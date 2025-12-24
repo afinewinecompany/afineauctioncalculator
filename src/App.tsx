@@ -7,6 +7,7 @@ import { LeaguesList } from './components/LeaguesList';
 import { SetupScreen } from './components/SetupScreen';
 import { DraftRoom } from './components/DraftRoom';
 import { PostDraftAnalysis } from './components/PostDraftAnalysis';
+import { TopMenuBar } from './components/TopMenuBar';
 
 type AppScreen = 'landing' | 'login' | 'leagues' | 'setup' | 'draft' | 'analysis';
 
@@ -148,6 +149,19 @@ export default function App() {
     setFinalRoster([]);
   };
 
+  const handleSwitchLeague = (league: SavedLeague) => {
+    setCurrentLeague(league);
+    setPlayers(league.players);
+    
+    if (league.status === 'complete') {
+      const myTeam = league.players.filter(p => p.status === 'onMyTeam');
+      setFinalRoster(myTeam as any);
+      setCurrentScreen('analysis');
+    } else {
+      setCurrentScreen('draft');
+    }
+  };
+
   // Save draft progress periodically
   useEffect(() => {
     if (currentScreen === 'draft' && currentLeague && userData) {
@@ -197,24 +211,49 @@ export default function App() {
         />
       )}
 
-      {currentScreen === 'setup' && (
-        <SetupScreen onComplete={handleSetupComplete} />
+      {currentScreen === 'setup' && userData && (
+        <>
+          <TopMenuBar
+            currentLeague={null}
+            allLeagues={userData.leagues}
+            onGoToDashboard={handleBackToLeagues}
+            onSwitchLeague={handleSwitchLeague}
+            showLeagueSelector={false}
+          />
+          <SetupScreen onComplete={handleSetupComplete} />
+        </>
       )}
 
-      {currentScreen === 'draft' && currentLeague && (
-        <DraftRoom
-          settings={currentLeague.settings}
-          players={players}
-          onComplete={handleDraftComplete}
-        />
+      {currentScreen === 'draft' && currentLeague && userData && (
+        <>
+          <TopMenuBar
+            currentLeague={currentLeague}
+            allLeagues={userData.leagues}
+            onGoToDashboard={handleBackToLeagues}
+            onSwitchLeague={handleSwitchLeague}
+          />
+          <DraftRoom
+            settings={currentLeague.settings}
+            players={players}
+            onComplete={handleDraftComplete}
+          />
+        </>
       )}
 
-      {currentScreen === 'analysis' && currentLeague && (
-        <PostDraftAnalysis
-          roster={finalRoster}
-          settings={currentLeague.settings}
-          onRestart={handleBackToLeagues}
-        />
+      {currentScreen === 'analysis' && currentLeague && userData && (
+        <>
+          <TopMenuBar
+            currentLeague={currentLeague}
+            allLeagues={userData.leagues}
+            onGoToDashboard={handleBackToLeagues}
+            onSwitchLeague={handleSwitchLeague}
+          />
+          <PostDraftAnalysis
+            roster={finalRoster}
+            settings={currentLeague.settings}
+            onRestart={handleBackToLeagues}
+          />
+        </>
       )}
     </>
   );

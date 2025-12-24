@@ -20,6 +20,54 @@ export interface LeagueSettings {
   };
   scoringType: 'rotisserie' | 'h2h-categories' | 'h2h-points';
   projectionSystem: 'steamer' | 'batx' | 'ja';
+  // Scoring categories for Roto and H2H Categories
+  hittingCategories?: {
+    R?: boolean;
+    HR?: boolean;
+    RBI?: boolean;
+    SB?: boolean;
+    AVG?: boolean;
+    OBP?: boolean;
+    SLG?: boolean;
+    OPS?: boolean;
+    H?: boolean;
+    XBH?: boolean;
+  };
+  pitchingCategories?: {
+    W?: boolean;
+    K?: boolean;
+    ERA?: boolean;
+    WHIP?: boolean;
+    SV?: boolean;
+    QS?: boolean;
+    K_BB?: boolean;
+    K9?: boolean;
+    IP?: boolean;
+    SV_HD?: boolean;
+  };
+  // Point values for H2H Points
+  pointsSettings?: {
+    // Hitting
+    H?: number;
+    '2B'?: number;
+    '3B'?: number;
+    HR?: number;
+    RBI?: number;
+    R?: number;
+    SB?: number;
+    BB?: number;
+    K_hitter?: number;
+    // Pitching
+    IP?: number;
+    W?: number;
+    K_pitcher?: number;
+    QS?: number;
+    SV?: number;
+    HD?: number;
+    ER?: number;
+    H_allowed?: number;
+    BB_allowed?: number;
+  };
 }
 
 export interface Player {

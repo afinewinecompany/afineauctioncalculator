@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { LeagueSettings } from '../lib/types';
 import { defaultLeagueSettings } from '../lib/mockData';
 import { ChevronRight, ChevronLeft, Zap, Database } from 'lucide-react';
+import { ScoringConfig } from './ScoringConfig';
 
 interface SetupScreenProps {
   onComplete: (settings: LeagueSettings) => void;
@@ -37,7 +38,7 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-8 relative overflow-hidden">
+    <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-8 relative overflow-hidden" style={{ minHeight: 'calc(100vh - 57px)' }}>
       {/* Baseball field pattern overlay */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border-4 border-white"></div>
@@ -60,9 +61,10 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
             <div className="flex items-center justify-between mb-12">
               {[
                 { num: 1, label: 'League Format' },
-                { num: 2, label: 'Roster Config' },
-                { num: 3, label: 'Projections' },
-                { num: 4, label: 'Review' }
+                { num: 2, label: 'Scoring' },
+                { num: 3, label: 'Roster Config' },
+                { num: 4, label: 'Projections' },
+                { num: 5, label: 'Review' }
               ].map((step, idx) => (
                 <div key={step.num} className="flex items-center flex-1">
                   <div className="flex flex-col items-center">
@@ -73,11 +75,11 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                     }`}>
                       {step.num}
                     </div>
-                    <span className={`mt-2 transition-colors ${currentStep >= step.num ? 'text-white' : 'text-slate-500'}`}>
+                    <span className={`mt-2 text-sm transition-colors ${currentStep >= step.num ? 'text-white' : 'text-slate-500'}`}>
                       {step.label}
                     </span>
                   </div>
-                  {idx < 3 && (
+                  {idx < 4 && (
                     <div className={`flex-1 h-1 mx-4 rounded-full transition-all duration-300 ${
                       currentStep > step.num ? 'bg-gradient-to-r from-red-600 to-red-700' : 'bg-slate-800'
                     }`} />
@@ -143,33 +145,52 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                     max={500}
                   />
                 </div>
-
-                <div>
-                  <label className="block text-slate-300 mb-3">Scoring Type</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {scoringTypes.map((type) => (
-                      <button
-                        key={type.value}
-                        onClick={() => setSettings({ ...settings, scoringType: type.value })}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                          settings.scoringType === type.value
-                            ? 'border-red-500 bg-gradient-to-br from-red-600/20 to-red-700/20 shadow-lg shadow-red-500/20'
-                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                        }`}
-                      >
-                        <div className={`mb-1 ${settings.scoringType === type.value ? 'text-red-400' : 'text-slate-300'}`}>
-                          {type.label}
-                        </div>
-                        <div className="text-slate-500">{type.description}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             )}
 
-            {/* Step 2: Roster Positions */}
+            {/* Step 2: Scoring */}
             {currentStep === 2 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h2 className="text-white flex items-center gap-2">
+                  <Database className="w-6 h-6 text-red-500" />
+                  Scoring Type
+                </h2>
+
+                <div className="bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-blue-500/30 rounded-xl p-4 mb-6">
+                  <p className="text-blue-300">
+                    💡 Choose the scoring type that will be used to rank players. 
+                    This determines the baseline for auction price calculations and inflation adjustments.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  {scoringTypes.map((type) => (
+                    <button
+                      key={type.value}
+                      onClick={() => setSettings({ ...settings, scoringType: type.value })}
+                      className={`p-6 rounded-xl border-2 transition-all duration-200 ${
+                        settings.scoringType === type.value
+                          ? 'border-red-500 bg-gradient-to-br from-red-600/20 to-red-700/20 shadow-lg shadow-red-500/20 scale-105'
+                          : 'border-slate-700 bg-slate-800/50 hover:border-slate-600 hover:scale-102'
+                      }`}
+                    >
+                      <div className={`mb-2 ${settings.scoringType === type.value ? 'text-red-400' : 'text-slate-300'}`}>
+                        {type.label}
+                      </div>
+                      <div className="text-slate-500 text-sm">{type.description}</div>
+                      {settings.scoringType === type.value && (
+                        <div className="mt-3 text-emerald-400">✓ Selected</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <ScoringConfig settings={settings} onUpdateSettings={setSettings} />
+              </div>
+            )}
+
+            {/* Step 3: Roster Positions */}
+            {currentStep === 3 && (
               <div className="space-y-6 animate-fadeIn">
                 <div className="flex items-center justify-between">
                   <h2 className="text-white">Roster Configuration</h2>
@@ -236,8 +257,8 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
               </div>
             )}
 
-            {/* Step 3: Projections */}
-            {currentStep === 3 && (
+            {/* Step 4: Projections */}
+            {currentStep === 4 && (
               <div className="space-y-6 animate-fadeIn">
                 <h2 className="text-white flex items-center gap-2">
                   <Database className="w-6 h-6 text-red-500" />
@@ -285,8 +306,8 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
               </div>
             )}
 
-            {/* Step 4: Review */}
-            {currentStep === 4 && (
+            {/* Step 5: Review */}
+            {currentStep === 5 && (
               <div className="space-y-6 animate-fadeIn">
                 <h2 className="text-white">Review Settings</h2>
 
@@ -367,7 +388,7 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
               )}
               
               <div className="ml-auto">
-                {currentStep < 4 ? (
+                {currentStep < 5 ? (
                   <button
                     onClick={() => setCurrentStep(currentStep + 1)}
                     className="px-8 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30 flex items-center gap-2 group"

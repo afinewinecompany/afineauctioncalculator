@@ -79,7 +79,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   const isDraftComplete = myRoster.length >= totalRosterSpots;
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
+    <div className="flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950" style={{ height: 'calc(100vh - 57px)' }}>
       {/* Header */}
       <DraftHeader
         settings={settings}

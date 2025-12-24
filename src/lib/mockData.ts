@@ -21,7 +21,22 @@ export const defaultLeagueSettings: LeagueSettings = {
     Bench: 3
   },
   scoringType: 'rotisserie',
-  projectionSystem: 'steamer'
+  projectionSystem: 'steamer',
+  // Default Roto categories (5x5)
+  hittingCategories: {
+    R: true,
+    HR: true,
+    RBI: true,
+    SB: true,
+    AVG: true
+  },
+  pitchingCategories: {
+    W: true,
+    K: true,
+    ERA: true,
+    WHIP: true,
+    SV: true
+  }
 };
 
 export const generateMockPlayers = (): Player[] => {
