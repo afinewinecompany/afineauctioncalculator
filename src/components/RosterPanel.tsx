@@ -1,9 +1,9 @@
-import { DraftedPlayer, LeagueSettings } from '../lib/types';
+import { Player, LeagueSettings } from '../lib/types';
 import { calculateTeamProjectedStats } from '../lib/calculations';
 import { Users, TrendingUp } from 'lucide-react';
 
 interface RosterPanelProps {
-  roster: DraftedPlayer[];
+  roster: Player[];
   settings: LeagueSettings;
   rosterNeedsRemaining: LeagueSettings['rosterSpots'];
 }

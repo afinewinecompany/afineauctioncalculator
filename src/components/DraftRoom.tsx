@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
-import { LeagueSettings, Player } from '../lib/types';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { LeagueSettings, Player, SyncState, AuctionSyncResult, MatchedPlayer } from '../lib/types';
 import { calculateInflation } from '../lib/calculations';
+import { syncAuctionLite } from '../lib/auctionApi';
 import { DraftHeader } from './DraftHeader';
 import { PlayerQueue } from './PlayerQueue';
 import { RosterPanel } from './RosterPanel';
 import { InflationTracker } from './InflationTracker';
 import { PlayerDetailModal } from './PlayerDetailModal';
+
+// Sync interval: 2 minutes
+const SYNC_INTERVAL_MS = 2 * 60 * 1000;
 
 interface DraftRoomProps {
   settings: LeagueSettings;
@@ -20,23 +24,136 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   const [inflationRate, setInflationRate] = useState(0);
   const [rosterNeedsRemaining, setRosterNeedsRemaining] = useState(settings.rosterSpots);
   const [selectedPlayerForDetail, setSelectedPlayerForDetail] = useState<Player | null>(null);
-  
+
+  // Couch Managers sync state
+  const [syncState, setSyncState] = useState<SyncState>({
+    isConnected: false,
+    lastSyncAt: null,
+    syncError: null,
+    isSyncing: false,
+  });
+  const [syncResult, setSyncResult] = useState<AuctionSyncResult | null>(null);
+  const [liveInflationStats, setLiveInflationStats] = useState<AuctionSyncResult['inflationStats'] | null>(null);
+  const syncIntervalRef = useRef<number | null>(null);
+  const isSyncingRef = useRef(false);
+
   const moneySpent = myRoster.reduce((sum, p) => sum + (p.draftedPrice || 0), 0);
   const moneyRemaining = settings.budgetPerTeam - moneySpent;
 
-  // Recalculate inflation whenever players are drafted
+  // Sync with Couch Managers - stable callback that doesn't depend on players state
+  const performSync = useCallback(async () => {
+    if (!settings.couchManagerRoomId) return;
+
+    // Prevent concurrent syncs
+    if (isSyncingRef.current) {
+      console.log('Sync already in progress, skipping...');
+      return;
+    }
+
+    isSyncingRef.current = true;
+    setSyncState(prev => ({ ...prev, isSyncing: true, syncError: null }));
+
+    try {
+      // Use lightweight sync that uses server-cached projections
+      // This sends only ~200 bytes instead of ~800KB
+      const result = await syncAuctionLite(settings.couchManagerRoomId, settings);
+      setSyncResult(result);
+      setLiveInflationStats(result.inflationStats);
+
+      // Build lookup map for matched players
+      const matchedByProjectionId = new Map<string, MatchedPlayer>();
+      result.matchedPlayers.forEach(mp => {
+        if (mp.projectionPlayerId) {
+          matchedByProjectionId.set(mp.projectionPlayerId, mp);
+        }
+      });
+
+      // Batch update: update player statuses and build drafted list in one pass
+      const draftedFromSync: Player[] = [];
+
+      setPlayers(prevPlayers => {
+        return prevPlayers.map(p => {
+          const matched = matchedByProjectionId.get(p.id);
+          if (matched && matched.scrapedPlayer.status === 'drafted') {
+            const updatedPlayer: Player = {
+              ...p,
+              status: 'drafted' as const,
+              draftedPrice: matched.scrapedPlayer.winningBid,
+              draftedBy: matched.scrapedPlayer.winningTeam || 'Unknown',
+            };
+            draftedFromSync.push(updatedPlayer);
+            return updatedPlayer;
+          }
+          return p;
+        });
+      });
+
+      // Only update allDrafted if there are changes
+      if (draftedFromSync.length > 0) {
+        setAllDrafted(draftedFromSync);
+      }
+
+      setSyncState(prev => ({
+        ...prev,
+        isConnected: true,
+        lastSyncAt: new Date().toISOString(),
+        isSyncing: false,
+      }));
+    } catch (error) {
+      console.error('Sync error:', error);
+      setSyncState(prev => ({
+        ...prev,
+        syncError: error instanceof Error ? error.message : 'Sync failed',
+        isSyncing: false,
+      }));
+    } finally {
+      isSyncingRef.current = false;
+    }
+  }, [settings]); // Only depends on settings, not players
+
+  // Auto-sync on mount and every 2 minutes if roomId is set
   useEffect(() => {
-    const newInflationRate = calculateInflation(settings, allDrafted);
-    setInflationRate(newInflationRate);
-    
-    // Adjust all player values based on new inflation
-    setPlayers(prevPlayers =>
-      prevPlayers.map(p => ({
-        ...p,
-        adjustedValue: Math.round(p.projectedValue * (1 + newInflationRate))
-      }))
-    );
-  }, [allDrafted.length, settings]);
+    if (!settings.couchManagerRoomId) return;
+
+    // Initial sync with small delay to let component mount
+    const initialSyncTimeout = setTimeout(performSync, 500);
+
+    // Set up interval
+    syncIntervalRef.current = window.setInterval(performSync, SYNC_INTERVAL_MS);
+
+    return () => {
+      clearTimeout(initialSyncTimeout);
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+      }
+    };
+  }, [settings.couchManagerRoomId, performSync]);
+
+  // Recalculate inflation whenever players are drafted - separate from player value updates
+  const calculatedInflationRate = useMemo(() => {
+    return calculateInflation(settings, allDrafted);
+  }, [allDrafted, settings]);
+
+  // Update inflation rate state only when it changes
+  useEffect(() => {
+    setInflationRate(calculatedInflationRate);
+  }, [calculatedInflationRate]);
+
+  // Adjust player values based on inflation - debounced to prevent rapid updates
+  useEffect(() => {
+    if (calculatedInflationRate === 0) return;
+
+    const timeoutId = setTimeout(() => {
+      setPlayers(prevPlayers =>
+        prevPlayers.map(p => ({
+          ...p,
+          adjustedValue: Math.round(p.projectedValue * (1 + calculatedInflationRate))
+        }))
+      );
+    }, 100); // Small debounce to batch rapid changes
+
+    return () => clearTimeout(timeoutId);
+  }, [calculatedInflationRate]);
 
   // Update roster needs
   useEffect(() => {
@@ -113,6 +230,10 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
               settings={settings}
               allDrafted={allDrafted}
               inflationRate={inflationRate}
+              syncState={syncState}
+              liveInflationStats={liveInflationStats}
+              currentAuction={syncResult?.auctionData.currentAuction}
+              onManualSync={performSync}
             />
           </div>
         </div>

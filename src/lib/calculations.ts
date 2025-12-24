@@ -1,14 +1,17 @@
 import { Player, LeagueSettings, DraftedPlayer } from './types';
 
+// Type for players that have been drafted (with price information)
+type DraftedPlayerLike = Pick<Player, 'draftedPrice' | 'projectedValue'>;
+
 export function calculateInflation(
   leagueSettings: LeagueSettings,
-  allDrafted: DraftedPlayer[]
+  allDrafted: DraftedPlayerLike[]
 ): number {
   const totalBudget = leagueSettings.numTeams * leagueSettings.budgetPerTeam;
   const totalRosterSpots = leagueSettings.numTeams * Object.values(leagueSettings.rosterSpots).reduce((a, b) => a + b, 0);
-  
+
   // Calculate money spent so far
-  const moneySpent = allDrafted.reduce((sum, p) => sum + p.draftedPrice, 0);
+  const moneySpent = allDrafted.reduce((sum, p) => sum + (p.draftedPrice || 0), 0);
   const moneyRemaining = totalBudget - moneySpent;
   
   // Calculate players drafted
@@ -82,7 +85,7 @@ export function getInflationIndicator(inflationRate: number): {
 
 export function calculateRosterNeeds(
   leagueSettings: LeagueSettings,
-  myRoster: DraftedPlayer[]
+  myRoster: Player[]
 ): LeagueSettings['rosterSpots'] {
   const needs = { ...leagueSettings.rosterSpots };
   
@@ -113,7 +116,7 @@ export function getPositionScarcity(
   return 'low';
 }
 
-export function calculateTeamProjectedStats(roster: DraftedPlayer[]): {
+export function calculateTeamProjectedStats(roster: Player[]): {
   totalSpent: number;
   projectedHR: number;
   projectedRBI: number;
@@ -123,7 +126,7 @@ export function calculateTeamProjectedStats(roster: DraftedPlayer[]): {
   projectedSV: number;
 } {
   return roster.reduce((acc, player) => ({
-    totalSpent: acc.totalSpent + player.draftedPrice,
+    totalSpent: acc.totalSpent + (player.draftedPrice || 0),
     projectedHR: acc.projectedHR + (player.projectedStats.HR || 0),
     projectedRBI: acc.projectedRBI + (player.projectedStats.RBI || 0),
     projectedSB: acc.projectedSB + (player.projectedStats.SB || 0),

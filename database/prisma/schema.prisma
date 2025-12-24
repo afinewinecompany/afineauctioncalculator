@@ -1,0 +1,434 @@
+// Fantasy Baseball Auction Tool - Prisma Schema
+// This schema maps to the PostgreSQL database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum AuthProvider {
+  email
+  google
+  yahoo
+  espn
+
+  @@map("auth_provider")
+}
+
+enum LeagueStatus {
+  setup
+  drafting
+  complete
+  archived
+
+  @@map("league_status")
+}
+
+enum ScoringType {
+  rotisserie
+  h2h_categories @map("h2h-categories")
+  h2h_points     @map("h2h-points")
+
+  @@map("scoring_type")
+}
+
+enum ProjectionSystem {
+  steamer
+  batx
+  ja
+  custom
+
+  @@map("projection_system")
+}
+
+enum LeagueRole {
+  owner
+  manager
+  viewer
+
+  @@map("league_role")
+}
+
+enum DraftPickStatus {
+  available
+  nominated
+  won
+  passed
+
+  @@map("draft_pick_status")
+}
+
+// ============================================
+// USERS & AUTHENTICATION
+// ============================================
+
+model User {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String    @unique @db.VarChar(255)
+  username          String    @db.VarChar(100)
+  passwordHash      String?   @map("password_hash") @db.VarChar(255)
+  authProvider      AuthProvider @default(email) @map("auth_provider")
+  profilePictureUrl String?   @map("profile_picture_url")
+  emailVerified     Boolean   @default(false) @map("email_verified")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  lastLoginAt       DateTime? @map("last_login_at") @db.Timestamptz
+  isActive          Boolean   @default(true) @map("is_active")
+
+  // Relations
+  refreshTokens     RefreshToken[]
+  oauthTokens       UserOAuthToken[]
+  createdLeagues    League[]       @relation("LeagueCreator")
+  userLeagues       UserLeague[]
+  draftedPlayers    LeaguePlayer[] @relation("DraftedBy")
+  draftPicks        DraftPick[]    @relation("DraftWinner")
+  activityLogs      ActivityLog[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+model UserOAuthToken {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  provider       String    @db.VarChar(50)
+  accessToken    String    @map("access_token")
+  refreshToken   String?   @map("refresh_token")
+  tokenExpiresAt DateTime? @map("token_expires_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("user_oauth_tokens")
+}
+
+// ============================================
+// LEAGUES
+// ============================================
+
+model League {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String           @db.VarChar(255)
+  externalRoomId   String?          @map("external_room_id") @db.VarChar(100)
+  numTeams         Int              @map("num_teams")
+  budgetPerTeam    Int              @map("budget_per_team")
+  scoringType      ScoringType      @default(rotisserie) @map("scoring_type")
+  projectionSystem ProjectionSystem @default(steamer) @map("projection_system")
+  status           LeagueStatus     @default(setup)
+  draftStartedAt   DateTime?        @map("draft_started_at") @db.Timestamptz
+  draftCompletedAt DateTime?        @map("draft_completed_at") @db.Timestamptz
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String           @map("created_by") @db.Uuid
+
+  // Relations
+  creator           User                     @relation("LeagueCreator", fields: [createdBy], references: [id])
+  rosterSpots       LeagueRosterSpot[]
+  scoringCategories LeagueScoringCategory[]
+  pointValues       LeaguePointValue[]
+  userLeagues       UserLeague[]
+  leaguePlayers     LeaguePlayer[]
+  draftPicks        DraftPick[]
+  draftSnapshots    DraftSnapshot[]
+  activityLogs      ActivityLog[]
+
+  @@index([status])
+  @@index([createdBy])
+  @@map("leagues")
+}
+
+model LeagueRosterSpot {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leagueId     String @map("league_id") @db.Uuid
+  positionCode String @map("position_code") @db.VarChar(10)
+  numSpots     Int    @default(0) @map("num_spots")
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, positionCode])
+  @@index([leagueId])
+  @@map("league_roster_spots")
+}
+
+model LeagueScoringCategory {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leagueId     String  @map("league_id") @db.Uuid
+  categoryCode String  @map("category_code") @db.VarChar(20)
+  categoryType String  @map("category_type") @db.VarChar(10)
+  isEnabled    Boolean @default(true) @map("is_enabled")
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, categoryCode])
+  @@index([leagueId])
+  @@map("league_scoring_categories")
+}
+
+model LeaguePointValue {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leagueId   String  @map("league_id") @db.Uuid
+  statCode   String  @map("stat_code") @db.VarChar(20)
+  statType   String  @map("stat_type") @db.VarChar(10)
+  pointValue Decimal @default(0) @map("point_value") @db.Decimal(5, 2)
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, statCode])
+  @@index([leagueId])
+  @@map("league_point_values")
+}
+
+// ============================================
+// USER-LEAGUE MEMBERSHIP
+// ============================================
+
+model UserLeague {
+  id       String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId   String     @map("user_id") @db.Uuid
+  leagueId String     @map("league_id") @db.Uuid
+  role     LeagueRole @default(manager)
+  teamName String?    @map("team_name") @db.VarChar(100)
+  isMyTeam Boolean    @default(false) @map("is_my_team")
+  joinedAt DateTime   @default(now()) @map("joined_at") @db.Timestamptz
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, leagueId])
+  @@index([userId])
+  @@index([leagueId])
+  @@map("user_leagues")
+}
+
+// ============================================
+// PLAYERS & PROJECTIONS
+// ============================================
+
+model Player {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  externalId      String?  @unique @map("external_id") @db.VarChar(50)
+  name            String   @db.VarChar(255)
+  team            String   @db.VarChar(10)
+  primaryPosition String   @map("primary_position") @db.VarChar(10)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  positions     PlayerPosition[]
+  projections   PlayerProjection[]
+  leaguePlayers LeaguePlayer[]
+
+  @@index([name])
+  @@index([team])
+  @@index([primaryPosition])
+  @@map("players")
+}
+
+model PlayerPosition {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId     String @map("player_id") @db.Uuid
+  positionCode String @map("position_code") @db.VarChar(10)
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, positionCode])
+  @@index([playerId])
+  @@map("player_positions")
+}
+
+model PlayerProjection {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId         String           @map("player_id") @db.Uuid
+  projectionSystem ProjectionSystem @map("projection_system")
+  seasonYear       Int              @map("season_year")
+
+  // Hitting stats
+  games          Int?
+  atBats         Int?     @map("at_bats")
+  runs           Int?
+  hits           Int?
+  doubles        Int?
+  triples        Int?
+  homeRuns       Int?     @map("home_runs")
+  rbi            Int?
+  stolenBases    Int?     @map("stolen_bases")
+  caughtStealing Int?     @map("caught_stealing")
+  walks          Int?
+  strikeoutsHitter Int?   @map("strikeouts_hitter")
+  battingAvg     Decimal? @map("batting_avg") @db.Decimal(4, 3)
+  onBasePct      Decimal? @map("on_base_pct") @db.Decimal(4, 3)
+  sluggingPct    Decimal? @map("slugging_pct") @db.Decimal(4, 3)
+  ops            Decimal? @db.Decimal(4, 3)
+
+  // Pitching stats
+  inningsPitched   Decimal? @map("innings_pitched") @db.Decimal(5, 1)
+  wins             Int?
+  losses           Int?
+  saves            Int?
+  holds            Int?
+  earnedRuns       Int?     @map("earned_runs")
+  hitsAllowed      Int?     @map("hits_allowed")
+  walksAllowed     Int?     @map("walks_allowed")
+  strikeoutsPitcher Int?    @map("strikeouts_pitcher")
+  era              Decimal? @db.Decimal(4, 2)
+  whip             Decimal? @db.Decimal(4, 2)
+  qualityStarts    Int?     @map("quality_starts")
+
+  // Calculated value
+  projectedValue Decimal? @map("projected_value") @db.Decimal(6, 2)
+  tier           Int?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, projectionSystem, seasonYear])
+  @@index([playerId])
+  @@index([projectionSystem, seasonYear])
+  @@index([projectedValue(sort: Desc)])
+  @@map("player_projections")
+}
+
+// ============================================
+// DRAFT STATE & PICKS
+// ============================================
+
+model LeaguePlayer {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leagueId  String          @map("league_id") @db.Uuid
+  playerId  String          @map("player_id") @db.Uuid
+
+  // Draft state
+  status      DraftPickStatus @default(available)
+  nominatedAt DateTime?       @map("nominated_at") @db.Timestamptz
+  draftedAt   DateTime?       @map("drafted_at") @db.Timestamptz
+
+  // Auction values
+  baseValue     Decimal  @map("base_value") @db.Decimal(6, 2)
+  adjustedValue Decimal  @map("adjusted_value") @db.Decimal(6, 2)
+  winningBid    Decimal? @map("winning_bid") @db.Decimal(6, 2)
+
+  // Ownership
+  draftedByUserId   String?  @map("drafted_by_user_id") @db.Uuid
+  draftedByTeamName String?  @map("drafted_by_team_name") @db.VarChar(100)
+  isMyTeam          Boolean  @default(false) @map("is_my_team")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  league     League      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  player     Player      @relation(fields: [playerId], references: [id])
+  draftedBy  User?       @relation("DraftedBy", fields: [draftedByUserId], references: [id])
+  draftPicks DraftPick[]
+
+  @@unique([leagueId, playerId])
+  @@index([leagueId])
+  @@index([status])
+  @@index([draftedByUserId])
+  @@map("league_players")
+}
+
+model DraftPick {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leagueId       String   @map("league_id") @db.Uuid
+  leaguePlayerId String   @map("league_player_id") @db.Uuid
+  pickNumber     Int      @map("pick_number")
+
+  // Bid details
+  winningBid           Decimal @map("winning_bid") @db.Decimal(6, 2)
+  adjustedValueAtPick  Decimal @map("adjusted_value_at_pick") @db.Decimal(6, 2)
+  inflationRateAtPick  Decimal @map("inflation_rate_at_pick") @db.Decimal(5, 4)
+
+  // Winner
+  winnerUserId   String?  @map("winner_user_id") @db.Uuid
+  winnerTeamName String?  @map("winner_team_name") @db.VarChar(100)
+  isMyTeam       Boolean  @default(false) @map("is_my_team")
+
+  pickedAt DateTime @default(now()) @map("picked_at") @db.Timestamptz
+
+  league       League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leaguePlayer LeaguePlayer @relation(fields: [leaguePlayerId], references: [id])
+  winner       User?        @relation("DraftWinner", fields: [winnerUserId], references: [id])
+
+  @@unique([leagueId, pickNumber])
+  @@index([leagueId])
+  @@index([leaguePlayerId])
+  @@map("draft_picks")
+}
+
+// ============================================
+// DRAFT ANALYTICS
+// ============================================
+
+model DraftSnapshot {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leagueId       String   @map("league_id") @db.Uuid
+  snapshotNumber Int      @map("snapshot_number")
+
+  playersDrafted          Int     @map("players_drafted")
+  totalMoneySpent         Decimal @map("total_money_spent") @db.Decimal(10, 2)
+  totalMoneyRemaining     Decimal @map("total_money_remaining") @db.Decimal(10, 2)
+  calculatedInflationRate Decimal @map("calculated_inflation_rate") @db.Decimal(5, 4)
+
+  myTeamSpent       Decimal? @map("my_team_spent") @db.Decimal(10, 2)
+  myTeamRemaining   Decimal? @map("my_team_remaining") @db.Decimal(10, 2)
+  myTeamRosterCount Int?     @map("my_team_roster_count")
+
+  capturedAt DateTime @default(now()) @map("captured_at") @db.Timestamptz
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, snapshotNumber])
+  @@index([leagueId])
+  @@map("draft_snapshots")
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model ActivityLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  leagueId   String?  @map("league_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String?  @map("entity_type") @db.VarChar(50)
+  entityId   String?  @map("entity_id") @db.Uuid
+  details    Json?
+  ipAddress  String?  @map("ip_address") @db.Inet
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user   User?   @relation(fields: [userId], references: [id])
+  league League? @relation(fields: [leagueId], references: [id])
+
+  @@index([userId])
+  @@index([leagueId])
+  @@index([createdAt(sort: Desc)])
+  @@map("activity_log")
+}

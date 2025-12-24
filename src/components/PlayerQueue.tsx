@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { Player } from '../lib/types';
 import { getValueIndicator } from '../lib/calculations';
 import { ArrowUpDown, Filter, Check } from 'lucide-react';
+
+// Maximum players to render at once for performance
+const MAX_VISIBLE_PLAYERS = 100;
 
 interface PlayerQueueProps {
   players: Player[];
@@ -9,13 +12,13 @@ interface PlayerQueueProps {
   onPlayerClick: (player: Player) => void;
 }
 
-export function PlayerQueue({ players, onDraftPlayer, onPlayerClick }: PlayerQueueProps) {
+export const PlayerQueue = memo(function PlayerQueue({ players, onDraftPlayer, onPlayerClick }: PlayerQueueProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPosition, setFilterPosition] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'available'>('available');
   const [sortBy, setSortBy] = useState<'name' | 'projectedValue' | 'adjustedValue'>('adjustedValue');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
+
   // Track bid values and my team checkboxes for each player
   const [bidValues, setBidValues] = useState<Record<string, number>>({});
   const [myTeamChecks, setMyTeamChecks] = useState<Record<string, boolean>>({});
@@ -29,11 +32,11 @@ export function PlayerQueue({ players, onDraftPlayer, onPlayerClick }: PlayerQue
     }
   };
 
-  const handleDraft = (player: Player) => {
+  const handleDraft = useCallback((player: Player) => {
     const bidValue = bidValues[player.id] || 1;
     const isMyTeam = myTeamChecks[player.id] || false;
     onDraftPlayer(player, bidValue, isMyTeam ? 'me' : 'other');
-    
+
     // Clear the bid value and checkbox for this player
     setBidValues(prev => {
       const next = { ...prev };
@@ -45,35 +48,50 @@ export function PlayerQueue({ players, onDraftPlayer, onPlayerClick }: PlayerQue
       delete next[player.id];
       return next;
     });
-  };
+  }, [bidValues, myTeamChecks, onDraftPlayer]);
 
-  const handleBidKeyPress = (e: React.KeyboardEvent, player: Player) => {
+  const handleBidKeyPress = useCallback((e: React.KeyboardEvent, player: Player) => {
     if (e.key === 'Enter') {
       handleDraft(player);
     }
-  };
+  }, [handleDraft]);
 
-  const filteredPlayers = (players || [])
-    .filter(p => {
+  // Memoize filtered and sorted players to avoid recalculating on every render
+  const filteredPlayers = useMemo(() => {
+    const searchLower = searchQuery.toLowerCase();
+
+    const filtered = (players || []).filter(p => {
       if (filterStatus === 'available' && p.status !== 'available') return false;
       if (filterPosition !== 'all' && !p.positions.includes(filterPosition)) return false;
-      if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (searchQuery && !p.name.toLowerCase().includes(searchLower)) return false;
       return true;
-    })
-    .sort((a, b) => {
+    });
+
+    // Sort the filtered list
+    filtered.sort((a, b) => {
       let aVal: string | number = a[sortBy];
       let bVal: string | number = b[sortBy];
-      
+
       if (sortBy === 'name') {
-        return sortOrder === 'asc' 
+        return sortOrder === 'asc'
           ? (aVal as string).localeCompare(bVal as string)
           : (bVal as string).localeCompare(aVal as string);
       }
-      
-      return sortOrder === 'asc' 
+
+      return sortOrder === 'asc'
         ? (aVal as number) - (bVal as number)
         : (bVal as number) - (aVal as number);
     });
+
+    return filtered;
+  }, [players, filterStatus, filterPosition, searchQuery, sortBy, sortOrder]);
+
+  // Limit visible players for performance - show more as user scrolls/filters
+  const visiblePlayers = useMemo(() => {
+    return filteredPlayers.slice(0, MAX_VISIBLE_PLAYERS);
+  }, [filteredPlayers]);
+
+  const hasMorePlayers = filteredPlayers.length > MAX_VISIBLE_PLAYERS;
 
   const positions = ['all', 'C', '1B', '2B', '3B', 'SS', 'OF', 'CI', 'MI', 'UTIL', 'SP', 'RP', 'P'];
 
@@ -165,7 +183,7 @@ export function PlayerQueue({ players, onDraftPlayer, onPlayerClick }: PlayerQue
 
       {/* Player List */}
       <div className="flex-1 overflow-y-auto">
-        {filteredPlayers.map((player) => {
+        {visiblePlayers.map((player) => {
           const isPitcher = player.positions.some(p => ['SP', 'RP'].includes(p));
           const keyStats = isPitcher
             ? `${player.projectedStats.W}W ${player.projectedStats.K}K ${player.projectedStats.ERA?.toFixed(2)}ERA`
@@ -309,9 +327,14 @@ export function PlayerQueue({ players, onDraftPlayer, onPlayerClick }: PlayerQue
 
       <div className="p-4 border-t border-slate-700 bg-slate-800/50">
         <div className="text-slate-400">
-          Showing {filteredPlayers.length} of {players.length} players
+          Showing {visiblePlayers.length} of {filteredPlayers.length} matching players
+          {hasMorePlayers && (
+            <span className="text-slate-500 ml-2">
+              (use search/filters to see more)
+            </span>
+          )}
         </div>
       </div>
     </div>
   );
-}
+});

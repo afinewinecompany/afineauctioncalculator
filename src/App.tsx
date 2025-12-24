@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LeagueSettings, Player, SavedLeague, UserData } from './lib/types';
 import { generateMockPlayers } from './lib/mockData';
+import { calculateLeagueAuctionValues, convertToPlayers } from './lib/auctionApi';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
 import { LeaguesList } from './components/LeaguesList';
@@ -17,6 +18,8 @@ export default function App() {
   const [currentLeague, setCurrentLeague] = useState<SavedLeague | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [finalRoster, setFinalRoster] = useState<any[]>([]);
+  const [isLoadingProjections, setIsLoadingProjections] = useState(false);
+  const [projectionError, setProjectionError] = useState<string | null>(null);
 
   // Load user data from localStorage
   useEffect(() => {
@@ -66,29 +69,70 @@ export default function App() {
     setCurrentScreen('setup');
   };
 
-  const handleSetupComplete = (settings: LeagueSettings) => {
-    const newLeague: SavedLeague = {
-      id: `league-${Date.now()}`,
-      leagueName: settings.leagueName,
-      settings,
-      players: generateMockPlayers(),
-      createdAt: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      status: 'drafting'
-    };
+  const handleSetupComplete = async (settings: LeagueSettings) => {
+    setIsLoadingProjections(true);
+    setProjectionError(null);
 
-    // Add league to user's leagues
-    if (userData) {
-      const updatedUser = {
-        ...userData,
-        leagues: [...userData.leagues, newLeague]
+    try {
+      // Fetch projections and calculate auction values based on league settings
+      const calculatedValues = await calculateLeagueAuctionValues(settings);
+      const projectedPlayers = convertToPlayers(calculatedValues);
+
+      console.log(`Loaded ${projectedPlayers.length} players from ${settings.projectionSystem} projections`);
+      console.log(`League summary:`, calculatedValues.leagueSummary);
+
+      const newLeague: SavedLeague = {
+        id: `league-${Date.now()}`,
+        leagueName: settings.leagueName,
+        settings,
+        players: projectedPlayers,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        status: 'drafting'
       };
-      setUserData(updatedUser);
-    }
 
-    setCurrentLeague(newLeague);
-    setPlayers(newLeague.players);
-    setCurrentScreen('draft');
+      // Add league to user's leagues
+      if (userData) {
+        const updatedUser = {
+          ...userData,
+          leagues: [...userData.leagues, newLeague]
+        };
+        setUserData(updatedUser);
+      }
+
+      setCurrentLeague(newLeague);
+      setPlayers(newLeague.players);
+      setCurrentScreen('draft');
+    } catch (error) {
+      console.error('Failed to load projections:', error);
+      setProjectionError(error instanceof Error ? error.message : 'Failed to load projections');
+
+      // Fallback to mock data if projections fail
+      const fallbackPlayers = generateMockPlayers();
+      const newLeague: SavedLeague = {
+        id: `league-${Date.now()}`,
+        leagueName: settings.leagueName,
+        settings,
+        players: fallbackPlayers,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        status: 'drafting'
+      };
+
+      if (userData) {
+        const updatedUser = {
+          ...userData,
+          leagues: [...userData.leagues, newLeague]
+        };
+        setUserData(updatedUser);
+      }
+
+      setCurrentLeague(newLeague);
+      setPlayers(newLeague.players);
+      setCurrentScreen('draft');
+    } finally {
+      setIsLoadingProjections(false);
+    }
   };
 
   const handleContinueDraft = (league: SavedLeague) => {
@@ -221,6 +265,21 @@ export default function App() {
             showLeagueSelector={false}
           />
           <SetupScreen onComplete={handleSetupComplete} />
+          {isLoadingProjections && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 text-center max-w-md">
+                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <h3 className="text-white text-xl mb-2">Loading Projections</h3>
+                <p className="text-slate-400">Fetching player projections and calculating auction values based on your league settings...</p>
+              </div>
+            </div>
+          )}
+          {projectionError && (
+            <div className="fixed bottom-4 right-4 bg-red-900/90 border border-red-700 rounded-xl p-4 max-w-md z-50">
+              <p className="text-red-200">Failed to load projections: {projectionError}</p>
+              <p className="text-red-300 text-sm mt-1">Using fallback mock data instead.</p>
+            </div>
+          )}
         </>
       )}
 

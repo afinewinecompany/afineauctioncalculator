@@ -68,10 +68,16 @@ export interface LeagueSettings {
     H_allowed?: number;
     BB_allowed?: number;
   };
+  // Budget allocation split between hitters and pitchers (default 68/32)
+  hitterPitcherSplit?: {
+    hitter: number; // e.g., 0.68 for 68%
+    pitcher: number; // e.g., 0.32 for 32%
+  };
 }
 
 export interface Player {
   id: string;
+  externalId?: string; // FanGraphs player ID for projection matching
   name: string;
   team: string;
   positions: string[];
@@ -82,16 +88,22 @@ export interface Player {
     RBI?: number;
     SB?: number;
     AVG?: number;
+    R?: number;
+    H?: number;
+    OBP?: number;
+    SLG?: number;
     W?: number;
     K?: number;
     ERA?: number;
     WHIP?: number;
     SV?: number;
+    IP?: number;
   };
   status: 'available' | 'drafted' | 'onMyTeam';
   draftedPrice?: number;
   draftedBy?: string;
   tier?: number;
+  isInDraftPool?: boolean; // Whether player is in the draftable pool
 }
 
 export interface DraftedPlayer extends Player {
@@ -128,4 +140,84 @@ export interface UserData {
   leagues: SavedLeague[];
   authProvider?: 'email' | 'google';
   profilePicture?: string;
+}
+
+// Couch Managers Auction Sync Types
+export interface ScrapedPlayer {
+  couchManagersId: number;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  normalizedName: string;
+  positions: string[];
+  mlbTeam: string;
+  status: 'available' | 'drafted' | 'on_block' | 'passed';
+  winningBid?: number;
+  winningTeam?: string;
+  stats?: {
+    avg?: string;
+    hr?: number;
+    rbi?: number;
+    sb?: number;
+    runs?: number;
+  };
+}
+
+export interface CurrentAuction {
+  playerId: number;
+  playerName: string;
+  currentBid: number;
+  currentBidder: string;
+  timeRemaining: number;
+}
+
+export interface ScrapedAuctionData {
+  roomId: string;
+  scrapedAt: string;
+  status: 'active' | 'paused' | 'completed' | 'not_found';
+  players: ScrapedPlayer[];
+  teams: {
+    name: string;
+    budget: number;
+    spent: number;
+    remaining: number;
+    playersDrafted: number;
+    isOnline: boolean;
+  }[];
+  currentAuction?: CurrentAuction;
+  totalPlayersDrafted: number;
+  totalMoneySpent: number;
+}
+
+export interface MatchedPlayer {
+  scrapedPlayer: ScrapedPlayer;
+  projectionPlayerId: string | null;
+  projectedValue: number | null;
+  actualBid: number | null;
+  inflationAmount: number | null;
+  inflationPercent: number | null;
+  matchConfidence: 'exact' | 'partial' | 'unmatched';
+}
+
+export interface InflationStats {
+  overallInflationRate: number;
+  totalProjectedValue: number;
+  totalActualSpent: number;
+  draftedPlayersCount: number;
+  averageInflationPerPlayer: number;
+  remainingBudgetInflationAdjustment: number;
+}
+
+export interface AuctionSyncResult {
+  auctionData: ScrapedAuctionData;
+  matchedPlayers: MatchedPlayer[];
+  inflationStats: InflationStats;
+  unmatchedPlayers: ScrapedPlayer[];
+}
+
+export interface SyncState {
+  isConnected: boolean;
+  lastSyncAt: string | null;
+  syncError: string | null;
+  isSyncing: boolean;
 }

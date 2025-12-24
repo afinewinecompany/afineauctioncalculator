@@ -1,10 +1,59 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import path from 'path';
+import type { ViteDevServer } from 'vite';
 
-  import { defineConfig } from 'vite';
-  import react from '@vitejs/plugin-react-swc';
-  import path from 'path';
+// Plugin to integrate Express API with Vite dev server
+function apiPlugin() {
+  return {
+    name: 'api-server',
+    configureServer(server: ViteDevServer) {
+      // Synchronously add middleware BEFORE Vite's built-in middleware
+      // We'll set up the handler and initialize the Express app async
+      let expressApp: any = null;
+      let appReady = false;
 
-  export default defineConfig({
-    plugins: [react()],
+      // Load the Express app
+      import('./server/index').then(({ createServer }) => {
+        expressApp = createServer();
+        appReady = true;
+        console.log('API server middleware ready at /api');
+      }).catch((err) => {
+        console.error('Failed to load API server:', err);
+      });
+
+      // Add middleware synchronously - it will wait for app to be ready
+      server.middlewares.use((req, res, next) => {
+        if (req.url?.startsWith('/api')) {
+          if (!appReady) {
+            // Wait for app to be ready
+            const checkReady = setInterval(() => {
+              if (appReady && expressApp) {
+                clearInterval(checkReady);
+                expressApp(req, res, next);
+              }
+            }, 10);
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              clearInterval(checkReady);
+              if (!appReady) {
+                res.statusCode = 503;
+                res.end('API server not ready');
+              }
+            }, 5000);
+          } else {
+            expressApp(req, res, next);
+          }
+        } else {
+          next();
+        }
+      });
+    },
+  };
+}
+
+export default defineConfig({
+  plugins: [react(), apiPlugin()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {

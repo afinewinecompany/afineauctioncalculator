@@ -1,0 +1,10 @@
+node_modules
+
+# Cache directories
+server/cache/
+cache/
+
+# Figma data files
+figma-data.json
+figma-file-data.json
+figma-images.json
