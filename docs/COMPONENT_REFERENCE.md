@@ -97,7 +97,7 @@ interface SetupScreenProps {
 
 #### DraftRoom.tsx
 
-**Purpose**: Main draft interface orchestrating all draft-related components
+**Purpose**: Main draft interface with live Couch Managers sync and inflation tracking
 
 **Props**:
 ```typescript
@@ -110,17 +110,40 @@ interface DraftRoomProps {
 
 **State**:
 ```typescript
+// Player data
 players: Player[]
 myRoster: Player[]
 allDrafted: Player[]
-inflationRate: number
-rosterNeedsRemaining: RosterSpots
+
+// Couch Managers sync
+syncState: SyncState
+syncResult: AuctionSyncResult | null
+liveInflationStats: EnhancedInflationStats | null
+
+// Team selection
+availableTeams: string[]
+selectedTeam: string | null
+
+// Calculations (memoized)
+inflationResult: InflationResult  // Includes tier inflation, scarcity
+
+// UI state
+isInitialLoading: boolean
+loadingMessage: string
 selectedPlayerForDetail: Player | null
 ```
 
+**Key Features**:
+
+- Auto-sync with Couch Managers every 2 minutes
+- Loading overlay on initial sync
+- Team selector for "My Team" roster view
+- Memoized inflation calculation
+- Player status sync (drafted/available/on_block)
+
 **Used by**: App.tsx
 
-**Child Components**: DraftHeader, PlayerQueue, RosterPanel, InflationTracker, PlayerDetailModal
+**Child Components**: LoadingOverlay, DraftHeader, PlayerQueue, RosterPanel, InflationTracker, PlayerDetailModal
 
 ---
 
@@ -166,22 +189,25 @@ interface DraftHeaderProps {
 
 #### PlayerQueue.tsx
 
-**Purpose**: Display and manage available/drafted player lists
+**Purpose**: Display available/drafted player lists with scarcity indicators
 
 **Props**:
 ```typescript
 interface PlayerQueueProps {
   players: Player[];
-  onDraftPlayer: (player: Player, price: number, draftedBy: 'me' | 'other') => void;
   onPlayerClick: (player: Player) => void;
+  positionalScarcity?: PositionalScarcity[];
 }
 ```
 
 **Features**:
+
 - Filter by position, tier, status
 - Sort by various columns
 - Search by player name
-- Quick draft actions
+- Positional scarcity badges (severe/moderate/normal/surplus)
+- Color-coded value indicators
+- On-block player highlighting
 
 **Used by**: DraftRoom.tsx
 
@@ -189,7 +215,7 @@ interface PlayerQueueProps {
 
 #### RosterPanel.tsx
 
-**Purpose**: Display user's drafted roster organized by position
+**Purpose**: Display drafted roster with team selector dropdown
 
 **Props**:
 ```typescript
@@ -197,8 +223,18 @@ interface RosterPanelProps {
   roster: Player[];
   settings: LeagueSettings;
   rosterNeedsRemaining: RosterSpots;
+  availableTeams?: string[];
+  selectedTeam: string | null;
+  onTeamSelect?: (team: string) => void;
 }
 ```
+
+**Features**:
+
+- Team dropdown selector (when connected to Couch Managers)
+- Position-grouped roster display
+- Money remaining calculation
+- Roster spots remaining count
 
 **Used by**: DraftRoom.tsx
 
@@ -224,21 +260,34 @@ interface NominationPanelProps {
 
 #### InflationTracker.tsx
 
-**Purpose**: Visualize inflation rate and trends
+**Purpose**: Comprehensive inflation visualization with tier breakdowns, scarcity, and historical insights
 
 **Props**:
 ```typescript
 interface InflationTrackerProps {
   settings: LeagueSettings;
-  allDrafted: DraftedPlayer[];
+  allDrafted: Player[];
   inflationRate: number;
+  inflationResult?: InflationResult;
+  syncState?: SyncState;
+  liveInflationStats?: InflationStats | null;
+  currentAuction?: CurrentAuction | null;
+  onManualSync?: () => void;
 }
 ```
 
-**Features**:
-- Current inflation percentage
-- Inflation trend chart
-- Money remaining indicator
+**Display Sections** (collapsible):
+
+1. **Sync Status Header** - Connection status, last sync time, manual refresh
+2. **Current Auction** - Player on block with bid (animated pulse)
+3. **Hero Inflation** - Large rate display with severity color and multiplier
+4. **Budget Metrics** - Total budget, money spent, draft progress
+5. **Remaining Budget Analysis** - Effective budget, inflation multiplier
+6. **Live Inflation Details** - Projected vs actual spend
+7. **Tier Breakdown** - Per-tier inflation with historical comparison
+8. **Positional Scarcity** - 4-column grid with scarcity levels
+9. **Historical Insights** - Key findings from 6 analyzed auctions
+10. **Price Range Guide** - Bidding advice by value range
 
 **Used by**: DraftRoom.tsx
 
@@ -576,5 +625,5 @@ jest.mock('@/components/ui/button', () => ({
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 2.0*
 *Last Updated: December 2024*

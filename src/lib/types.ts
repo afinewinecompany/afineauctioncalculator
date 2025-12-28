@@ -78,6 +78,7 @@ export interface LeagueSettings {
 export interface Player {
   id: string;
   externalId?: string; // FanGraphs player ID for projection matching
+  mlbamId?: number; // MLB Advanced Media ID for player photos
   name: string;
   team: string;
   positions: string[];
@@ -99,9 +100,11 @@ export interface Player {
     SV?: number;
     IP?: number;
   };
-  status: 'available' | 'drafted' | 'onMyTeam';
+  status: 'available' | 'drafted' | 'onMyTeam' | 'on_block';
   draftedPrice?: number;
   draftedBy?: string;
+  currentBid?: number; // For on_block status - current auction bid
+  currentBidder?: string; // For on_block status - current highest bidder
   tier?: number;
   isInDraftPool?: boolean; // Whether player is in the draftable pool
 }
@@ -199,6 +202,17 @@ export interface MatchedPlayer {
   matchConfidence: 'exact' | 'partial' | 'unmatched';
 }
 
+/**
+ * Tier inflation data - tracks inflation by player tier
+ */
+export interface TierInflationData {
+  tier: number;
+  draftedCount: number;
+  totalProjectedValue: number;
+  totalActualSpent: number;
+  inflationRate: number; // As percentage (15 = 15%)
+}
+
 export interface InflationStats {
   overallInflationRate: number;
   totalProjectedValue: number;
@@ -206,6 +220,9 @@ export interface InflationStats {
   draftedPlayersCount: number;
   averageInflationPerPlayer: number;
   remainingBudgetInflationAdjustment: number;
+  // Tier-based inflation breakdown (optional for backward compatibility)
+  tierInflation?: TierInflationData[];
+  weightedInflationRate?: number;
 }
 
 export interface AuctionSyncResult {
@@ -220,4 +237,39 @@ export interface SyncState {
   lastSyncAt: string | null;
   syncError: string | null;
   isSyncing: boolean;
+}
+
+/**
+ * Positional scarcity data - tracks supply/demand at each position
+ */
+export interface PositionalScarcity {
+  position: string;
+  availableCount: number;           // Total available players at position
+  qualityCount: number;             // Above threshold (top 50% by value)
+  leagueNeed: number;               // Total unfilled slots league-wide
+  scarcityRatio: number;            // leagueNeed / qualityCount
+  scarcityLevel: 'surplus' | 'normal' | 'moderate' | 'severe';
+  inflationAdjustment: number;      // Multiplier (e.g., 1.15 = +15%)
+}
+
+/**
+ * Per-team budget constraint data - tracks effective spending power
+ */
+export interface TeamBudgetConstraint {
+  teamName: string;
+  rawRemaining: number;             // From Couch Managers
+  rosterSpotsRemaining: number;     // Calculated from league settings
+  effectiveBudget: number;          // rawRemaining - mandatory $1 reserves
+  canAffordThreshold: number;       // Max player value they can reasonably bid
+}
+
+/**
+ * Enhanced inflation stats with positional scarcity and team constraints
+ */
+export interface EnhancedInflationStats extends InflationStats {
+  positionalScarcity: PositionalScarcity[];
+  teamConstraints: TeamBudgetConstraint[];
+  leagueEffectiveBudget: number;    // Sum of all team effectiveBudgets
+  adjustedRemainingBudget: number;  // Effective budget for forward-looking inflation
+  remainingProjectedValue: number;  // Sum of projected values for undrafted players
 }

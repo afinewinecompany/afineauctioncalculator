@@ -23,18 +23,69 @@ export default function App() {
 
   // Load user data from localStorage
   useEffect(() => {
-    const savedUser = localStorage.getItem('fantasyBaseballUser');
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      setUserData(user);
-      setCurrentScreen('leagues');
+    try {
+      const savedUser = localStorage.getItem('fantasyBaseballUser');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        // Note: Saved data may have lightweight player arrays (only drafted players)
+        // Full player data will be fetched when entering the draft room
+        setUserData(user);
+        setCurrentScreen('leagues');
+      }
+    } catch (error) {
+      console.error('Failed to load user data from localStorage:', error);
+      // Clear corrupted data
+      localStorage.removeItem('fantasyBaseballUser');
     }
   }, []);
 
   // Save user data to localStorage whenever it changes
+  // Note: Only save league metadata, not the full player arrays to avoid quota issues
   useEffect(() => {
     if (userData) {
-      localStorage.setItem('fantasyBaseballUser', JSON.stringify(userData));
+      try {
+        // Create a lightweight version without full player arrays
+        const lightweightUserData = {
+          ...userData,
+          leagues: userData.leagues.map(league => ({
+            ...league,
+            // Only store player IDs and draft status, not full player objects
+            players: league.players
+              .filter(p => p.status === 'drafted' || p.status === 'onMyTeam')
+              .map(p => ({
+                id: p.id,
+                name: p.name,
+                status: p.status,
+                draftedPrice: p.draftedPrice,
+                draftedBy: p.draftedBy,
+              }))
+          }))
+        };
+        localStorage.setItem('fantasyBaseballUser', JSON.stringify(lightweightUserData));
+      } catch (error) {
+        console.warn('Failed to save to localStorage, likely quota exceeded:', error);
+        // Clear old data and try with minimal data
+        try {
+          const minimalData = {
+            username: userData.username,
+            email: userData.email,
+            authProvider: userData.authProvider,
+            profilePicture: userData.profilePicture,
+            leagues: userData.leagues.map(l => ({
+              id: l.id,
+              leagueName: l.leagueName,
+              settings: l.settings,
+              createdAt: l.createdAt,
+              lastModified: l.lastModified,
+              status: l.status,
+              players: [] // Don't save players if quota exceeded
+            }))
+          };
+          localStorage.setItem('fantasyBaseballUser', JSON.stringify(minimalData));
+        } catch (e) {
+          console.error('Failed to save minimal data to localStorage:', e);
+        }
+      }
     }
   }, [userData]);
 
@@ -135,10 +186,58 @@ export default function App() {
     }
   };
 
-  const handleContinueDraft = (league: SavedLeague) => {
+  const handleContinueDraft = async (league: SavedLeague) => {
     setCurrentLeague(league);
-    setPlayers(league.players);
-    
+
+    // Check if we need to reload full player data
+    // Saved leagues may only have drafted player summaries to save localStorage space
+    const hasFullPlayerData = league.players.length > 50 && league.players[0]?.projectedStats !== undefined;
+
+    if (hasFullPlayerData) {
+      setPlayers(league.players);
+    } else {
+      // Need to reload full player data from API
+      setIsLoadingProjections(true);
+      try {
+        const calculatedValues = await calculateLeagueAuctionValues(league.settings);
+        const projectedPlayers = convertToPlayers(calculatedValues);
+
+        // Merge draft status from saved lightweight data
+        const draftedMap = new Map(league.players.map(p => [p.id, p]));
+        const mergedPlayers = projectedPlayers.map(p => {
+          const savedPlayer = draftedMap.get(p.id);
+          if (savedPlayer && (savedPlayer.status === 'drafted' || savedPlayer.status === 'onMyTeam')) {
+            return {
+              ...p,
+              status: savedPlayer.status,
+              draftedPrice: savedPlayer.draftedPrice,
+              draftedBy: savedPlayer.draftedBy,
+            };
+          }
+          return p;
+        });
+
+        setPlayers(mergedPlayers);
+
+        // Update the league in userData with full player data
+        if (userData) {
+          const updatedLeague = { ...league, players: mergedPlayers };
+          const updatedUser = {
+            ...userData,
+            leagues: userData.leagues.map(l => l.id === league.id ? updatedLeague : l)
+          };
+          setUserData(updatedUser);
+          setCurrentLeague(updatedLeague);
+        }
+      } catch (error) {
+        console.error('Failed to reload player data:', error);
+        // Fall back to saved data even if incomplete
+        setPlayers(league.players);
+      } finally {
+        setIsLoadingProjections(false);
+      }
+    }
+
     if (league.status === 'complete') {
       const myTeam = league.players.filter(p => p.status === 'onMyTeam');
       setFinalRoster(myTeam as any);
@@ -193,17 +292,9 @@ export default function App() {
     setFinalRoster([]);
   };
 
-  const handleSwitchLeague = (league: SavedLeague) => {
-    setCurrentLeague(league);
-    setPlayers(league.players);
-    
-    if (league.status === 'complete') {
-      const myTeam = league.players.filter(p => p.status === 'onMyTeam');
-      setFinalRoster(myTeam as any);
-      setCurrentScreen('analysis');
-    } else {
-      setCurrentScreen('draft');
-    }
+  const handleSwitchLeague = async (league: SavedLeague) => {
+    // Reuse the same logic as handleContinueDraft
+    await handleContinueDraft(league);
   };
 
   // Save draft progress periodically

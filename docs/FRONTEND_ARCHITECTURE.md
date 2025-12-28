@@ -4,6 +4,13 @@
 
 This document describes the React frontend architecture, component hierarchy, state management patterns, and data flow for the Fantasy Baseball Auction Tool.
 
+**Key Features:**
+
+- Live auction sync with Couch Managers
+- Tier-weighted inflation tracking
+- Positional scarcity analysis
+- Historical inflation baselines
+
 ---
 
 ## Technology Stack
@@ -23,7 +30,7 @@ This document describes the React frontend architecture, component hierarchy, st
 
 ## Application Structure
 
-```
+```text
 src/
 ├── App.tsx                 # Root component & global state
 ├── main.tsx                # Entry point
@@ -37,19 +44,19 @@ src/
 │   ├── LoginPage.tsx       # Authentication UI
 │   ├── LeaguesList.tsx     # League dashboard
 │   ├── SetupScreen.tsx     # League configuration
-│   ├── DraftRoom.tsx       # Main draft interface
+│   ├── DraftRoom.tsx       # Main draft interface with live sync
 │   ├── DraftHeader.tsx     # Draft stats header
-│   ├── PlayerQueue.tsx     # Available players list
-│   ├── RosterPanel.tsx     # User's roster display
-│   ├── NominationPanel.tsx # Active bid panel
-│   ├── InflationTracker.tsx # Inflation visualization
+│   ├── PlayerQueue.tsx     # Available players with scarcity indicators
+│   ├── RosterPanel.tsx     # User's roster with team selector
+│   ├── InflationTracker.tsx # Tier/position inflation & historical insights
 │   ├── PlayerDetailModal.tsx # Player stats modal
 │   ├── PostDraftAnalysis.tsx # Post-draft review
 │   ├── ScoringConfig.tsx   # Scoring settings
 │   └── TopMenuBar.tsx      # Navigation bar
 ├── lib/
 │   ├── types.ts            # TypeScript interfaces
-│   ├── calculations.ts     # Business logic
+│   ├── calculations.ts     # Inflation & value calculation
+│   ├── auctionApi.ts       # Backend API client
 │   ├── mockData.ts         # Sample data
 │   └── utils.ts            # Utility functions
 └── assets/                 # Static images
@@ -148,9 +155,29 @@ const [players, setPlayers] = useState<Player[]>(initialPlayers);
 const [myRoster, setMyRoster] = useState<Player[]>([]);
 const [allDrafted, setAllDrafted] = useState<Player[]>([]);
 
-// Calculations
-const [inflationRate, setInflationRate] = useState(0);
-const [rosterNeedsRemaining, setRosterNeedsRemaining] = useState(settings.rosterSpots);
+// Couch Managers sync state
+const [syncState, setSyncState] = useState<SyncState>({
+  isConnected: false,
+  lastSyncAt: null,
+  syncError: null,
+  isSyncing: false,
+});
+const [syncResult, setSyncResult] = useState<AuctionSyncResult | null>(null);
+const [liveInflationStats, setLiveInflationStats] = useState<EnhancedInflationStats | null>(null);
+
+// Team selection for "My Team"
+const [availableTeams, setAvailableTeams] = useState<string[]>([]);
+const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+
+// Calculations (memoized)
+const inflationResult: InflationResult = useMemo(() => {
+  const baseResult = calculateTierWeightedInflation(settings, allDrafted, playersWithStatus);
+  // Merge server-side enhanced data (positional scarcity, team constraints)
+  if (liveInflationStats) {
+    return { ...baseResult, ...liveInflationStats };
+  }
+  return baseResult;
+}, [allDrafted, initialPlayers, settings, liveInflationStats]);
 
 // Derived values
 const moneySpent = myRoster.reduce((sum, p) => sum + (p.draftedPrice || 0), 0);
@@ -161,10 +188,17 @@ const moneyRemaining = settings.budgetPerTeam - moneySpent;
 
 ## Data Flow Diagram
 
-```
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│              External Services (Backend API)                     │
+├─────────────────────────────────────────────────────────────────┤
+│  GET  /api/projections/:system     → Cached projections         │
+│  POST /api/auction/:roomId/sync-lite → Live auction state       │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
 ┌─────────────────────────────────────────────────────────────────┐
 │                        localStorage                              │
-│                    'fantasyBaseballUser'                        │
+│            (draft progress, team selection)                      │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
                             ▼
@@ -180,20 +214,26 @@ const moneyRemaining = settings.budgetPerTeam - moneySpent;
     │LoginPage│    │SetupScreen│   │DraftRoom │    │PostDraft │
     └─────────┘    └──────────┘    └────┬─────┘    │ Analysis │
                                         │          └──────────┘
+                            ┌───────────┴───────────┐
+                            │    performSync()      │
+                            │  (every 2 minutes)    │
+                            └───────────┬───────────┘
                                         ▼
                    ┌────────────────────────────────────┐
                    │          DraftRoom State           │
-                   │  ┌──────────┐  ┌──────────┐       │
-                   │  │ myRoster │  │allDrafted│       │
-                   │  └────┬─────┘  └────┬─────┘       │
-                   └───────┼─────────────┼─────────────┘
-                           │             │
-         ┌─────────────────┼─────────────┼─────────────────┐
-         │                 │             │                 │
-         ▼                 ▼             ▼                 ▼
-    ┌─────────┐      ┌──────────┐  ┌──────────┐   ┌────────────┐
+                   │  ┌──────────┐  ┌──────────────┐   │
+                   │  │ myRoster │  │ syncResult   │   │
+                   │  │allDrafted│  │liveInflation │   │
+                   │  └────┬─────┘  └──────┬───────┘   │
+                   └───────┼───────────────┼───────────┘
+                           │               │
+         ┌─────────────────┼───────────────┼─────────────────┐
+         │                 │               │                 │
+         ▼                 ▼               ▼                 ▼
+    ┌─────────┐      ┌──────────┐  ┌──────────┐   ┌────────────────┐
     │DraftHead│      │PlayerQueue│ │RosterPanel│  │InflationTracker│
-    └─────────┘      └──────────┘  └──────────┘   └────────────┘
+    └─────────┘      │(scarcity) │ │(team sel) │  │(tiers/history) │
+                     └──────────┘  └──────────┘   └────────────────┘
 ```
 
 ---
@@ -283,87 +323,121 @@ interface PlayerQueueProps {
 
 ### InflationTracker.tsx
 
-**Purpose**: Visualize inflation trends and provide analytics
+**Purpose**: Comprehensive inflation visualization with tier breakdowns, positional scarcity, and historical insights
 
 **Props**:
 ```typescript
 interface InflationTrackerProps {
   settings: LeagueSettings;
-  allDrafted: DraftedPlayer[];
+  allDrafted: Player[];
   inflationRate: number;
+  inflationResult?: InflationResult;
+  syncState?: SyncState;
+  liveInflationStats?: InflationStats | null;
+  currentAuction?: CurrentAuction | null;
+  onManualSync?: () => void;
 }
 ```
 
-**Display**:
-- Current inflation rate (percentage)
-- Inflation trend chart
-- Money remaining in league
-- Value adjustment indicator
+**Display Sections**:
+
+- **Sync Status**: Connection status, last sync time, manual refresh button
+- **Current Auction**: Player on block with current bid (when active)
+- **Hero Inflation Section**: Large inflation rate with severity indicator and multiplier
+- **Remaining Budget Analysis**: Money remaining, effective budget, inflation multiplier
+- **Tier Breakdown**: Inflation by tier (1-10) with historical comparisons
+- **Positional Scarcity**: Grid showing scarcity level per position (severe/moderate/normal/surplus)
+- **Historical Insights**: Key findings from 6 analyzed auctions (elite players deflated, filler inflated)
+- **Price Range Guide**: Bidding advice by projected value range ($1-$5, $6-$15, etc.)
 
 ---
 
 ## Business Logic (lib/calculations.ts)
 
-### Inflation Calculation
+### Tier-Weighted Inflation Calculation
 
 ```typescript
-export function calculateInflation(
+export function calculateTierWeightedInflation(
   leagueSettings: LeagueSettings,
-  allDrafted: DraftedPlayer[]
-): number {
-  const totalBudget = leagueSettings.numTeams * leagueSettings.budgetPerTeam;
-  const totalRosterSpots = leagueSettings.numTeams *
-    Object.values(leagueSettings.rosterSpots).reduce((a, b) => a + b, 0);
+  allDrafted: Player[],
+  allPlayers: Player[]
+): InflationResult {
+  // Calculate tier-based inflation with dampened low-value player weights
+  // Tier 1 (elite) = top 10%, Tier 10 (filler) = bottom 10%
 
-  const moneySpent = allDrafted.reduce((sum, p) => sum + p.draftedPrice, 0);
-  const moneyRemaining = totalBudget - moneySpent;
+  // Per-tier calculation
+  const tierInflation = getTierBreakdown(allDrafted);
 
-  const playersDrafted = allDrafted.length;
-  const playersRemaining = totalRosterSpots - playersDrafted;
+  // Weighted average with dampening for $1-$5 players
+  // Low-value players see 500-1500% inflation, which distorts averages
+  const weightedRate = calculateDampenedWeightedAverage(tierInflation);
 
-  if (playersRemaining === 0) return 0;
+  // Remaining budget method (primary adjustment)
+  const remainingBudget = totalBudget - moneySpent;
+  const remainingProjectedValue = availablePlayers.reduce(
+    (sum, p) => sum + p.projectedValue, 0
+  );
+  const inflationMultiplier = remainingBudget / remainingProjectedValue;
 
-  const avgProjectedValue = (totalBudget * 0.95) / totalRosterSpots;
-  const expectedRemainingValue = playersRemaining * avgProjectedValue;
-
-  const inflationRate = (moneyRemaining / expectedRemainingValue) - 1;
-
-  return Math.round(inflationRate * 100) / 100;
+  return {
+    overallInflationRate: weightedRate,
+    tierInflation,
+    remainingBudget,
+    remainingProjectedValue,
+    // Additional enhanced data from server...
+  };
 }
 ```
 
-### Value Indicators
+### Historical Inflation Baselines
 
 ```typescript
-export function getValueIndicator(bid: number, adjustedValue: number): {
-  color: string;
-  label: string;
-  percentage: number;
-} {
-  const percentage = ((bid - adjustedValue) / adjustedValue) * 100;
-
-  if (percentage <= 20) return { color: 'text-green-600', label: 'Great Deal' };
-  if (percentage <= 40) return { color: 'text-yellow-600', label: 'Fair Value' };
-  if (percentage <= 60) return { color: 'text-orange-600', label: 'Slightly Expensive' };
-  return { color: 'text-red-600', label: 'Overpay' };
-}
+// Based on analysis of 6 Couch Managers auctions
+export const HISTORICAL_INFLATION_BASELINES = {
+  overall: { avgInflationRate: 20.33, stdDeviation: 44.83 },
+  byTier: {
+    1: { avgInflation: -19.84, label: 'Elite (top 10%)' },     // DEFLATED
+    7: { avgInflation: 1580.36, label: 'Roster filler' },      // Highest
+  },
+  byPosition: {
+    MiLB: { avgInflation: 1347.40, trend: 'severely_inflated' },
+    RP: { avgInflation: 974.62, trend: 'severely_inflated' },
+    SP: { avgInflation: 870.42, trend: 'severely_inflated' },
+    C: { avgInflation: 268.48, trend: 'highly_inflated' },
+  },
+  byPriceRange: {
+    '$31+': { avgInflation: -17.54, trend: 'deflated' },
+    '$1-$5': { avgInflation: 991.64, trend: 'extreme' },
+  },
+};
 ```
 
-### Position Scarcity
+### Value Adjustment
 
 ```typescript
-export function getPositionScarcity(
-  position: string,
+export function adjustPlayerValuesWithTiers(
   players: Player[],
-  threshold: number = 20
-): 'high' | 'medium' | 'low' {
-  const availableAtPosition = players.filter(
-    p => p.status === 'available' && p.positions.includes(position)
-  ).length;
+  inflationResult: InflationResult
+): Player[] {
+  return players.map(p => {
+    if (p.status === 'drafted') {
+      // Drafted players show actual price
+      return { ...p, adjustedValue: p.draftedPrice };
+    }
 
-  if (availableAtPosition < threshold * 0.3) return 'high';
-  if (availableAtPosition < threshold * 0.6) return 'medium';
-  return 'low';
+    // Available players: multiply by inflation and apply scarcity
+    const inflationMultiplier = inflationResult.adjustedRemainingBudget
+      / inflationResult.remainingProjectedValue;
+
+    // Apply positional scarcity adjustment
+    const scarcityAdjustment = getPositionalScarcityAdjustment(
+      p.positions,
+      inflationResult.positionalScarcity
+    );
+
+    const adjustedValue = p.projectedValue * inflationMultiplier * scarcityAdjustment;
+    return { ...p, adjustedValue: Math.round(adjustedValue) };
+  });
 }
 ```
 
@@ -460,32 +534,67 @@ function SetupScreen() {
 
 ---
 
+## API Integration (lib/auctionApi.ts)
+
+### Sync Functions
+
+```typescript
+// Lightweight sync using server-cached projections (~200 bytes)
+export async function syncAuctionLite(
+  roomId: string,
+  settings: LeagueSettings
+): Promise<AuctionSyncResult> {
+  const response = await fetch(`/api/auction/${roomId}/sync-lite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      projectionSystem: settings.projectionSystem,
+      leagueConfig: {
+        numTeams: settings.numTeams,
+        budgetPerTeam: settings.budgetPerTeam,
+        totalRosterSpots: calculateTotalRosterSpots(settings),
+        rosterSpots: settings.rosterSpots,
+        scoringType: settings.scoringType,
+        hittingCategories: settings.hittingCategories,
+        pitchingCategories: settings.pitchingCategories,
+      },
+    }),
+  });
+  return response.json();
+}
+
+// Format last sync time for display
+export function formatLastSync(lastSyncAt: string | null): string {
+  if (!lastSyncAt) return 'Never synced';
+  const seconds = Math.floor((Date.now() - new Date(lastSyncAt).getTime()) / 1000);
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  return `${Math.floor(seconds / 3600)}h ago`;
+}
+```
+
+---
+
 ## Future Considerations
-
-### API Integration
-
-When migrating to backend:
-1. Replace `localStorage` calls with API service
-2. Add loading states to components
-3. Implement error boundaries
-4. Add optimistic updates
 
 ### WebSocket Integration
 
-For real-time draft rooms:
+For real-time draft rooms (replace 2-minute polling):
+
 1. Add WebSocket connection in DraftRoom
-2. Sync draft picks across clients
+2. Sync draft picks across clients instantly
 3. Handle connection drops gracefully
 
 ### Performance Optimization
 
 Recommended improvements:
-1. Memoize expensive calculations with `useMemo`
-2. Virtualize long player lists
+
+1. ~~Memoize expensive calculations with `useMemo`~~ - Done (inflationResult)
+2. Virtualize long player lists (react-window)
 3. Code-split by route
 4. Lazy load modals
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 2.0*
 *Last Updated: December 2024*

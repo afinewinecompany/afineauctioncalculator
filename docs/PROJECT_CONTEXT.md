@@ -6,11 +6,11 @@
 |-----------|-------|
 | **Project Name** | Fantasy Baseball Auction Tool |
 | **Purpose** | Optimize draft budgeting during fantasy baseball salary cap auctions |
-| **Tech Stack** | React 18 + TypeScript + Vite |
+| **Tech Stack** | React 18 + TypeScript + Vite (Frontend) + Node.js/Express (Backend) |
 | **UI Framework** | Radix UI + Tailwind CSS (shadcn/ui) |
-| **Current Storage** | localStorage (browser) |
-| **Planned Backend** | PostgreSQL + Node.js/Express + Prisma |
-| **Status** | MVP Complete - Ready for Backend Integration |
+| **Data Sources** | FanGraphs Projections (Steamer/BatX/JA) + Couch Managers Live Sync |
+| **Backend Status** | Implemented - Projections API, Auction Sync, Value Calculator |
+| **Status** | Full-Stack MVP with Live Auction Sync |
 
 ---
 
@@ -21,38 +21,46 @@ This is a **React single-page application** that helps fantasy baseball team man
 ### Core Features
 
 1. **League Configuration** - Custom scoring systems (Roto, H2H Categories, H2H Points), roster positions, and budget settings
-2. **Draft Management** - Real-time player queue, bid tracking, nomination system
-3. **Inflation Tracking** - Live calculation of market inflation based on draft activity
-4. **Value Analysis** - Indicators for deal quality (Great Deal, Fair Value, Overpay)
-5. **Team Analytics** - Post-draft team analysis with projected stats and charts
+2. **Live Auction Sync** - Real-time integration with Couch Managers draft rooms
+3. **Projections Engine** - FanGraphs projections (Steamer/BatX/JA) with SGP-based value calculation
+4. **Tier-Weighted Inflation** - Sophisticated inflation tracking with historical baselines and positional scarcity
+5. **Value Adjustment** - Dynamic player value adjustment based on remaining budget and positional need
+6. **Team Analytics** - Post-draft team analysis with projected stats and charts
 
 ---
 
 ## Directory Structure
 
-```
+```text
 afineauctioncalculator/
-├── src/
-│   ├── components/          # React components (15+ custom + 60+ UI)
-│   │   ├── ui/              # shadcn/ui component library
-│   │   └── *.tsx            # Business logic components
+├── src/                        # Frontend React application
+│   ├── components/             # React components (15+ custom + 60+ UI)
+│   │   ├── ui/                 # shadcn/ui component library
+│   │   └── *.tsx               # Business logic components
 │   ├── lib/
-│   │   ├── types.ts         # TypeScript interfaces
-│   │   ├── calculations.ts  # Draft math (inflation, values)
-│   │   ├── mockData.ts      # Sample player data
-│   │   └── utils.ts         # Helper utilities
-│   ├── assets/              # Images from Figma design
-│   ├── App.tsx              # Root component & state manager
-│   └── main.tsx             # Entry point
-├── database/
-│   ├── migrations/          # SQL schema files
-│   ├── prisma/              # Prisma ORM configuration
-│   └── SETUP.md             # Database setup guide
-├── docs/                    # Project documentation
-│   ├── PROJECT_CONTEXT.md   # This file
-│   └── DATABASE_ARCHITECTURE.md
-├── .claude/
-│   └── agents/              # Claude agent configurations
+│   │   ├── types.ts            # TypeScript interfaces
+│   │   ├── calculations.ts     # Inflation & value calculations
+│   │   ├── auctionApi.ts       # API client for backend
+│   │   └── mockData.ts         # Sample player data
+│   ├── App.tsx                 # Root component & state manager
+│   └── main.tsx                # Entry point
+├── server/                     # Backend Express server
+│   ├── index.ts                # Server entry point
+│   ├── routes/
+│   │   ├── auction.ts          # Couch Managers sync endpoints
+│   │   └── projections.ts      # Projections API endpoints
+│   ├── services/
+│   │   ├── couchManagersScraper.ts  # Couch Managers web scraper
+│   │   ├── projectionsService.ts    # FanGraphs projections fetcher
+│   │   ├── projectionsCacheService.ts # 24-hour projection cache
+│   │   ├── valueCalculator.ts       # SGP-based value calculation
+│   │   ├── inflationCalculator.ts   # Tier-weighted inflation
+│   │   └── playerMatcher.ts         # Name matching algorithm
+│   └── types/
+│       ├── auction.ts          # Auction/sync types
+│       └── projections.ts      # Projection types
+├── docs/                       # Project documentation
+├── .claude/                    # Claude agent configurations
 ├── package.json
 ├── vite.config.ts
 └── tsconfig.json
@@ -66,20 +74,32 @@ afineauctioncalculator/
 
 | File | Purpose | When to Read |
 |------|---------|--------------|
-| `src/lib/types.ts` | All TypeScript interfaces | Before any coding task |
-| `src/App.tsx` | Root state management | Understanding data flow |
-| `src/lib/calculations.ts` | Business logic | Modifying draft calculations |
-| `docs/DATABASE_ARCHITECTURE.md` | Database design | Backend development |
+| `src/lib/types.ts` | All TypeScript interfaces (frontend + shared) | Before any coding task |
+| `server/types/auction.ts` | Backend auction/sync types | Backend development |
+| `src/lib/calculations.ts` | Frontend inflation & value calculations | Modifying calculations |
+| `server/services/inflationCalculator.ts` | Server-side inflation with positional scarcity | Backend inflation work |
+| `server/services/valueCalculator.ts` | SGP-based auction value calculator | Value calculation changes |
+| `src/lib/auctionApi.ts` | API client for backend services | API integration |
 
 ### Component Files
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| DraftRoom | `src/components/DraftRoom.tsx` | Main draft interface orchestrator |
+| DraftRoom | `src/components/DraftRoom.tsx` | Main draft interface with live sync |
 | PlayerQueue | `src/components/PlayerQueue.tsx` | Available/drafted player lists |
-| RosterPanel | `src/components/RosterPanel.tsx` | User's team roster display |
+| RosterPanel | `src/components/RosterPanel.tsx` | User's team roster with team selector |
+| InflationTracker | `src/components/InflationTracker.tsx` | Tier inflation, scarcity, historical insights |
 | SetupScreen | `src/components/SetupScreen.tsx` | League configuration form |
-| InflationTracker | `src/components/InflationTracker.tsx` | Inflation visualization |
+
+### Backend Files
+
+| Service | File | Purpose |
+|---------|------|---------|
+| Auction Routes | `server/routes/auction.ts` | Couch Managers sync endpoints |
+| Projections Routes | `server/routes/projections.ts` | FanGraphs projection endpoints |
+| Value Calculator | `server/services/valueCalculator.ts` | SGP/Points value calculation |
+| Inflation Calculator | `server/services/inflationCalculator.ts` | Enhanced inflation with scarcity |
+| Projections Cache | `server/services/projectionsCacheService.ts` | 24-hour projection caching |
 
 ---
 
@@ -88,100 +108,146 @@ afineauctioncalculator/
 ### Core Types (src/lib/types.ts)
 
 ```typescript
-// User session data
-UserData {
-  username, email, leagues[]
-  authProvider: 'email' | 'google'
-}
-
-// League configuration
-SavedLeague {
-  id, leagueName, status
-  settings: LeagueSettings
-  players: Player[]
-}
-
-// League settings
+// League settings - includes Couch Managers integration
 LeagueSettings {
+  leagueName, couchManagerRoomId
   numTeams, budgetPerTeam
   scoringType: 'rotisserie' | 'h2h-categories' | 'h2h-points'
   projectionSystem: 'steamer' | 'batx' | 'ja'
   rosterSpots: { C, 1B, 2B, 3B, SS, OF, CI, MI, UTIL, SP, RP, P, Bench }
   hittingCategories, pitchingCategories, pointsSettings
+  hitterPitcherSplit?: { hitter: 0.68, pitcher: 0.32 }
 }
 
-// Player data
+// Player data - extended with auction status
 Player {
-  id, name, team, positions[]
-  projectedValue, adjustedValue
-  projectedStats: { HR, RBI, SB, AVG, W, K, ERA, WHIP, SV }
-  status: 'available' | 'drafted' | 'onMyTeam'
-  draftedPrice?, draftedBy?, tier?
+  id, externalId?, name, team, positions[]
+  projectedValue, adjustedValue, tier?, isInDraftPool?
+  projectedStats: { HR, RBI, SB, AVG, R, H, W, K, ERA, WHIP, SV, IP }
+  status: 'available' | 'drafted' | 'onMyTeam' | 'on_block'
+  draftedPrice?, draftedBy?
+  currentBid?, currentBidder?  // For on_block status
+}
+
+// Enhanced Inflation Stats (from server)
+EnhancedInflationStats {
+  overallInflationRate, totalProjectedValue, totalActualSpent
+  tierInflation: TierInflationData[]
+  positionalScarcity: PositionalScarcity[]
+  teamConstraints: TeamBudgetConstraint[]
+  adjustedRemainingBudget, remainingProjectedValue
+}
+
+// Positional Scarcity
+PositionalScarcity {
+  position, availableCount, qualityCount, leagueNeed
+  scarcityRatio, scarcityLevel: 'surplus' | 'normal' | 'moderate' | 'severe'
+  inflationAdjustment  // Multiplier (1.25 = +25%)
 }
 ```
 
 ### Data Flow
 
-```
-localStorage('fantasyBaseballUser')
-    ↓
-App.tsx (state manager)
-    ↓
-├── LoginPage → Authentication
-├── LeaguesList → League selection
-├── SetupScreen → League creation
-└── DraftRoom → Draft execution
-        ↓
-    ├── DraftHeader (stats display)
-    ├── PlayerQueue (player lists)
-    ├── RosterPanel (my team)
-    ├── NominationPanel (active bid)
-    └── InflationTracker (analytics)
+```text
+                        ┌─────────────────────────────────┐
+                        │    External Data Sources         │
+                        ├─────────────────────────────────┤
+                        │  FanGraphs API (Projections)    │
+                        │  Couch Managers (Live Auction)  │
+                        └────────────────┬────────────────┘
+                                         │
+                        ┌────────────────▼────────────────┐
+                        │       Express Backend           │
+                        ├─────────────────────────────────┤
+                        │  /api/projections/:system       │
+                        │  /api/projections/calculate-values │
+                        │  /api/auction/:roomId/sync-lite │
+                        └────────────────┬────────────────┘
+                                         │
+┌──────────────────┐    ┌────────────────▼────────────────┐
+│   localStorage   │◄───│         App.tsx                 │
+│ (draft progress) │    │    (state manager)              │
+└──────────────────┘    └────────────────┬────────────────┘
+                                         │
+              ┌──────────────────────────┼──────────────────────────┐
+              │                          │                          │
+    ┌─────────▼─────────┐    ┌───────────▼───────────┐    ┌────────▼────────┐
+    │   SetupScreen     │    │      DraftRoom        │    │  PostDraft      │
+    │   (config)        │    │   (live auction)      │    │  Analysis       │
+    └───────────────────┘    └───────────┬───────────┘    └─────────────────┘
+                                         │
+                    ┌────────────────────┼────────────────────┐
+                    │                    │                    │
+          ┌─────────▼─────────┐ ┌────────▼────────┐ ┌────────▼────────┐
+          │   PlayerQueue     │ │  RosterPanel    │ │ InflationTracker│
+          │ (with scarcity)   │ │ (team selector) │ │ (tier/position) │
+          └───────────────────┘ └─────────────────┘ └─────────────────┘
 ```
 
 ---
 
 ## Current State vs Planned State
 
-### Current (localStorage MVP)
+### Current (Full-Stack MVP)
 
-- All data stored in browser localStorage
-- Single-user only
-- No cross-device sync
-- ~5MB storage limit
-- No real-time collaboration
+**Implemented:**
 
-### Planned (Production Backend)
+- Express backend with projections and auction sync APIs
+- FanGraphs projections (Steamer/BatX/JA) with 24-hour caching
+- SGP-based value calculation for Roto/H2H Categories leagues
+- Points-based value calculation for H2H Points leagues
+- Couch Managers live sync with player matching
+- Tier-weighted inflation with historical baselines
+- Positional scarcity analysis with inflation adjustments
+- Team budget constraint tracking (effective budget calculation)
+- Lightweight sync endpoint (~200 bytes vs 800KB)
 
-- PostgreSQL database with 14 tables
+**Storage:**
+
+- localStorage for draft progress persistence
+- Server-side projection caching (24-hour TTL)
+- In-memory auction data caching (30-second TTL)
+
+### Future Enhancements
+
+- PostgreSQL database for persistent storage
 - JWT authentication with OAuth
 - Multi-user league sharing
 - Real-time draft rooms via WebSocket
-- Redis caching layer
+- Historical auction data analysis
 
 ---
 
 ## Development Commands
 
 ```bash
-npm install        # Install dependencies
-npm run dev        # Start dev server (localhost:3000)
-npm run build      # Production build to /build
+npm install          # Install dependencies
+npm run dev          # Start frontend dev server (Vite)
+npm run server       # Start backend Express server
+npm run build        # Production build
 ```
 
 ---
 
 ## Integration Points
 
-### External Services (Planned)
+### External Services (Implemented)
 
-- **Couch Manager** - Draft room synchronization
-- **Steamer/Batx/JA** - Player projection imports
-- **Google OAuth** - Authentication
+- **FanGraphs** - Player projections (Steamer, BatX, JA systems)
+- **Couch Managers** - Live auction room synchronization (web scraping)
 
-### Internal APIs (To Build)
+### Internal APIs (Implemented)
 
-See [API_DESIGN.md](./API_DESIGN.md) for planned endpoints.
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/projections/:system` | GET | Fetch cached projections |
+| `/api/projections/calculate-values` | POST | Calculate auction values for league |
+| `/api/projections/:system/refresh` | POST | Force cache refresh |
+| `/api/auction/:roomId` | GET | Fetch auction state |
+| `/api/auction/:roomId/sync` | POST | Full sync with player projections |
+| `/api/auction/:roomId/sync-lite` | POST | Lightweight sync using cached projections |
+
+See [API_DESIGN.md](./API_DESIGN.md) for full endpoint documentation.
 
 ---
 
@@ -189,45 +255,72 @@ See [API_DESIGN.md](./API_DESIGN.md) for planned endpoints.
 
 ### Inflation Calculation
 
-Located in `src/lib/calculations.ts`:
+**Tier-Weighted Inflation** (server/services/inflationCalculator.ts):
 
+```text
+Per-tier inflation = (actual_spent - projected_value) / projected_value
+Weighted avg = Σ(tier_inflation × tier_value) / Σ(tier_value)
 ```
-inflation_rate = (money_remaining / expected_remaining_value) - 1
+
+Key features:
+
+- Dampened weights for low-value players ($1-$5) to avoid distortion
+- Historical baselines from 6 analyzed auctions
+- Tier 1 (elite) typically -20% deflated, Tier 7 (filler) +1580% inflated
+
+**Remaining Budget Inflation** (primary adjustment method):
+
+```text
+inflation_multiplier = effective_remaining_budget / remaining_projected_value
+adjusted_value = projected_value × inflation_multiplier × scarcity_adjustment
 ```
 
-- Tracks total league spending vs total player value
-- Adjusts player values in real-time during draft
-- Critical for bidding strategy
+### Positional Scarcity
 
-### Value Indicators
+- **Severe** (ratio >= 2.0): +25% adjustment
+- **Moderate** (ratio >= 1.0): +12% adjustment
+- **Normal** (ratio >= 0.5): No adjustment
+- **Surplus** (ratio < 0.5): -5% adjustment
 
-- **Great Deal**: Bid < 80% of adjusted value
-- **Fair Value**: Bid within 80-120% of adjusted value
-- **Overpay**: Bid > 120% of adjusted value
+Historical position premiums also applied (SP/RP +15%, C +10%, 2B/3B +5%)
+
+### Value Calculation (SGP Method)
+
+For Rotisserie/H2H Categories leagues:
+
+1. Calculate category stats (avg, stddev) for top N players
+2. SGP per player = Σ((stat - avg) / stddev) for each category
+3. Dollar value = $1 + (SGP share × distributable budget)
 
 ---
 
 ## Agent-Specific Notes
 
 ### Frontend Developer
+
 - Components use Radix UI primitives styled with Tailwind
-- State management is React Context + hooks
-- All forms use react-hook-form
+- DraftRoom uses `syncAuctionLite` for efficient server sync
+- InflationTracker displays tier breakdown, scarcity, and historical insights
+- PlayerQueue receives positional scarcity data for display
 
 ### Backend Architect
-- Database schema fully designed (see DATABASE_ARCHITECTURE.md)
-- API endpoints planned (see API_DESIGN.md)
-- Prisma ORM schema ready in `database/prisma/`
+
+- Express server in `server/` directory
+- Projections cached for 24 hours (projectionsCacheService)
+- Auction data cached for 30 seconds (in-memory)
+- Value calculator supports SGP (categories) and Points scoring
 
 ### Test Engineer
-- No tests currently implemented
-- Testing framework not yet chosen
-- Priority: calculation functions, component rendering
 
-### Database Architect
-- PostgreSQL 15+ required
-- 14 tables + 6 enums designed
-- Inflation calculation as stored procedure
+- Priority: valueCalculator.ts, inflationCalculator.ts
+- Test inflation edge cases (empty draft, single tier, extreme values)
+- Test player matching algorithm accuracy
+
+### Fullstack Developer
+
+- API client in `src/lib/auctionApi.ts`
+- Types shared between frontend and backend where possible
+- Sync-lite endpoint reduces payload from 800KB to 200 bytes
 
 ---
 
@@ -235,23 +328,25 @@ inflation_rate = (money_remaining / expected_remaining_value) - 1
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| Dec 2024 | PostgreSQL over MongoDB | ACID compliance for draft transactions |
-| Dec 2024 | Prisma ORM | Type-safe queries, migration support |
 | Dec 2024 | shadcn/ui components | Accessible, customizable, Tailwind-native |
-| Dec 2024 | localStorage for MVP | Quick iteration before backend |
+| Dec 2024 | Express backend | Simple, sufficient for MVP, easy TypeScript integration |
+| Dec 2024 | SGP-based values | Standard fantasy baseball methodology |
+| Dec 2024 | Tier-weighted inflation | More accurate than simple average |
+| Dec 2024 | Sync-lite endpoint | 4000x payload reduction for better performance |
+| Dec 2024 | Historical baselines | Data from 6 analyzed auctions improves predictions |
 
 ---
 
 ## Open Questions / TODOs
 
-1. **Authentication**: Implement JWT + refresh token flow
-2. **Real-time**: WebSocket vs SSE for draft rooms
-3. **Mobile**: Responsive design optimization needed
-4. **Testing**: Choose testing framework (Vitest recommended)
-5. **Deployment**: Vercel (frontend) + Railway/Supabase (backend)
+1. **Persistence**: Move from localStorage to PostgreSQL for multi-device
+2. **Authentication**: JWT + refresh token flow
+3. **Real-time**: WebSocket for live auction updates (reduce polling)
+4. **Testing**: Vitest for unit tests, Playwright for E2E
+5. **Deployment**: Consider Railway/Render for backend
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 2.0*
 *Last Updated: December 2024*
 *Maintained by: context-manager agent*

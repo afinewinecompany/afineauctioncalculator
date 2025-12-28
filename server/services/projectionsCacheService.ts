@@ -5,14 +5,15 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import type {
   NormalizedProjection,
   ProjectionCacheEntry,
   ProjectionCacheMetadata,
 } from '../types/projections';
 
-// Cache directory relative to server folder
-const CACHE_DIR = path.join(__dirname, '../../cache');
+// Cache directory - use process.cwd() to find project root
+const CACHE_DIR = path.join(process.cwd(), 'cache');
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**

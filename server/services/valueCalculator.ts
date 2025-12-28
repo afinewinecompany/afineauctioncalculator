@@ -318,7 +318,11 @@ function calculateCategoryStats(
 
     if (values.length > 0) {
       const avg = values.reduce((a, b) => a + b, 0) / values.length;
-      const variance = values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / values.length;
+      // Use sample variance (Bessel's correction: N-1) instead of population variance (N)
+      // This provides an unbiased estimate of variance for sample data
+      const variance = values.length > 1
+        ? values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / (values.length - 1)
+        : 0;
       const stdDev = Math.sqrt(variance);
 
       stats[cat] = { avg, stdDev: stdDev || 1 }; // Avoid division by zero
@@ -350,6 +354,39 @@ function getHittingStat(stats: HittingStats, category: string): number {
 }
 
 /**
+ * Estimates Quality Starts from IP, ERA, and GS
+ * QS = 6+ IP with 3 or fewer ER
+ *
+ * Uses historical QS/GS ratios based on ERA and average IP per start:
+ * - Elite starters (6.5+ IP/start, ERA <= 3.50): ~75% QS rate
+ * - Good starters (6.0+ IP/start, ERA <= 4.00): ~65% QS rate
+ * - Average starters (5.5+ IP/start, ERA <= 4.50): ~50% QS rate
+ * - Below average (5.0+ IP/start): ~35% QS rate
+ * - Poor starters: ~20% QS rate
+ */
+function estimateQualityStarts(stats: PitchingStats): number {
+  if (stats.gamesStarted === 0) return 0;
+
+  const avgIPperStart = stats.inningsPitched / stats.gamesStarted;
+
+  let qsRate = 0;
+
+  if (avgIPperStart >= 6.5 && stats.era <= 3.50) {
+    qsRate = 0.75; // Elite starters
+  } else if (avgIPperStart >= 6.0 && stats.era <= 4.00) {
+    qsRate = 0.65; // Good starters
+  } else if (avgIPperStart >= 5.5 && stats.era <= 4.50) {
+    qsRate = 0.50; // Average starters
+  } else if (avgIPperStart >= 5.0) {
+    qsRate = 0.35; // Below average starters
+  } else {
+    qsRate = 0.20; // Poor starters / spot starters
+  }
+
+  return Math.round(stats.gamesStarted * qsRate);
+}
+
+/**
  * Get a pitching stat value by category code
  */
 function getPitchingStat(stats: PitchingStats, category: string): number {
@@ -359,7 +396,7 @@ function getPitchingStat(stats: PitchingStats, category: string): number {
     case 'ERA': return stats.era;
     case 'WHIP': return stats.whip;
     case 'SV': return stats.saves;
-    case 'QS': return 0; // QS not in FanGraphs projections, would need to estimate
+    case 'QS': return estimateQualityStarts(stats);
     case 'K/BB': return stats.walks > 0 ? stats.strikeouts / stats.walks : 0;
     case 'K/9': return stats.k9;
     case 'IP': return stats.inningsPitched;
@@ -371,6 +408,7 @@ function getPitchingStat(stats: PitchingStats, category: string): number {
 
 /**
  * Convert SGP values to dollar values
+ * Includes budget normalization to ensure values sum exactly to total budget
  */
 function convertSGPToDollars(
   players: Array<{ player: NormalizedProjection; sgp: number; categoryBreakdown?: Record<string, number> }>,
@@ -382,7 +420,7 @@ function convertSGPToDollars(
   const reservedDollars = poolSize * MIN_AUCTION_VALUE;
   const distributableDollars = totalBudget - reservedDollars;
 
-  return players.map((p, index) => {
+  const results = players.map((p, index) => {
     const isInPool = index < poolSize;
     let auctionValue = 0;
 
@@ -404,6 +442,21 @@ function convertSGPToDollars(
       isInDraftPool: isInPool,
     };
   });
+
+  // Normalize to ensure exact budget match (handles rounding errors)
+  const playersInPool = results.filter(p => p.isInDraftPool);
+  const totalAllocated = playersInPool.reduce((sum, p) => sum + p.auctionValue, 0);
+
+  if (totalAllocated !== totalBudget && playersInPool.length > 0) {
+    const difference = totalBudget - totalAllocated;
+    // Apply adjustment to the top player (most value, smallest relative impact)
+    const topPlayer = playersInPool[0];
+    if (topPlayer) {
+      topPlayer.auctionValue = Math.max(MIN_AUCTION_VALUE, topPlayer.auctionValue + difference);
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -452,6 +505,7 @@ function calculatePitcherPoints(
 
 /**
  * Convert points to dollar values
+ * Includes budget normalization to ensure values sum exactly to total budget
  */
 function convertPointsToDollars(
   players: Array<{ player: NormalizedProjection; points: number }>,
@@ -462,7 +516,7 @@ function convertPointsToDollars(
   const reservedDollars = poolSize * MIN_AUCTION_VALUE;
   const distributableDollars = totalBudget - reservedDollars;
 
-  return players.map((p, index) => {
+  const results = players.map((p, index) => {
     const isInPool = index < poolSize;
     let auctionValue = 0;
 
@@ -481,15 +535,33 @@ function convertPointsToDollars(
       isInDraftPool: isInPool,
     };
   });
+
+  // Normalize to ensure exact budget match (handles rounding errors)
+  const playersInPool = results.filter(p => p.isInDraftPool);
+  const totalAllocated = playersInPool.reduce((sum, p) => sum + p.auctionValue, 0);
+
+  if (totalAllocated !== totalBudget && playersInPool.length > 0) {
+    const difference = totalBudget - totalAllocated;
+    // Apply adjustment to the top player (most value, smallest relative impact)
+    const topPlayer = playersInPool[0];
+    if (topPlayer) {
+      topPlayer.auctionValue = Math.max(MIN_AUCTION_VALUE, topPlayer.auctionValue + difference);
+    }
+  }
+
+  return results;
 }
 
 /**
  * Calculate tier (1-10) based on ranking within pool
+ * Uses percentile-based assignment for consistent tier sizes regardless of pool size
  */
 function calculateTier(rank: number, poolSize: number): number {
   if (rank >= poolSize) return 10; // Outside pool
-  const tierSize = Math.ceil(poolSize / 10);
-  return Math.min(10, Math.floor(rank / tierSize) + 1);
+  if (poolSize === 0) return 10;
+  // Percentile-based tier assignment: each tier gets ~10% of players
+  // rank 0 = tier 1, rank poolSize-1 = tier 10
+  return Math.min(10, Math.ceil(((rank + 1) / poolSize) * 10));
 }
 
 /**
@@ -529,20 +601,34 @@ function calculatePositionNeeds(settings: LeagueSettings): { hitterSpots: number
 
 /**
  * Get enabled hitting categories from settings
+ * Defaults to standard 5x5 categories if none specified
  */
 function getEnabledHittingCategories(settings: LeagueSettings): string[] {
   const cats = settings.hittingCategories || {};
-  return Object.entries(cats)
+  const enabled = Object.entries(cats)
     .filter(([_, enabled]) => enabled)
     .map(([cat]) => cat);
+
+  // Default to standard 5x5 hitting categories if none specified
+  if (enabled.length === 0) {
+    return ['R', 'HR', 'RBI', 'SB', 'AVG'];
+  }
+  return enabled;
 }
 
 /**
  * Get enabled pitching categories from settings
+ * Defaults to standard 5x5 categories if none specified
  */
 function getEnabledPitchingCategories(settings: LeagueSettings): string[] {
   const cats = settings.pitchingCategories || {};
-  return Object.entries(cats)
+  const enabled = Object.entries(cats)
     .filter(([_, enabled]) => enabled)
     .map(([cat]) => cat);
+
+  // Default to standard 5x5 pitching categories if none specified
+  if (enabled.length === 0) {
+    return ['W', 'K', 'ERA', 'WHIP', 'SV'];
+  }
+  return enabled;
 }

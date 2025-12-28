@@ -64,6 +64,17 @@ export interface MatchedPlayer {
   matchConfidence: 'exact' | 'partial' | 'unmatched';
 }
 
+/**
+ * Tier inflation data - tracks inflation by player tier
+ */
+export interface TierInflationData {
+  tier: number;
+  draftedCount: number;
+  totalProjectedValue: number;
+  totalActualSpent: number;
+  inflationRate: number; // As percentage (15 = 15%)
+}
+
 export interface InflationStats {
   overallInflationRate: number;
   totalProjectedValue: number;
@@ -71,6 +82,9 @@ export interface InflationStats {
   draftedPlayersCount: number;
   averageInflationPerPlayer: number;
   remainingBudgetInflationAdjustment: number;
+  // Tier-based inflation breakdown (optional for backward compatibility)
+  tierInflation?: TierInflationData[];
+  weightedInflationRate?: number;
 }
 
 export interface AuctionSyncResult {
@@ -78,4 +92,39 @@ export interface AuctionSyncResult {
   matchedPlayers: MatchedPlayer[];
   inflationStats: InflationStats;
   unmatchedPlayers: ScrapedPlayer[];
+}
+
+/**
+ * Positional scarcity data - tracks supply/demand at each position
+ */
+export interface PositionalScarcity {
+  position: string;
+  availableCount: number;           // Total available players at position
+  qualityCount: number;             // Above threshold (top 50% by value)
+  leagueNeed: number;               // Total unfilled slots league-wide
+  scarcityRatio: number;            // leagueNeed / qualityCount
+  scarcityLevel: 'surplus' | 'normal' | 'moderate' | 'severe';
+  inflationAdjustment: number;      // Multiplier (e.g., 1.15 = +15%)
+}
+
+/**
+ * Per-team budget constraint data - tracks effective spending power
+ */
+export interface TeamBudgetConstraint {
+  teamName: string;
+  rawRemaining: number;             // From Couch Managers
+  rosterSpotsRemaining: number;     // Calculated from league settings
+  effectiveBudget: number;          // rawRemaining - mandatory $1 reserves
+  canAffordThreshold: number;       // Max player value they can reasonably bid
+}
+
+/**
+ * Enhanced inflation stats with positional scarcity and team constraints
+ */
+export interface EnhancedInflationStats extends InflationStats {
+  positionalScarcity: PositionalScarcity[];
+  teamConstraints: TeamBudgetConstraint[];
+  leagueEffectiveBudget: number;    // Sum of all team effectiveBudgets
+  adjustedRemainingBudget: number;  // Effective budget for forward-looking inflation
+  remainingProjectedValue: number;  // Sum of projected values for undrafted players
 }

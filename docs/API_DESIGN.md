@@ -2,13 +2,21 @@
 
 ## Overview
 
-This document defines the REST API design for the Fantasy Baseball Auction Tool backend. The API follows RESTful conventions and uses JWT for authentication.
+This document defines the REST API design for the Fantasy Baseball Auction Tool backend. The API follows RESTful conventions.
+
+**Implementation Status:**
+
+- Projections API - **IMPLEMENTED**
+- Auction Sync API - **IMPLEMENTED**
+- Authentication - Planned
+- Leagues CRUD - Planned
+- WebSocket - Planned
 
 ---
 
 ## Base URL
 
-```
+```text
 Development: http://localhost:3001/api
 Production:  https://api.fantasybaseballauction.com/api
 ```
@@ -363,7 +371,7 @@ Query parameters:
 
 ---
 
-### Projections (`/projections`)
+### Projections (`/projections`) - IMPLEMENTED
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -412,6 +420,22 @@ Returns player projections from the specified system. Uses 24-hour cache.
   "fromCache": true
 }
 ```
+
+##### Player Photo URLs
+
+The `mlbamId` field can be used to construct player photo URLs using MLB's official image service:
+
+```text
+https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{mlbamId}/headshot/67/current
+```
+
+Example for Aaron Judge (mlbamId: 592450):
+
+```text
+https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/592450/headshot/67/current
+```
+
+The URL includes a fallback to a generic player silhouette if the specific player's photo is unavailable.
 
 #### POST /projections/calculate-values
 
@@ -481,6 +505,151 @@ Forces a cache refresh by fetching fresh data from FanGraphs.
   "pitcherCount": 400,
   "refreshedAt": "2024-12-23T12:00:00Z"
 }
+```
+
+---
+
+### Auction Sync (`/auction`) - IMPLEMENTED
+
+Live integration with Couch Managers auction rooms.
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/auction/:roomId` | Get auction state (30s cache) | No |
+| GET | `/auction/:roomId/current` | Get current player on block | No |
+| POST | `/auction/:roomId/sync` | Full sync with client projections | No |
+| POST | `/auction/:roomId/sync-lite` | Lightweight sync using server cache | No |
+
+#### GET /auction/:roomId
+
+Scrapes current auction state from Couch Managers.
+
+```json
+// Response 200
+{
+  "roomId": "12345",
+  "scrapedAt": "2024-12-23T12:00:00Z",
+  "status": "active",
+  "players": [
+    {
+      "couchManagersId": 1001,
+      "firstName": "Aaron",
+      "lastName": "Judge",
+      "fullName": "Aaron Judge",
+      "normalizedName": "aaron judge",
+      "positions": ["OF"],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 52,
+      "winningTeam": "Team Alpha"
+    }
+  ],
+  "teams": [
+    {
+      "name": "Team Alpha",
+      "budget": 260,
+      "spent": 145,
+      "remaining": 115,
+      "playersDrafted": 8,
+      "isOnline": true
+    }
+  ],
+  "currentAuction": {
+    "playerId": 1002,
+    "playerName": "Shohei Ohtani",
+    "currentBid": 45,
+    "currentBidder": "Team Beta",
+    "timeRemaining": 12
+  },
+  "totalPlayersDrafted": 72,
+  "totalMoneySpent": 1560,
+  "fromCache": false
+}
+```
+
+#### POST /auction/:roomId/sync-lite (Recommended)
+
+Lightweight sync that uses server-cached projections. Sends only ~200 bytes instead of ~800KB.
+
+```json
+// Request
+{
+  "projectionSystem": "steamer",
+  "leagueConfig": {
+    "numTeams": 12,
+    "budgetPerTeam": 260,
+    "totalRosterSpots": 23,
+    "rosterSpots": { "C": 2, "1B": 1, "OF": 5, "SP": 4, "RP": 2 },
+    "scoringType": "h2h-categories",
+    "hittingCategories": { "R": true, "HR": true, "RBI": true, "SB": true, "AVG": true },
+    "pitchingCategories": { "W": true, "K": true, "ERA": true, "WHIP": true, "SV": true }
+  }
+}
+
+// Response 200
+{
+  "auctionData": { ... },  // Same as GET /auction/:roomId
+  "matchedPlayers": [
+    {
+      "scrapedPlayer": { ... },
+      "projectionPlayerId": "12345",
+      "projectedValue": 45,
+      "actualBid": 52,
+      "inflationAmount": 7,
+      "inflationPercent": 15.6,
+      "matchConfidence": "exact"
+    }
+  ],
+  "inflationStats": {
+    "overallInflationRate": 12.5,
+    "totalProjectedValue": 1400,
+    "totalActualSpent": 1575,
+    "draftedPlayersCount": 72,
+    "tierInflation": [
+      { "tier": 1, "draftedCount": 10, "inflationRate": -5.2 },
+      { "tier": 5, "draftedCount": 15, "inflationRate": 45.3 }
+    ],
+    "positionalScarcity": [
+      {
+        "position": "SP",
+        "availableCount": 45,
+        "qualityCount": 22,
+        "leagueNeed": 48,
+        "scarcityRatio": 2.18,
+        "scarcityLevel": "severe",
+        "inflationAdjustment": 1.25
+      }
+    ],
+    "teamConstraints": [
+      {
+        "teamName": "Team Alpha",
+        "rawRemaining": 115,
+        "rosterSpotsRemaining": 15,
+        "effectiveBudget": 101,
+        "canAffordThreshold": 50
+      }
+    ],
+    "adjustedRemainingBudget": 1445,
+    "remainingProjectedValue": 1200
+  },
+  "unmatchedPlayers": []
+}
+```
+
+#### POST /auction/:roomId/sync
+
+Full sync that accepts projections from the client. Use sync-lite instead for better performance.
+
+```json
+// Request
+{
+  "projections": [
+    { "id": "12345", "name": "Aaron Judge", "projectedValue": 45 }
+  ],
+  "leagueConfig": { ... }
+}
+
+// Response: Same as sync-lite
 ```
 
 ---
@@ -699,24 +868,34 @@ Breaking changes will increment the version number.
 
 ## Implementation Priority
 
-### Phase 1 (MVP)
+### Phase 1 (MVP) - COMPLETE
+
+1. ~~Projections API~~ - Implemented
+2. ~~Auction sync endpoints~~ - Implemented
+3. ~~Value calculation~~ - Implemented
+4. ~~Inflation tracking~~ - Implemented
+
+### Phase 2 (Current)
+
 1. Authentication (register, login, me)
-2. Leagues CRUD
+2. Leagues CRUD with persistent storage
 3. League players list
 4. Draft player endpoint
 
-### Phase 2 (Enhanced)
+### Phase 3 (Enhanced)
+
 1. Google OAuth
 2. Analytics endpoint
 3. Player search
-4. Projections import
+4. Historical auction data
 
-### Phase 3 (Real-time)
+### Phase 4 (Real-time)
+
 1. WebSocket draft room
-2. Live updates
+2. Live updates (replace polling)
 3. Multi-user sync
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 2.0*
 *Last Updated: December 2024*

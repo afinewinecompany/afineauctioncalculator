@@ -152,6 +152,7 @@ export async function syncAuction(
         numTeams: settings.numTeams,
         budgetPerTeam: settings.budgetPerTeam,
         totalRosterSpots,
+        rosterSpots: settings.rosterSpots, // Include per-position slots for scarcity calculation
       },
     }),
   });
@@ -192,6 +193,11 @@ export async function syncAuctionLite(
         numTeams: settings.numTeams,
         budgetPerTeam: settings.budgetPerTeam,
         totalRosterSpots,
+        rosterSpots: settings.rosterSpots, // Include per-position slots for scarcity calculation
+        scoringType: settings.scoringType,
+        hittingCategories: settings.hittingCategories,
+        pitchingCategories: settings.pitchingCategories,
+        pointsSettings: settings.pointsSettings,
       },
     }),
   });
@@ -240,6 +246,18 @@ export function normalizeName(name: string): string {
     .replace(/[^a-z\s]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Generates the MLB player photo URL from mlbamId
+ * Uses MLB's official mugshot service
+ * @param mlbamId - MLB Advanced Media player ID
+ * @param size - Image size multiplier (1x, 2x, 4x available)
+ * @returns URL to the player's headshot image
+ */
+export function getPlayerPhotoUrl(mlbamId: number | undefined, size: '1x' | '2x' | '4x' = '4x'): string | null {
+  if (!mlbamId) return null;
+  return `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${mlbamId}/headshot/67/current`;
 }
 
 /**
@@ -381,6 +399,7 @@ export function convertToPlayers(
     return {
       id: p.externalId,
       externalId: p.externalId,
+      mlbamId: p.mlbamId,
       name: p.name,
       team: p.team,
       positions: p.positions,
