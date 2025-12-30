@@ -2,6 +2,7 @@
 
 export interface ScrapedPlayer {
   couchManagersId: number;
+  mlbamId?: number; // MLB.com player ID for cross-system matching
   firstName: string;
   lastName: string;
   fullName: string;
@@ -50,6 +51,8 @@ export interface ScrapedAuctionData {
   players: ScrapedPlayer[];
   teams: ScrapedTeam[];
   currentAuction?: CurrentAuction;
+  /** All currently active auctions (players on the block) */
+  activeAuctions?: CurrentAuction[];
   totalPlayersDrafted: number;
   totalMoneySpent: number;
 }

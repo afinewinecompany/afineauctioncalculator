@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { LeagueSettings } from '../lib/types';
 import { defaultLeagueSettings } from '../lib/mockData';
-import { ChevronRight, ChevronLeft, Zap, Database } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Zap, Database, Crown, RefreshCw, Upload, X, FileSpreadsheet } from 'lucide-react';
 import { ScoringConfig } from './ScoringConfig';
+import { parseCSV } from '../lib/csvParser';
 
 interface SetupScreenProps {
   onComplete: (settings: LeagueSettings) => void;
@@ -11,6 +12,48 @@ interface SetupScreenProps {
 export function SetupScreen({ onComplete }: SetupScreenProps) {
   const [settings, setSettings] = useState<LeagueSettings>(defaultLeagueSettings);
   const [currentStep, setCurrentStep] = useState(1);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+    setIsParsingFile(true);
+
+    try {
+      const text = await file.text();
+      const rankings = parseCSV(text);
+
+      setSettings({
+        ...settings,
+        dynastySettings: {
+          ...settings.dynastySettings!,
+          rankingsSource: 'custom',
+          customRankings: rankings
+        }
+      });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Failed to parse file');
+    } finally {
+      setIsParsingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const clearCustomRankings = () => {
+    setSettings({
+      ...settings,
+      dynastySettings: {
+        ...settings.dynastySettings!,
+        rankingsSource: 'harryknowsball',
+        customRankings: undefined
+      }
+    });
+    setUploadError(null);
+  };
 
   const updateRosterSpot = (position: keyof LeagueSettings['rosterSpots'], value: number) => {
     setSettings({
@@ -31,10 +74,25 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
     { value: 'h2h-points', label: 'H2H Points', description: 'Weekly matchups with point totals' },
   ];
 
-  const projectionSystems: Array<{ value: LeagueSettings['projectionSystem']; label: string; description: string }> = [
+  const projectionSystems: Array<{ value: LeagueSettings['projectionSystem']; label: string; description: string; disabled?: boolean; disabledReason?: string }> = [
     { value: 'steamer', label: 'Steamer', description: 'Popular projection system with conservative estimates' },
-    { value: 'batx', label: 'BatX', description: 'Advanced metrics-based projections' },
-    { value: 'ja', label: 'JA', description: 'Custom projection algorithm' },
+    { value: 'batx', label: 'BatX', description: 'Advanced metrics-based projections', disabled: true, disabledReason: 'Currently unavailable' },
+    { value: 'ja', label: 'JA Projections', description: 'Custom projection algorithm' },
+  ];
+
+  const leagueTypes: Array<{ value: LeagueSettings['leagueType']; label: string; description: string; icon: React.ReactNode }> = [
+    {
+      value: 'redraft',
+      label: 'Redraft',
+      description: 'Single season league - values based purely on projected stats',
+      icon: <RefreshCw className="w-6 h-6" />
+    },
+    {
+      value: 'dynasty',
+      label: 'Dynasty',
+      description: 'Multi-year league - values blend projections with long-term rankings',
+      icon: <Crown className="w-6 h-6" />
+    },
   ];
 
   return (
@@ -95,7 +153,7 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                   <Zap className="w-6 h-6 text-red-500" />
                   League Format
                 </h2>
-                
+
                 <div>
                   <label className="block text-slate-300 mb-3">League Name</label>
                   <input
@@ -108,18 +166,253 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                   />
                 </div>
 
+                {/* League Type Selection */}
                 <div>
-                  <label className="block text-slate-300 mb-3">Couch Manager Room ID</label>
+                  <label className="block text-slate-300 mb-3">League Type</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {leagueTypes.map((type) => (
+                      <button
+                        key={type.value}
+                        onClick={() => setSettings({ ...settings, leagueType: type.value })}
+                        className={`p-5 rounded-xl border-2 transition-all duration-200 text-left ${
+                          settings.leagueType === type.value
+                            ? 'border-red-500 bg-gradient-to-br from-red-600/20 to-red-700/20 shadow-lg shadow-red-500/20'
+                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={settings.leagueType === type.value ? 'text-red-400' : 'text-slate-400'}>
+                            {type.icon}
+                          </div>
+                          <div className={`text-lg ${settings.leagueType === type.value ? 'text-red-400' : 'text-slate-300'}`}>
+                            {type.label}
+                          </div>
+                        </div>
+                        <div className="text-slate-500 text-sm">{type.description}</div>
+                        {settings.leagueType === type.value && (
+                          <div className="mt-2 text-emerald-400 text-sm">✓ Selected</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dynasty Settings (shown when dynasty is selected) */}
+                {settings.leagueType === 'dynasty' && (
+                  <div className="bg-gradient-to-br from-purple-900/30 to-slate-800/80 border-2 border-purple-500/60 rounded-xl p-6 space-y-5 shadow-lg shadow-purple-500/10">
+                    <div className="flex items-center gap-3 pb-3 border-b border-purple-500/30">
+                      <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                        <Crown className="w-6 h-6 text-purple-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-semibold text-lg">Dynasty Settings</h3>
+                        <p className="text-purple-300/70 text-sm">Configure long-term league options</p>
+                      </div>
+                    </div>
+
+                    {/* Rankings Source Selection */}
+                    <div>
+                      <label className="block text-white font-medium mb-2">Dynasty Rankings Source</label>
+                      {/* Prompt message when nothing selected */}
+                      {!settings.dynastySettings?.rankingsSource && (
+                        <p className="text-amber-400 text-sm mb-3 animate-pulse">
+                          Please select a rankings source below
+                        </p>
+                      )}
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Harry Knows Ball Option */}
+                        <button
+                          type="button"
+                          onClick={() => setSettings({
+                            ...settings,
+                            dynastySettings: {
+                              ...settings.dynastySettings!,
+                              rankingsSource: 'harryknowsball',
+                              customRankings: undefined
+                            }
+                          })}
+                          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                            settings.dynastySettings?.rankingsSource === 'harryknowsball'
+                              ? 'border-purple-400 bg-purple-600/30 scale-[1.02]'
+                              : !settings.dynastySettings?.rankingsSource
+                                ? 'border-amber-500/60 bg-slate-700/50 hover:border-purple-400 hover:bg-purple-600/20 animate-pulse'
+                                : 'border-slate-500 bg-slate-700/50 hover:border-slate-400 hover:bg-slate-700'
+                          }`}
+                        >
+                          <div className="font-semibold text-base text-white">
+                            Harry Knows Ball
+                          </div>
+                          <div className="text-sm mt-1 text-slate-300">
+                            Crowd-sourced dynasty rankings
+                          </div>
+                          {settings.dynastySettings?.rankingsSource === 'harryknowsball' && (
+                            <div className="mt-2 text-green-400 text-sm font-medium">✓ Selected</div>
+                          )}
+                        </button>
+
+                        {/* Upload Custom Option */}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                            settings.dynastySettings?.rankingsSource === 'custom'
+                              ? 'border-purple-400 bg-purple-600/30 scale-[1.02]'
+                              : !settings.dynastySettings?.rankingsSource
+                                ? 'border-amber-500/60 bg-slate-700/50 hover:border-purple-400 hover:bg-purple-600/20 animate-pulse'
+                                : 'border-slate-500 bg-slate-700/50 hover:border-slate-400 hover:bg-slate-700'
+                          }`}
+                        >
+                          <div className="font-semibold text-base flex items-center gap-2 text-white">
+                            <Upload className="w-4 h-4" />
+                            Upload Custom
+                          </div>
+                          <div className="text-sm mt-1 text-slate-300">
+                            CSV file with rankings
+                          </div>
+                          {settings.dynastySettings?.rankingsSource === 'custom' && (
+                            <div className="mt-2 text-green-400 text-sm font-medium">✓ Selected</div>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Hidden file input - using inline style to guarantee it's hidden */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv"
+                        onChange={handleFileUpload}
+                        style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}
+                        tabIndex={-1}
+                      />
+
+                      {/* File Format Help */}
+                      <p className="text-slate-300 text-sm mt-3">
+                        CSV format: name column (name, player, fullname, or first+last) and rank column (rank, ranking, overall, etc.). Any column with "id" in the name is used for matching.
+                      </p>
+                    </div>
+
+                    {/* Custom Rankings Status */}
+                    {settings.dynastySettings?.rankingsSource === 'custom' && settings.dynastySettings?.customRankings && (
+                      <div className="bg-green-900/40 border border-green-500/60 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-green-300">
+                            <FileSpreadsheet className="w-5 h-5" />
+                            <span className="font-semibold">
+                              {settings.dynastySettings.customRankings.length} players loaded
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={clearCustomRankings}
+                            className="text-slate-300 hover:text-red-400 transition-colors p-1"
+                            title="Remove custom rankings"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="mt-2 text-slate-200 text-sm">
+                          Top 3: {settings.dynastySettings.customRankings.slice(0, 3).map(r => r.name).join(', ')}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload Error */}
+                    {uploadError && (
+                      <div className="bg-red-900/40 border border-red-500/60 rounded-lg p-4 text-red-200">
+                        {uploadError}
+                      </div>
+                    )}
+
+                    {/* Parsing Indicator */}
+                    {isParsingFile && (
+                      <div className="text-white flex items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                        Parsing file...
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-white font-medium mb-2">Dynasty Weight</label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={(settings.dynastySettings?.dynastyWeight ?? 0.5) * 100}
+                          onChange={(e) => setSettings({
+                            ...settings,
+                            dynastySettings: {
+                              ...settings.dynastySettings!,
+                              dynastyWeight: Number(e.target.value) / 100
+                            }
+                          })}
+                          className="flex-1 h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-purple-400"
+                        />
+                        <span className="text-white font-semibold w-16 text-center text-lg">
+                          {Math.round((settings.dynastySettings?.dynastyWeight ?? 0.5) * 100)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm text-slate-300 mt-2">
+                        <span>More Projections</span>
+                        <span>More Dynasty Rank</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between py-2">
+                      <div>
+                        <label className="text-white font-medium">Include Minor Leaguers</label>
+                        <p className="text-slate-300 text-sm">Include prospects in dynasty rankings</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-sm font-medium transition-colors ${
+                          settings.dynastySettings?.includeMinors === true ? 'text-slate-500' : 'text-slate-300'
+                        }`}>Off</span>
+                        <button
+                          type="button"
+                          onClick={() => setSettings({
+                            ...settings,
+                            dynastySettings: {
+                              ...settings.dynastySettings!,
+                              includeMinors: settings.dynastySettings?.includeMinors === true ? false : true
+                            }
+                          })}
+                          className={`relative w-14 h-7 rounded-full transition-colors duration-300 ease-in-out ${
+                            settings.dynastySettings?.includeMinors === true
+                              ? 'bg-purple-500'
+                              : 'bg-slate-600'
+                          }`}
+                          role="switch"
+                          aria-checked={settings.dynastySettings?.includeMinors === true}
+                        >
+                          <span
+                            className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 ease-in-out"
+                            style={{
+                              left: settings.dynastySettings?.includeMinors === true ? 'calc(100% - 26px)' : '2px'
+                            }}
+                          />
+                        </button>
+                        <span className={`text-sm font-medium transition-colors ${
+                          settings.dynastySettings?.includeMinors === true ? 'text-purple-400' : 'text-slate-500'
+                        }`}>On</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-slate-300 mb-3">Couch Managers Room ID</label>
                   <input
                     type="text"
                     value={settings.couchManagerRoomId}
                     onChange={(e) => setSettings({ ...settings, couchManagerRoomId: e.target.value })}
                     className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                    placeholder="Enter Couch Manager auction room ID (optional)"
+                    placeholder="Enter Couch Managers auction room ID (optional)"
                   />
-                  <p className="text-slate-500 mt-2">Used for API integration with projection systems</p>
+                  <p className="text-slate-500 mt-2">
+                    Find this in your Couch Managers URL: <span className="text-slate-400 font-mono">couchmanagers.com/auction/<span className="text-emerald-400">[ROOM_ID]</span></span>
+                  </p>
                 </div>
-                
+
                 <div>
                   <label className="block text-slate-300 mb-3">Number of Teams</label>
                   <input
@@ -248,7 +541,7 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                           onChange={(e) => updateRosterSpot('Bench', Number(e.target.value))}
                           className="w-20 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                           min={0}
-                          max={10}
+                          max={50}
                         />
                       </div>
                     </div>
@@ -276,18 +569,29 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                   {projectionSystems.map((system) => (
                     <button
                       key={system.value}
-                      onClick={() => setSettings({ ...settings, projectionSystem: system.value })}
+                      onClick={() => !system.disabled && setSettings({ ...settings, projectionSystem: system.value })}
+                      disabled={system.disabled}
                       className={`p-6 rounded-xl border-2 transition-all duration-200 ${
-                        settings.projectionSystem === system.value
+                        system.disabled
+                          ? 'border-slate-700/50 bg-slate-800/30 cursor-not-allowed opacity-50'
+                          : settings.projectionSystem === system.value
                           ? 'border-red-500 bg-gradient-to-br from-red-600/20 to-red-700/20 shadow-lg shadow-red-500/20 scale-105'
                           : 'border-slate-700 bg-slate-800/50 hover:border-slate-600 hover:scale-102'
                       }`}
                     >
-                      <div className={`mb-2 ${settings.projectionSystem === system.value ? 'text-red-400' : 'text-slate-300'}`}>
+                      <div className={`mb-2 ${
+                        system.disabled
+                          ? 'text-slate-500'
+                          : settings.projectionSystem === system.value
+                          ? 'text-red-400'
+                          : 'text-slate-300'
+                      }`}>
                         {system.label}
                       </div>
-                      <div className="text-slate-500">{system.description}</div>
-                      {settings.projectionSystem === system.value && (
+                      <div className={system.disabled ? 'text-slate-600' : 'text-slate-500'}>
+                        {system.disabled ? system.disabledReason : system.description}
+                      </div>
+                      {!system.disabled && settings.projectionSystem === system.value && (
                         <div className="mt-3 text-emerald-400">✓ Selected</div>
                       )}
                     </button>
@@ -315,6 +619,14 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                   <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 space-y-4">
                     <h3 className="text-emerald-400 mb-4">League Configuration</h3>
                     <div className="flex justify-between">
+                      <span className="text-slate-400">League Type:</span>
+                      <span className={`capitalize flex items-center gap-2 ${settings.leagueType === 'dynasty' ? 'text-purple-400' : 'text-white'}`}>
+                        {settings.leagueType === 'dynasty' && <Crown className="w-4 h-4" />}
+                        {settings.leagueType === 'redraft' && <RefreshCw className="w-4 h-4" />}
+                        {settings.leagueType}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-slate-400">League Size:</span>
                       <span className="text-white">{settings.numTeams} teams</span>
                     </div>
@@ -334,6 +646,36 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                       <span className="text-slate-400">Projection System:</span>
                       <span className="text-white uppercase">{settings.projectionSystem}</span>
                     </div>
+                    {settings.leagueType === 'dynasty' && settings.dynastySettings && (
+                      <>
+                        <div className="pt-3 border-t border-slate-700">
+                          <div className="text-purple-400 mb-2 flex items-center gap-2">
+                            <Crown className="w-4 h-4" />
+                            Dynasty Settings
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Rankings Source:</span>
+                              <span className="text-white">
+                                {settings.dynastySettings.rankingsSource === 'custom'
+                                  ? `Custom (${settings.dynastySettings.customRankings?.length ?? 0} players)`
+                                  : 'Harry Knows Ball'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Dynasty Weight:</span>
+                              <span className="text-white">{Math.round(settings.dynastySettings.dynastyWeight * 100)}%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Include Minors:</span>
+                              <span className={settings.dynastySettings.includeMinors ? 'text-emerald-400' : 'text-slate-500'}>
+                                {settings.dynastySettings.includeMinors ? 'Yes' : 'No'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 space-y-4">
@@ -360,6 +702,15 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                     </div>
                   </div>
                 </div>
+
+                {settings.leagueType === 'dynasty' && (
+                  <div className="bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border border-purple-500/50 rounded-xl p-4">
+                    <p className="text-purple-300 text-sm">
+                      Dynasty mode enabled - player values will blend Steamer projections ({Math.round((1 - (settings.dynastySettings?.dynastyWeight ?? 0.5)) * 100)}%)
+                      with {settings.dynastySettings?.rankingsSource === 'custom' ? 'custom uploaded' : 'Harry Knows Ball'} dynasty rankings ({Math.round((settings.dynastySettings?.dynastyWeight ?? 0.5) * 100)}%)
+                    </p>
+                  </div>
+                )}
 
                 <div className="bg-gradient-to-r from-emerald-600/20 to-green-600/20 border border-emerald-500/50 rounded-xl p-6">
                   <div className="flex items-center gap-3">

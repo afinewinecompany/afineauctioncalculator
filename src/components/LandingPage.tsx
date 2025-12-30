@@ -1,4 +1,4 @@
-import { DollarSign, TrendingUp, Users, BarChart3, Target, Zap } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, BarChart3, Target, Zap, LineChart, Shield, Clock } from 'lucide-react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -28,8 +28,8 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               Fantasy Baseball Auction Calculator
             </h1>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-              Make optimal bidding decisions during live auctions with real-time inflation tracking, 
-              dynamic value adjustments, and comprehensive draft analytics.
+              Win your auction draft with AI-powered inflation tracking, live Couch Managers integration,
+              and historical insights from real auctions. Know exactly when to bid and when to wait.
             </p>
           </div>
 
@@ -39,9 +39,9 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 to-green-700 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/30">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl text-white mb-2">Real-Time Inflation Tracking</h3>
+              <h3 className="text-xl text-white mb-2">Tier-Weighted Inflation</h3>
               <p className="text-slate-400">
-                Player values automatically adjust as money leaves the auction pool, ensuring accurate valuations throughout your draft.
+                Smart inflation tracking by player tier. Elite players often go below projection while $1-5 players see 1000%+ inflation. We account for this.
               </p>
             </div>
 
@@ -49,19 +49,19 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30">
                 <Users className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl text-white mb-2">Slow Auction Support</h3>
+              <h3 className="text-xl text-white mb-2">Live Couch Managers Sync</h3>
               <p className="text-slate-400">
-                Perfectly designed for slow auction drafts where nominations happen at different paces. Track bids as they're called out.
+                Auto-sync with your Couch Managers draft room. Player bids and team rosters update automatically every 2 minutes.
               </p>
             </div>
 
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-6 hover:border-red-500/50 transition-all shadow-xl backdrop-blur-sm animate-slideInLeft" style={{ animationDelay: '0.2s' }}>
               <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-red-500/30">
-                <BarChart3 className="w-6 h-6 text-white" />
+                <LineChart className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl text-white mb-2">Multiple Projection Systems</h3>
+              <h3 className="text-xl text-white mb-2">Historical Auction Intelligence</h3>
               <p className="text-slate-400">
-                Import projections from Steamer, BatX, or JA via API integration with Couch Manager auction rooms.
+                Built on analysis of real auctions. Know that SP/RP inflate heavily while elite hitters often go at a discount.
               </p>
             </div>
 
@@ -69,19 +69,19 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-purple-500/30">
                 <Target className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl text-white mb-2">Roster Management</h3>
+              <h3 className="text-xl text-white mb-2">Positional Scarcity Alerts</h3>
               <p className="text-slate-400">
-                Track position needs, budget remaining, and roster construction in real-time during your live draft.
+                See which positions are running thin. Get inflation-adjusted values based on real-time supply and demand at each position.
               </p>
             </div>
 
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-6 hover:border-yellow-500/50 transition-all shadow-xl backdrop-blur-sm animate-slideInLeft" style={{ animationDelay: '0.4s' }}>
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-600 to-orange-700 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-yellow-500/30">
-                <Zap className="w-6 h-6 text-white" />
+                <Shield className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl text-white mb-2">Color-Coded Values</h3>
+              <h3 className="text-xl text-white mb-2">Effective Budget Tracking</h3>
               <p className="text-slate-400">
-                Instantly see great deals, fair values, and overpays with intuitive color indicators and value comparisons.
+                See your true spending power. We calculate $1 reserves for remaining roster spots so you never accidentally overbid.
               </p>
             </div>
 
@@ -89,9 +89,9 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 to-green-700 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/30">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl text-white mb-2">Post-Draft Analysis</h3>
+              <h3 className="text-xl text-white mb-2">Steamer & JA Projections</h3>
               <p className="text-slate-400">
-                Review your draft performance with comprehensive analytics showing value gained and roster strengths.
+                Professional projections from FanGraphs Steamer and JA Projections. Calculated auction values tuned to your league settings.
               </p>
             </div>
           </div>
@@ -124,7 +124,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                   </div>
                   <div>
                     <h4 className="text-white mb-1">Configure Your League</h4>
-                    <p className="text-slate-400">Set up team count, budget, roster positions, scoring type, and connect your Couch Manager room ID.</p>
+                    <p className="text-slate-400">Set team count, budget, roster positions, and paste your Couch Managers room ID for automatic syncing.</p>
                   </div>
                 </div>
 
@@ -133,8 +133,8 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                     <span className="text-white">2</span>
                   </div>
                   <div>
-                    <h4 className="text-white mb-1">Track Live Bids</h4>
-                    <p className="text-slate-400">As players are nominated and bid on, enter the bid amount and mark whether it's your team or another team.</p>
+                    <h4 className="text-white mb-1">Watch Live Inflation</h4>
+                    <p className="text-slate-400">As bids are placed, see tier-weighted inflation rates update. Elite players deflate, role players inflate massively.</p>
                   </div>
                 </div>
 
@@ -143,8 +143,8 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                     <span className="text-white">3</span>
                   </div>
                   <div>
-                    <h4 className="text-white mb-1">Watch Values Adjust</h4>
-                    <p className="text-slate-400">Player values automatically recalculate based on inflation as the auction progresses.</p>
+                    <h4 className="text-white mb-1">Spot the Deals</h4>
+                    <p className="text-slate-400">Color-coded values show you when a player is a steal (green), fair value (yellow), or overpay (red) based on current inflation.</p>
                   </div>
                 </div>
 
@@ -153,37 +153,47 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                     <span className="text-white">4</span>
                   </div>
                   <div>
-                    <h4 className="text-white mb-1">Analyze Your Results</h4>
-                    <p className="text-slate-400">After the draft, review your team's performance and value gained.</p>
+                    <h4 className="text-white mb-1">Review Your Draft</h4>
+                    <p className="text-slate-400">Post-draft analysis shows your best picks, biggest overpays, and total value gained vs. projections.</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl">
-              <h3 className="text-2xl text-white mb-4">Perfect For:</h3>
+              <h3 className="text-2xl text-white mb-4">Built For Serious Owners</h3>
               <ul className="space-y-3 text-slate-300">
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                  <span>Rotisserie, H2H Categories, and H2H Points leagues</span>
+                  <span>Roto, H2H Categories, and H2H Points with 100+ scoring categories</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                  <span>2-30 team leagues</span>
+                  <span>Dynasty leagues with Harry Knows Ball rankings integration</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                  <span>Custom roster configurations with CI, MI, and UTIL spots</span>
+                  <span>Any roster config: C, 1B, 2B, 3B, SS, OF, CI, MI, UTIL, SP, RP, P</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                  <span>Slow auction drafts with varying nomination speeds</span>
+                  <span>Slow auctions where you need values updated between nominations</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                  <span>Desktop-optimized for split-screen drafting</span>
+                  <span>Split-screen optimized: run the calculator next to your draft</span>
                 </li>
               </ul>
+
+              <div className="mt-6 pt-6 border-t border-slate-700">
+                <h4 className="text-lg text-white mb-3">Key Insights from Real Auctions:</h4>
+                <ul className="space-y-2 text-sm text-slate-400">
+                  <li>• Elite $31+ players go 17% BELOW projection on average</li>
+                  <li>• $1-5 players see 990%+ inflation - be cautious!</li>
+                  <li>• SP/RP positions inflate 800-1300% more than projections</li>
+                  <li>• Catchers consistently overpay due to scarcity</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>

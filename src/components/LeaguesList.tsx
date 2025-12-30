@@ -1,5 +1,8 @@
-import { SavedLeague } from '../lib/types';
-import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { SavedLeague, LeagueSettings, SubscriptionInfo, ScrapedAuctionData } from '../lib/types';
+import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle, Settings, User, Crown, Loader2 } from 'lucide-react';
+import { EditLeagueModal } from './EditLeagueModal';
+import { fetchAuctionData } from '../lib/auctionApi';
 
 interface LeaguesListProps {
   username: string;
@@ -7,19 +10,94 @@ interface LeaguesListProps {
   onCreateNew: () => void;
   onContinueDraft: (league: SavedLeague) => void;
   onDeleteLeague: (leagueId: string) => void;
+  onEditLeague: (league: SavedLeague) => void;
+  onReloadProjections: (league: SavedLeague, newProjectionSystem?: LeagueSettings['projectionSystem']) => Promise<void>;
   onLogout: () => void;
+  onAccount: () => void;
   profilePicture?: string;
+  subscription?: SubscriptionInfo;
 }
 
-export function LeaguesList({ 
-  username, 
-  leagues, 
-  onCreateNew, 
+// Cache type for room data
+interface RoomDataCache {
+  [roomId: string]: {
+    data: ScrapedAuctionData | null;
+    loading: boolean;
+    error: string | null;
+  };
+}
+
+export function LeaguesList({
+  username,
+  leagues,
+  onCreateNew,
   onContinueDraft,
   onDeleteLeague,
+  onEditLeague,
+  onReloadProjections,
   onLogout,
-  profilePicture
+  onAccount,
+  profilePicture,
+  subscription
 }: LeaguesListProps) {
+  const [editingLeague, setEditingLeague] = useState<SavedLeague | null>(null);
+  const [roomDataCache, setRoomDataCache] = useState<RoomDataCache>({});
+
+  // Fetch room data for leagues with Couch Managers room IDs
+  useEffect(() => {
+    const roomIds = leagues
+      .filter(l => l.settings.couchManagerRoomId && l.status === 'drafting')
+      .map(l => l.settings.couchManagerRoomId)
+      .filter((id, index, arr) => arr.indexOf(id) === index); // unique room IDs
+
+    roomIds.forEach(roomId => {
+      // Skip if already cached or loading
+      if (roomDataCache[roomId]?.data || roomDataCache[roomId]?.loading) return;
+
+      // Mark as loading
+      setRoomDataCache(prev => ({
+        ...prev,
+        [roomId]: { data: null, loading: true, error: null }
+      }));
+
+      // Fetch room data
+      fetchAuctionData(roomId)
+        .then(data => {
+          setRoomDataCache(prev => ({
+            ...prev,
+            [roomId]: { data, loading: false, error: null }
+          }));
+        })
+        .catch(error => {
+          console.warn(`Failed to fetch room ${roomId} data:`, error);
+          setRoomDataCache(prev => ({
+            ...prev,
+            [roomId]: { data: null, loading: false, error: error.message }
+          }));
+        });
+    });
+  }, [leagues]);
+
+  // Helper to get drafted count for a league
+  const getDraftedCount = (league: SavedLeague): { count: number; loading: boolean; fromRoom: boolean } => {
+    const roomId = league.settings.couchManagerRoomId;
+
+    // If league has a room ID, try to get data from cache
+    if (roomId && roomDataCache[roomId]) {
+      const cached = roomDataCache[roomId];
+      if (cached.loading) {
+        return { count: 0, loading: true, fromRoom: true };
+      }
+      if (cached.data) {
+        return { count: cached.data.totalPlayersDrafted, loading: false, fromRoom: true };
+      }
+    }
+
+    // Fall back to local player data
+    const localCount = league.players.filter(p => p.status === 'drafted' || p.status === 'onMyTeam').length;
+    return { count: localCount, loading: false, fromRoom: false };
+  };
+
   const getStatusBadge = (status: SavedLeague['status']) => {
     switch (status) {
       case 'setup':
@@ -57,24 +135,44 @@ export function LeaguesList({
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-fadeIn">
           <div className="flex items-center gap-4">
-            {profilePicture && (
-              <img 
-                src={profilePicture} 
-                alt={username} 
+            {profilePicture ? (
+              <img
+                src={profilePicture}
+                alt={username}
                 className="w-16 h-16 rounded-full border-2 border-red-500 shadow-lg shadow-red-500/30"
               />
+            ) : (
+              <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-full flex items-center justify-center shadow-lg shadow-red-500/30">
+                <User className="w-8 h-8 text-white" />
+              </div>
             )}
             <div>
-              <h1 className="text-4xl text-white mb-2">Welcome back, {username}!</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-4xl text-white">Welcome back, {username}!</h1>
+                {subscription?.tier === 'premium' && (
+                  <span title="Premium Member">
+                    <Crown className="w-6 h-6 text-amber-400" />
+                  </span>
+                )}
+              </div>
               <p className="text-slate-400">Manage your fantasy baseball auction drafts</p>
             </div>
           </div>
-          <button
-            onClick={onLogout}
-            className="px-4 py-2 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-700 transition-all"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onAccount}
+              className="px-4 py-2 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-700 transition-all flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Account
+            </button>
+            <button
+              onClick={onLogout}
+              className="px-4 py-2 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-700 transition-all"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {/* Create New League Button */}
@@ -134,11 +232,26 @@ export function LeaguesList({
                       </div>
                     )}
 
-                    {league.status === 'drafting' && (
-                      <div className="mt-2 text-sm text-yellow-400">
-                        Draft in progress - {league.players.filter(p => p.status !== 'available').length} players drafted
-                      </div>
-                    )}
+                    {league.status === 'drafting' && (() => {
+                      const { count, loading, fromRoom } = getDraftedCount(league);
+                      return (
+                        <div className="mt-2 text-sm text-yellow-400 flex items-center gap-2">
+                          {loading ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <span>Checking draft status...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>Draft in progress - {count} players drafted</span>
+                              {fromRoom && count > 0 && (
+                                <span className="text-emerald-400 text-xs">(live from room)</span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
@@ -158,7 +271,15 @@ export function LeaguesList({
                         </>
                       )}
                     </button>
-                    
+
+                    <button
+                      onClick={() => setEditingLeague(league)}
+                      className="px-4 py-3 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:bg-blue-900/30 hover:text-blue-400 hover:border-blue-500/30 transition-all"
+                      title="Edit league settings"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+
                     <button
                       onClick={() => {
                         if (confirm(`Are you sure you want to delete "${league.leagueName}"?`)) {
@@ -166,6 +287,7 @@ export function LeaguesList({
                         }
                       }}
                       className="px-4 py-3 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:bg-red-900/30 hover:text-red-400 hover:border-red-500/30 transition-all"
+                      title="Delete league"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -191,6 +313,23 @@ export function LeaguesList({
           </div>
         )}
       </div>
+
+      {/* Edit League Modal */}
+      {editingLeague && (
+        <EditLeagueModal
+          league={editingLeague}
+          isOpen={!!editingLeague}
+          onClose={() => setEditingLeague(null)}
+          onSave={(updatedLeague) => {
+            onEditLeague(updatedLeague);
+            setEditingLeague(null);
+          }}
+          onReloadProjections={async (league, newProjectionSystem) => {
+            await onReloadProjections(league, newProjectionSystem);
+            setEditingLeague(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { toast, Toaster } from 'sonner';
 import { LeagueSettings, Player, SavedLeague, UserData } from './lib/types';
 import { generateMockPlayers } from './lib/mockData';
 import { calculateLeagueAuctionValues, convertToPlayers } from './lib/auctionApi';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
 import { LeaguesList } from './components/LeaguesList';
@@ -9,8 +11,10 @@ import { SetupScreen } from './components/SetupScreen';
 import { DraftRoom } from './components/DraftRoom';
 import { PostDraftAnalysis } from './components/PostDraftAnalysis';
 import { TopMenuBar } from './components/TopMenuBar';
+import { ProjectionsLoadingScreen } from './components/ProjectionsLoadingScreen';
+import { AccountScreen } from './components/AccountScreen';
 
-type AppScreen = 'landing' | 'login' | 'leagues' | 'setup' | 'draft' | 'analysis';
+type AppScreen = 'landing' | 'login' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('landing');
@@ -20,6 +24,10 @@ export default function App() {
   const [finalRoster, setFinalRoster] = useState<any[]>([]);
   const [isLoadingProjections, setIsLoadingProjections] = useState(false);
   const [projectionError, setProjectionError] = useState<string | null>(null);
+  const [loadingSettings, setLoadingSettings] = useState<LeagueSettings | null>(null);
+
+  // Track if we've already shown the storage warning to prevent spamming
+  const storageWarningShownRef = useRef(false);
 
   // Load user data from localStorage
   useEffect(() => {
@@ -62,8 +70,20 @@ export default function App() {
           }))
         };
         localStorage.setItem('fantasyBaseballUser', JSON.stringify(lightweightUserData));
+        // Reset warning flag on successful save
+        storageWarningShownRef.current = false;
       } catch (error) {
         console.warn('Failed to save to localStorage, likely quota exceeded:', error);
+
+        // Show toast notification to warn user (only once per session)
+        if (!storageWarningShownRef.current) {
+          storageWarningShownRef.current = true;
+          toast.warning('Storage limit reached', {
+            description: 'Your draft progress may not be fully saved. Consider clearing old leagues to free up space.',
+            duration: 8000,
+          });
+        }
+
         // Clear old data and try with minimal data
         try {
           const minimalData = {
@@ -84,6 +104,14 @@ export default function App() {
           localStorage.setItem('fantasyBaseballUser', JSON.stringify(minimalData));
         } catch (e) {
           console.error('Failed to save minimal data to localStorage:', e);
+          // Show critical error toast if even minimal save fails
+          if (!storageWarningShownRef.current) {
+            storageWarningShownRef.current = true;
+            toast.error('Unable to save draft progress', {
+              description: 'localStorage is full. Your draft progress will not be saved. Please clear browser data.',
+              duration: 10000,
+            });
+          }
         }
       }
     }
@@ -121,12 +149,23 @@ export default function App() {
   };
 
   const handleSetupComplete = async (settings: LeagueSettings) => {
+    console.log('[App] Starting handleSetupComplete, setting isLoadingProjections=true');
+    console.log('[App] Settings:', settings.leagueName, settings.projectionSystem);
+
+    // Set loading state synchronously
     setIsLoadingProjections(true);
+    setLoadingSettings(settings);
     setProjectionError(null);
 
+    // Track when loading started for minimum display time
+    const loadingStartTime = Date.now();
+    const MINIMUM_LOADING_TIME_MS = 3000; // Show loading screen for at least 3 seconds
+
     try {
+      console.log('[App] Starting API call...');
       // Fetch projections and calculate auction values based on league settings
       const calculatedValues = await calculateLeagueAuctionValues(settings);
+      console.log('[App] API call complete');
       const projectedPlayers = convertToPlayers(calculatedValues);
 
       console.log(`Loaded ${projectedPlayers.length} players from ${settings.projectionSystem} projections`);
@@ -153,6 +192,16 @@ export default function App() {
 
       setCurrentLeague(newLeague);
       setPlayers(newLeague.players);
+
+      // Ensure minimum loading time for good UX
+      const elapsedTime = Date.now() - loadingStartTime;
+      const remainingTime = Math.max(0, MINIMUM_LOADING_TIME_MS - elapsedTime);
+      console.log(`[App] Elapsed: ${elapsedTime}ms, waiting additional ${remainingTime}ms`);
+
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+
       setCurrentScreen('draft');
     } catch (error) {
       console.error('Failed to load projections:', error);
@@ -182,7 +231,9 @@ export default function App() {
       setPlayers(newLeague.players);
       setCurrentScreen('draft');
     } finally {
+      console.log('[App] Finally block - setting isLoadingProjections=false');
       setIsLoadingProjections(false);
+      setLoadingSettings(null);
     }
   };
 
@@ -257,6 +308,86 @@ export default function App() {
     }
   };
 
+  const handleEditLeague = (updatedLeague: SavedLeague) => {
+    if (userData) {
+      const updatedUser = {
+        ...userData,
+        leagues: userData.leagues.map(l =>
+          l.id === updatedLeague.id ? updatedLeague : l
+        )
+      };
+      setUserData(updatedUser);
+    }
+  };
+
+  const handleReloadProjections = async (league: SavedLeague, newProjectionSystem?: LeagueSettings['projectionSystem']) => {
+    setIsLoadingProjections(true);
+    setLoadingSettings(league.settings);
+    setProjectionError(null);
+
+    const loadingStartTime = Date.now();
+    const MINIMUM_LOADING_TIME_MS = 2000;
+
+    try {
+      // Use the new projection system if provided, otherwise use the existing one
+      const settingsToUse = newProjectionSystem
+        ? { ...league.settings, projectionSystem: newProjectionSystem }
+        : league.settings;
+
+      const calculatedValues = await calculateLeagueAuctionValues(settingsToUse);
+      const projectedPlayers = convertToPlayers(calculatedValues);
+
+      console.log(`Reloaded ${projectedPlayers.length} players from ${settingsToUse.projectionSystem} projections`);
+
+      // Merge draft status from existing players
+      const draftedMap = new Map(league.players.map(p => [p.id, p]));
+      const mergedPlayers = projectedPlayers.map(p => {
+        const existingPlayer = draftedMap.get(p.id);
+        if (existingPlayer && (existingPlayer.status === 'drafted' || existingPlayer.status === 'onMyTeam')) {
+          return {
+            ...p,
+            status: existingPlayer.status,
+            draftedPrice: existingPlayer.draftedPrice,
+            draftedBy: existingPlayer.draftedBy,
+          };
+        }
+        return p;
+      });
+
+      // Update the league with new settings and players
+      const updatedLeague: SavedLeague = {
+        ...league,
+        settings: settingsToUse,
+        players: mergedPlayers,
+        lastModified: new Date().toISOString()
+      };
+
+      if (userData) {
+        const updatedUser = {
+          ...userData,
+          leagues: userData.leagues.map(l =>
+            l.id === league.id ? updatedLeague : l
+          )
+        };
+        setUserData(updatedUser);
+      }
+
+      // Ensure minimum loading time for good UX
+      const elapsedTime = Date.now() - loadingStartTime;
+      const remainingTime = Math.max(0, MINIMUM_LOADING_TIME_MS - elapsedTime);
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+    } catch (error) {
+      console.error('Failed to reload projections:', error);
+      setProjectionError(error instanceof Error ? error.message : 'Failed to reload projections');
+      throw error; // Re-throw so the modal can show the error
+    } finally {
+      setIsLoadingProjections(false);
+      setLoadingSettings(null);
+    }
+  };
+
   const handleDraftComplete = () => {
     // Get the drafted players from the draft room
     const myTeam = players.filter(p => p.status === 'onMyTeam');
@@ -322,7 +453,7 @@ export default function App() {
   }, [currentScreen, currentLeague, players, userData]);
 
   return (
-    <>
+    <ErrorBoundary>
       {currentScreen === 'landing' && (
         <LandingPage onGetStarted={() => setCurrentScreen('login')} />
       )}
@@ -341,8 +472,12 @@ export default function App() {
           onCreateNew={handleCreateNewLeague}
           onContinueDraft={handleContinueDraft}
           onDeleteLeague={handleDeleteLeague}
+          onEditLeague={handleEditLeague}
+          onReloadProjections={handleReloadProjections}
           onLogout={handleLogout}
+          onAccount={() => setCurrentScreen('account')}
           profilePicture={userData.profilePicture}
+          subscription={userData.subscription}
         />
       )}
 
@@ -356,15 +491,7 @@ export default function App() {
             showLeagueSelector={false}
           />
           <SetupScreen onComplete={handleSetupComplete} />
-          {isLoadingProjections && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-              <div className="bg-slate-800 border border-slate-700 rounded-xl p-8 text-center max-w-md">
-                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <h3 className="text-white text-xl mb-2">Loading Projections</h3>
-                <p className="text-slate-400">Fetching player projections and calculating auction values based on your league settings...</p>
-              </div>
-            </div>
-          )}
+
           {projectionError && (
             <div className="fixed bottom-4 right-4 bg-red-900/90 border border-red-700 rounded-xl p-4 max-w-md z-50">
               <p className="text-red-200">Failed to load projections: {projectionError}</p>
@@ -373,6 +500,13 @@ export default function App() {
           )}
         </>
       )}
+
+      {/* Animated Projections Loading Screen - rendered at top level for proper exit animations */}
+      <ProjectionsLoadingScreen
+        isVisible={isLoadingProjections}
+        projectionSystem={loadingSettings?.projectionSystem || 'steamer'}
+        leagueName={loadingSettings?.leagueName || 'Your League'}
+      />
 
       {currentScreen === 'draft' && currentLeague && userData && (
         <>
@@ -405,6 +539,26 @@ export default function App() {
           />
         </>
       )}
-    </>
+
+      {currentScreen === 'account' && userData && (
+        <AccountScreen
+          userData={userData}
+          onUpdateUser={setUserData}
+          onBack={handleBackToLeagues}
+        />
+      )}
+
+      {/* Toast notifications for storage warnings and other alerts */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: 'rgb(30 41 59)', // slate-800
+            border: '1px solid rgb(71 85 105)', // slate-600
+            color: 'rgb(226 232 240)', // slate-200
+          },
+        }}
+      />
+    </ErrorBoundary>
   );
 }

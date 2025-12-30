@@ -20,6 +20,7 @@ export const defaultLeagueSettings: LeagueSettings = {
     P: 7,
     Bench: 3
   },
+  leagueType: 'redraft',
   scoringType: 'rotisserie',
   projectionSystem: 'steamer',
   // Default Roto categories (5x5)
@@ -36,6 +37,13 @@ export const defaultLeagueSettings: LeagueSettings = {
     ERA: true,
     WHIP: true,
     SV: true
+  },
+  // Dynasty settings (used when leagueType === 'dynasty')
+  dynastySettings: {
+    dynastyWeight: 0.5, // 50/50 blend of projections and dynasty rankings
+    includeMinors: true,
+    rankingsSource: undefined, // User must select a rankings source
+    customRankings: undefined
   }
 };
 

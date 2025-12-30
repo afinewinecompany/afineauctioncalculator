@@ -8,7 +8,8 @@ This document defines the REST API design for the Fantasy Baseball Auction Tool 
 
 - Projections API - **IMPLEMENTED**
 - Auction Sync API - **IMPLEMENTED**
-- Authentication - Planned
+- Dynasty Rankings API - **IMPLEMENTED**
+- Authentication - Planned (frontend only currently)
 - Leagues CRUD - Planned
 - WebSocket - Planned
 
@@ -375,10 +376,37 @@ Query parameters:
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| GET | `/projections/:system` | Get projections (steamer/batx/ja) | No |
+| GET | `/projections/:system` | Get projections (steamer/ja) | No |
 | GET | `/projections/:system/status` | Get cache status | No |
-| POST | `/projections/:system/refresh` | Force refresh from FanGraphs | No |
+| POST | `/projections/:system/refresh` | Force refresh from source | No |
 | POST | `/projections/calculate-values` | Calculate auction values for league | No |
+
+**Note**: Currently supported projection systems are `steamer` (FanGraphs) and `ja` (JA Projections from Google Sheets). BatX is currently unavailable.
+
+#### Category Validation
+
+The value calculator validates all scoring categories against available projection data. Categories are classified by data source:
+
+| Data Source | Accuracy | Description |
+|-------------|----------|-------------|
+| `direct` | High | Stat comes directly from projection data |
+| `calculated` | High | Derived from projection data via formula |
+| `estimated` | Medium | Estimated using statistical correlations |
+| `unsupported` | None | No reliable data or estimation available |
+
+**Supported Hitting Categories (100+):**
+
+- Core: R, HR, RBI, SB, H, AVG, OBP, SLG, OPS, BB, 1B, 2B, 3B
+- Calculated: XBH, TB, SBN, ISO, R+RBI, HR+SB, K%, BB/PA
+- Estimated: HBP, SF, GIDP, BABIP
+- Advanced Yahoo: wOBA, ISO, BABIP, and 60+ additional categories
+
+**Supported Pitching Categories (80+):**
+
+- Core: W, K, ERA, WHIP, SV, HLD, IP, L, GS, K/9, BB/9, FIP
+- Calculated: K/BB, SVH, SV+HD, HR/9, W%, K-BB
+- Estimated: QS, BS, CG, SHO, GF, HB, WP, BAA
+- Advanced: xFIP, SIERA, LOB%, GB%, HR/FB, and more
 
 #### GET /projections/:system
 
@@ -511,18 +539,32 @@ Forces a cache refresh by fetching fresh data from FanGraphs.
 
 ### Auction Sync (`/auction`) - IMPLEMENTED
 
-Live integration with Couch Managers auction rooms.
+Live integration with Couch Managers auction rooms. Uses **file-based caching** with 5-minute TTL to reduce API load and prevent rate limiting.
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| GET | `/auction/:roomId` | Get auction state (30s cache) | No |
+| GET | `/auction/:roomId` | Get auction state (5min cache) | No |
 | GET | `/auction/:roomId/current` | Get current player on block | No |
+| GET | `/auction/:roomId/cache` | Get cache status for room | No |
+| DELETE | `/auction/:roomId/cache` | Invalidate cache for room | No |
+| GET | `/auction/cache/status` | List all cached rooms | No |
+| POST | `/auction/cache/cleanup` | Cleanup expired caches | No |
 | POST | `/auction/:roomId/sync` | Full sync with client projections | No |
 | POST | `/auction/:roomId/sync-lite` | Lightweight sync using server cache | No |
 
+#### Caching Strategy
+
+All auction data is cached to files in `/cache/auctions/` with a **5-minute TTL**. This protects against:
+
+- Rate limiting from Couch Managers
+- Slow page loads due to repeated scraping
+- Multiple users hitting the same room simultaneously
+
+Query parameter `?refresh=true` forces a fresh scrape, bypassing cache.
+
 #### GET /auction/:roomId
 
-Scrapes current auction state from Couch Managers.
+Scrapes current auction state from Couch Managers (or returns cached data).
 
 ```json
 // Response 200
@@ -561,9 +603,23 @@ Scrapes current auction state from Couch Managers.
     "currentBidder": "Team Beta",
     "timeRemaining": 12
   },
+  "activeAuctions": [
+    {
+      "playerId": 1002,
+      "playerName": "Shohei Ohtani",
+      "currentBid": 45,
+      "currentBidder": "Team Beta",
+      "timeRemaining": 12
+    }
+  ],
   "totalPlayersDrafted": 72,
   "totalMoneySpent": 1560,
-  "fromCache": false
+  "fromCache": true,
+  "cacheInfo": {
+    "ageSeconds": 45,
+    "expiresInSeconds": 255,
+    "ttlSeconds": 300
+  }
 }
 ```
 
@@ -650,6 +706,68 @@ Full sync that accepts projections from the client. Use sync-lite instead for be
 }
 
 // Response: Same as sync-lite
+```
+
+---
+
+### Dynasty Rankings (`/dynasty`) - IMPLEMENTED
+
+Dynasty rankings integration for keeper/dynasty leagues.
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/dynasty/rankings` | Get dynasty rankings from Harry Knows Ball | No |
+| GET | `/dynasty/rankings/status` | Get cache status | No |
+| POST | `/dynasty/rankings/refresh` | Force refresh from source | No |
+
+#### GET /dynasty/rankings
+
+Returns dynasty player rankings from Harry Knows Ball (12-hour cache).
+
+```json
+// Response 200
+{
+  "metadata": {
+    "source": "harryknowsball",
+    "fetchedAt": "2025-12-23T12:00:00Z",
+    "expiresAt": "2025-12-24T00:00:00Z",
+    "playerCount": 500
+  },
+  "rankings": [
+    {
+      "rank": 1,
+      "name": "Gunnar Henderson",
+      "team": "BAL",
+      "positions": ["SS"],
+      "tier": 1
+    },
+    {
+      "rank": 2,
+      "name": "Elly De La Cruz",
+      "team": "CIN",
+      "positions": ["SS"],
+      "tier": 1
+    }
+  ],
+  "fromCache": true
+}
+```
+
+#### Custom Dynasty Rankings
+
+For custom rankings uploaded by users (CSV), the frontend parses the CSV using `src/lib/csvParser.ts` and stores rankings in the league settings. The CSV parser supports flexible column names:
+
+- **Name column**: name, player, fullname, first+last name columns
+- **Rank column**: rank, ranking, dynasty_rank, overall
+- **ID column**: any column containing 'id' (optional)
+
+```typescript
+// Parsed structure
+interface CustomDynastyRanking {
+  name: string;
+  rank: number;
+  playerId?: string;
+}
 ```
 
 ---
@@ -897,5 +1015,5 @@ Breaking changes will increment the version number.
 
 ---
 
-*Document Version: 2.0*
-*Last Updated: December 2024*
+*Document Version: 3.1*
+*Last Updated: December 2025*

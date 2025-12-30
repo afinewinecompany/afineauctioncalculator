@@ -7,9 +7,15 @@ This document describes the React frontend architecture, component hierarchy, st
 **Key Features:**
 
 - Live auction sync with Couch Managers
+- Manual draft mode for offline drafting
 - Tier-weighted inflation tracking
+- Market inflation correction (tier & position factors)
 - Positional scarcity analysis
 - Historical inflation baselines
+- Dynasty league support with rankings integration
+- Animated loading screens (Framer Motion)
+- Account management with subscription tiers
+- Global error boundary with crash recovery
 
 ---
 
@@ -22,6 +28,7 @@ This document describes the React frontend architecture, component hierarchy, st
 | Vite | 6.3.5 | Build tool & dev server |
 | Tailwind CSS | 3.x | Utility-first styling |
 | Radix UI | Various | Accessible component primitives |
+| Framer Motion | 11.x | Animation library |
 | react-hook-form | 7.55.0 | Form management |
 | Recharts | 2.15.2 | Data visualization |
 | Lucide React | 0.487.0 | Icon library |
@@ -43,6 +50,7 @@ src/
 │   ├── LandingPage.tsx     # Marketing/welcome page
 │   ├── LoginPage.tsx       # Authentication UI
 │   ├── LeaguesList.tsx     # League dashboard
+│   ├── AccountScreen.tsx   # User account & subscription settings (NEW)
 │   ├── SetupScreen.tsx     # League configuration
 │   ├── DraftRoom.tsx       # Main draft interface with live sync
 │   ├── DraftHeader.tsx     # Draft stats header
@@ -52,11 +60,18 @@ src/
 │   ├── PlayerDetailModal.tsx # Player stats modal
 │   ├── PostDraftAnalysis.tsx # Post-draft review
 │   ├── ScoringConfig.tsx   # Scoring settings
-│   └── TopMenuBar.tsx      # Navigation bar
+│   ├── TopMenuBar.tsx      # Navigation bar
+│   ├── EditLeagueModal.tsx # Edit league settings modal (NEW)
+│   ├── ProjectionsLoadingScreen.tsx  # Animated projections loading (NEW)
+│   ├── DraftRoomLoadingScreen.tsx    # Animated draft room loading (NEW)
+│   ├── LoadingTransitionManager.tsx  # Loading phase orchestrator (NEW)
+│   └── ErrorBoundary.tsx   # Global error handling with retry (NEW)
 ├── lib/
 │   ├── types.ts            # TypeScript interfaces
 │   ├── calculations.ts     # Inflation & value calculation
 │   ├── auctionApi.ts       # Backend API client
+│   ├── csvParser.ts        # CSV parser for custom dynasty rankings (NEW)
+│   ├── scoringCategories.ts # Shared category definitions (NEW)
 │   ├── mockData.ts         # Sample data
 │   └── utils.ts            # Utility functions
 └── assets/                 # Static images
@@ -76,7 +91,11 @@ App.tsx (Root State Manager)
 │   └── [Email/Google auth forms]
 │
 ├── LeaguesList
-│   └── [League cards with actions]
+│   ├── [League cards with actions]
+│   └── EditLeagueModal
+│
+├── AccountScreen (NEW)
+│   └── [Account settings, subscription management]
 │
 ├── TopMenuBar (shared header)
 │   └── [Navigation, league switcher]
@@ -84,6 +103,16 @@ App.tsx (Root State Manager)
 ├── SetupScreen
 │   └── ScoringConfig
 │       └── [Category/points configuration]
+│
+├── ProjectionsLoadingScreen (NEW)
+│   └── [Baseball-themed animation with progress stages]
+│
+├── LoadingTransitionManager (NEW)
+│   ├── ProjectionsLoadingScreen
+│   └── DraftRoomLoadingScreen
+│
+├── ErrorBoundary (NEW)
+│   └── [Wraps all screens for crash recovery]
 │
 ├── DraftRoom (main orchestrator)
 │   ├── DraftHeader
@@ -112,7 +141,7 @@ The root `App.tsx` component manages all global application state:
 ```typescript
 // Screen Navigation
 const [currentScreen, setCurrentScreen] = useState<AppScreen>('landing');
-type AppScreen = 'landing' | 'login' | 'leagues' | 'setup' | 'draft' | 'analysis';
+type AppScreen = 'landing' | 'login' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account';
 
 // User Data
 const [userData, setUserData] = useState<UserData | null>(null);
@@ -125,6 +154,11 @@ const [players, setPlayers] = useState<Player[]>([]);
 
 // Analysis Data
 const [finalRoster, setFinalRoster] = useState<Player[]>([]);
+
+// Loading States (NEW)
+const [isLoadingProjections, setIsLoadingProjections] = useState(false);
+const [projectionError, setProjectionError] = useState<string | null>(null);
+const [loadingSettings, setLoadingSettings] = useState<LeagueSettings | null>(null);
 ```
 
 ### Persistence Pattern
@@ -302,22 +336,28 @@ useEffect(() => {
 
 ### PlayerQueue.tsx
 
-**Purpose**: Display available and drafted players
+**Purpose**: Display available and drafted players with scarcity indicators
 
 **Props**:
 ```typescript
 interface PlayerQueueProps {
   players: Player[];
-  onDraftPlayer: (player: Player, price: number, draftedBy: 'me' | 'other') => void;
   onPlayerClick: (player: Player) => void;
+  positionalScarcity?: PositionalScarcity[];
+  isManualMode?: boolean; // When true, allow manual entry of actual $ values
+  onManualDraft?: (player: Player, price: number, toMyTeam: boolean) => void;
 }
 ```
 
 **Features**:
+
 - Filterable by position, tier, status
 - Sortable by value, name, team
-- Quick-draft buttons
+- Positional scarcity badges (severe/moderate/normal/surplus)
+- **Manual mode**: Quick-draft buttons with price input
+- Draft to "My Team" or "Other Team" options
 - Search functionality
+- Pagination (50 players per page)
 
 ---
 
@@ -596,5 +636,5 @@ Recommended improvements:
 
 ---
 
-*Document Version: 2.0*
-*Last Updated: December 2024*
+*Document Version: 3.1*
+*Last Updated: December 2025*

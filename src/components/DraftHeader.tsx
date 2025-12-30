@@ -1,4 +1,4 @@
-import { LeagueSettings } from '../lib/types';
+import { LeagueSettings, InflationStats } from '../lib/types';
 import { getInflationIndicator } from '../lib/calculations';
 import { DollarSign, Users, TrendingUp } from 'lucide-react';
 
@@ -8,20 +8,28 @@ interface DraftHeaderProps {
   rosterNeedsRemaining: LeagueSettings['rosterSpots'];
   totalDrafted: number;
   inflationRate: number;
+  liveInflationStats?: InflationStats | null;
 }
 
-export function DraftHeader({ 
-  settings, 
-  moneyRemaining, 
+export function DraftHeader({
+  settings,
+  moneyRemaining,
   rosterNeedsRemaining,
   totalDrafted,
-  inflationRate 
+  inflationRate,
+  liveInflationStats,
 }: DraftHeaderProps) {
   const totalRosterSpots = Object.values(settings.rosterSpots).reduce((a, b) => a + b, 0);
   const totalPlayersNeeded = totalRosterSpots * settings.numTeams;
   const spotsRemaining = Object.values(rosterNeedsRemaining).reduce((a, b) => a + b, 0);
-  
-  const inflationIndicator = getInflationIndicator(inflationRate);
+
+  // Use server-side liveInflationStats when available (already in percentage format)
+  // Fall back to client-side inflationRate (in decimal format, needs * 100)
+  const displayInflationRate = liveInflationStats?.overallInflationRate ?? (inflationRate * 100);
+
+  // getInflationIndicator expects decimal format, so convert back if using live stats
+  const inflationForIndicator = liveInflationStats ? displayInflationRate / 100 : inflationRate;
+  const inflationIndicator = getInflationIndicator(inflationForIndicator);
 
   return (
     <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/50 shadow-lg">
@@ -92,7 +100,7 @@ export function DraftHeader({
                 inflationIndicator.color === 'text-orange-600' ? 'text-orange-400' :
                 'text-red-400'
               }`}>
-                {inflationRate >= 0 ? '+' : ''}{(inflationRate * 100).toFixed(1)}% ({inflationIndicator.label})
+                {displayInflationRate >= 0 ? '+' : ''}{displayInflationRate.toFixed(1)}% ({inflationIndicator.label})
               </div>
             </div>
           </div>

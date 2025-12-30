@@ -2,30 +2,97 @@ import puppeteer, { Browser, Page } from 'puppeteer';
 import type { ScrapedAuctionData, ScrapedPlayer, ScrapedTeam, CurrentAuction } from '../types/auction';
 import { normalizeName } from './playerMatcher';
 
+// Browser instance management constants
+const MAX_PAGES = 5; // Maximum concurrent pages before recycling browser
+const BROWSER_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes maximum browser lifetime
+
 // Browser instance for reuse
 let browserInstance: Browser | null = null;
+let browserCreatedAt: number = 0;
+let pageCount: number = 0;
+
+/**
+ * Check if the browser instance is healthy and should be reused
+ */
+async function isBrowserHealthy(): Promise<boolean> {
+  if (!browserInstance) return false;
+  if (!browserInstance.connected) return false;
+
+  // Check if browser has exceeded maximum age
+  const age = Date.now() - browserCreatedAt;
+  if (age > BROWSER_MAX_AGE_MS) {
+    console.log(`[Scraper] Browser exceeded max age (${Math.round(age / 1000)}s), recycling...`);
+    return false;
+  }
+
+  // Check for orphaned pages (memory leak prevention)
+  try {
+    const pages = await browserInstance.pages();
+    // More than MAX_PAGES open pages indicates a leak
+    if (pages.length > MAX_PAGES) {
+      console.log(`[Scraper] Browser has ${pages.length} pages (max: ${MAX_PAGES}), recycling...`);
+      return false;
+    }
+  } catch (error) {
+    console.log('[Scraper] Browser health check failed:', error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Safely close and cleanup the browser instance
+ */
+async function cleanupBrowser(): Promise<void> {
+  if (browserInstance) {
+    try {
+      // Close all pages first
+      const pages = await browserInstance.pages();
+      await Promise.all(pages.map(page => page.close().catch(() => {})));
+      // Then close the browser
+      await browserInstance.close();
+    } catch (error) {
+      console.log('[Scraper] Error during browser cleanup:', error);
+    }
+    browserInstance = null;
+    browserCreatedAt = 0;
+    pageCount = 0;
+  }
+}
 
 async function getBrowser(): Promise<Browser> {
-  if (!browserInstance || !browserInstance.connected) {
-    browserInstance = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-      ],
-    });
+  // Check if existing browser is healthy
+  if (browserInstance && await isBrowserHealthy()) {
+    return browserInstance;
   }
+
+  // Cleanup old browser if it exists but is unhealthy
+  if (browserInstance) {
+    console.log('[Scraper] Cleaning up unhealthy browser instance...');
+    await cleanupBrowser();
+  }
+
+  // Create new browser instance
+  console.log('[Scraper] Creating new browser instance...');
+  browserInstance = await puppeteer.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu',
+    ],
+  });
+  browserCreatedAt = Date.now();
+  pageCount = 0;
+
   return browserInstance;
 }
 
 export async function closeBrowser(): Promise<void> {
-  if (browserInstance) {
-    await browserInstance.close();
-    browserInstance = null;
-  }
+  await cleanupBrowser();
 }
 
 /**
@@ -50,6 +117,7 @@ export async function prewarmBrowser(): Promise<void> {
 export async function scrapeAuction(roomId: string): Promise<ScrapedAuctionData> {
   const browser = await getBrowser();
   const page = await browser.newPage();
+  pageCount++; // Track page creation for health monitoring
 
   try {
     // Set a reasonable viewport
@@ -245,11 +313,12 @@ export async function scrapeAuction(roomId: string): Promise<ScrapedAuctionData>
       }
       debugInfo.playerHighestBidMapSize = Object.keys(playerHighestBidMap).length;
 
-      // Find currently active auctions (players on the block)
+      // Find currently active auctions (players on the block) - only non-sold auctions
       const activeAuctionPlayerIds = new Set<number>();
       for (const key of Object.keys(auctionArray)) {
         const auction = auctionArray[key];
-        if (auction && auction.playerid) {
+        // Only include auctions that are not yet sold (i.e., still active)
+        if (auction && auction.playerid && !auction.sold) {
           activeAuctionPlayerIds.add(Number(auction.playerid));
         }
       }
@@ -270,11 +339,14 @@ export async function scrapeAuction(roomId: string): Promise<ScrapedAuctionData>
         const isPassed = passedArray.includes(Number(id));
 
         // Determine status
+        // Priority: on_block > drafted > passed > available
+        // If a player is actively being auctioned (on_block), that takes precedence
+        // over the drafted flag (which may be set prematurely by CouchManagers)
         let status: 'available' | 'drafted' | 'on_block' | 'passed';
-        if (isDrafted) {
-          status = 'drafted';
-        } else if (isOpen) {
+        if (isOpen) {
           status = 'on_block';
+        } else if (isDrafted) {
+          status = 'drafted';
         } else if (isPassed) {
           status = 'passed';
         } else {
@@ -360,20 +432,28 @@ export async function scrapeAuction(roomId: string): Promise<ScrapedAuctionData>
         }
       }
 
-      // Extract current auction info
+      // Extract current auction info - track ALL active auctions
       let currentAuction: CurrentAuction | undefined;
-      const activeAuctions = Object.values(auctionArray).filter((a: any) => a && !a.sold);
-      if (activeAuctions.length > 0) {
-        const active = activeAuctions[0] as any;
-        const playerId = active.playerid || active.player_id;
+      const allActiveAuctions: CurrentAuction[] = [];
+      const unsoldAuctions = Object.values(auctionArray).filter((a: any) => a && !a.sold);
+
+      for (const active of unsoldAuctions) {
+        const auction = active as any;
+        const playerId = auction.playerid || auction.player_id;
         const player = playerArray[playerId];
-        currentAuction = {
+        const auctionInfo: CurrentAuction = {
           playerId: Number(playerId),
           playerName: player ? `${player.firstname} ${player.lastname}`.trim() : `Player ${playerId}`,
-          currentBid: Number(active.amount) || 0,
-          currentBidder: active.teamname || active.team || '',
-          timeRemaining: Number(active.time) || 0,
+          currentBid: Number(auction.amount) || 0,
+          currentBidder: cleanTeamName(auction.teamname || auction.team || ''),
+          timeRemaining: Number(auction.time) || 0,
         };
+        allActiveAuctions.push(auctionInfo);
+      }
+
+      // For backward compatibility, set currentAuction to the first active auction
+      if (allActiveAuctions.length > 0) {
+        currentAuction = allActiveAuctions[0];
       }
 
       // Calculate totals
@@ -400,6 +480,7 @@ export async function scrapeAuction(roomId: string): Promise<ScrapedAuctionData>
         players,
         teams,
         currentAuction,
+        activeAuctions: allActiveAuctions,
         totalPlayersDrafted,
         totalMoneySpent,
         status,
@@ -420,6 +501,7 @@ export async function scrapeAuction(roomId: string): Promise<ScrapedAuctionData>
       players: playersWithNormalizedNames,
       teams: scrapedData.teams,
       currentAuction: scrapedData.currentAuction,
+      activeAuctions: scrapedData.activeAuctions,
       totalPlayersDrafted: scrapedData.totalPlayersDrafted,
       totalMoneySpent: scrapedData.totalMoneySpent,
     };

@@ -7,10 +7,12 @@ import { PlayerQueue } from './PlayerQueue';
 import { RosterPanel } from './RosterPanel';
 import { InflationTracker } from './InflationTracker';
 import { PlayerDetailModal } from './PlayerDetailModal';
-import { Loader2 } from 'lucide-react';
+import { DraftRoomLoadingScreen } from './DraftRoomLoadingScreen';
 
-// Sync interval: 2 minutes
-const SYNC_INTERVAL_MS = 2 * 60 * 1000;
+// Timing constants
+const SYNC_INTERVAL_MS = 2 * 60 * 1000; // Sync interval: 2 minutes
+const INITIAL_SYNC_DELAY_MS = 300; // Delay before first sync to let component mount
+const LOADING_TRANSITION_DELAY_MS = 300; // Delay for smooth loading transition
 
 interface DraftRoomProps {
   settings: LeagueSettings;
@@ -18,132 +20,6 @@ interface DraftRoomProps {
   onComplete: () => void;
 }
 
-// Loading overlay component - renders on top of heavily blurred draft room
-function LoadingOverlay({ message }: { message: string }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xl">
-      {/* Animated background glow effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-emerald-400/10 rounded-full blur-2xl animate-ping" style={{ animationDuration: '3s' }} />
-      </div>
-
-      {/* Main loading content card */}
-      <div className="relative flex flex-col items-center px-16 py-12 rounded-3xl bg-slate-900/95 border border-emerald-500/30 shadow-2xl shadow-emerald-500/20">
-        {/* Large animated circular spinner */}
-        <div className="relative w-40 h-40 mb-8">
-          {/* Outer glow ring */}
-          <div className="absolute -inset-2 rounded-full bg-emerald-500/20 blur-xl animate-pulse" />
-
-          {/* Outer static ring */}
-          <div className="absolute inset-0 rounded-full border-4 border-slate-600/50" />
-
-          {/* Primary spinning ring - thick and visible */}
-          <div className="absolute inset-0 rounded-full border-[6px] border-transparent border-t-emerald-500 border-r-emerald-400/50 animate-spin" style={{ animationDuration: '1.2s' }} />
-
-          {/* Secondary spinning ring */}
-          <div className="absolute inset-3 rounded-full border-4 border-transparent border-b-emerald-400 border-l-emerald-300/40 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.8s' }} />
-
-          {/* Middle pulsing ring */}
-          <div className="absolute inset-6 rounded-full border-2 border-emerald-500/30 animate-ping" style={{ animationDuration: '1.5s' }} />
-
-          {/* Inner spinning ring */}
-          <div className="absolute inset-8 rounded-full border-2 border-transparent border-t-emerald-300 animate-spin" style={{ animationDuration: '0.6s' }} />
-
-          {/* Orbiting dots - larger and more visible */}
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="absolute inset-0 animate-spin"
-              style={{ animationDuration: '3s', animationDelay: `${i * 0.3}s` }}
-            >
-              <div
-                className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-emerald-400 rounded-full shadow-lg shadow-emerald-400/60"
-                style={{ opacity: 1 - (i * 0.15) }}
-              />
-            </div>
-          ))}
-
-          {/* Center icon - larger */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative">
-              <div className="absolute inset-0 bg-emerald-400/30 rounded-full blur-md animate-pulse" />
-              <Loader2 className="relative w-12 h-12 text-emerald-400 animate-spin" style={{ animationDuration: '1s' }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Loading text - larger and more prominent */}
-        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-300 to-emerald-400 mb-3 animate-pulse">
-          Connecting to Draft Room
-        </h2>
-
-        {/* Status message - larger */}
-        <p className="text-emerald-400 text-lg mb-2 font-medium">{message}</p>
-
-        {/* Detailed status hint */}
-        <p className="text-slate-400 text-sm mb-6">Please wait while we sync your auction data...</p>
-
-        {/* Progress bar animation */}
-        <div className="w-64 h-2 bg-slate-700 rounded-full overflow-hidden mb-6">
-          <div className="h-full bg-gradient-to-r from-emerald-500 via-green-400 to-emerald-500 rounded-full animate-loading-progress" />
-        </div>
-
-        {/* Wave animation dots - larger */}
-        <div className="flex gap-2">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="w-3 h-3 bg-emerald-500 rounded-full animate-loading-wave"
-              style={{
-                animationDelay: `${i * 0.15}s`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Don't leave message */}
-        <p className="text-slate-500 text-xs mt-6 animate-pulse">
-          Do not leave this page
-        </p>
-      </div>
-
-      {/* CSS for animations */}
-      <style>{`
-        @keyframes loading-wave {
-          0%, 100% {
-            transform: translateY(0) scale(1);
-            opacity: 0.4;
-          }
-          50% {
-            transform: translateY(-12px) scale(1.3);
-            opacity: 1;
-          }
-        }
-        .animate-loading-wave {
-          animation: loading-wave 1s ease-in-out infinite;
-        }
-        @keyframes loading-progress {
-          0% {
-            width: 0%;
-            margin-left: 0%;
-          }
-          50% {
-            width: 60%;
-            margin-left: 20%;
-          }
-          100% {
-            width: 0%;
-            margin-left: 100%;
-          }
-        }
-        .animate-loading-progress {
-          animation: loading-progress 2s ease-in-out infinite;
-        }
-      `}</style>
-    </div>
-  );
-}
 
 export function DraftRoom({ settings, players: initialPlayers, onComplete }: DraftRoomProps) {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
@@ -179,7 +55,11 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
 
   // Sync with Couch Managers - stable callback that doesn't depend on players state
   const performSync = useCallback(async () => {
-    if (!settings.couchManagerRoomId) return;
+    if (!settings.couchManagerRoomId) {
+      console.log('[DraftRoom] No couchManagerRoomId set, skipping sync');
+      return;
+    }
+    console.log(`[DraftRoom] Starting sync for room ${settings.couchManagerRoomId}`);
 
     // Prevent concurrent syncs
     if (isSyncingRef.current) {
@@ -204,7 +84,9 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
 
       // Use lightweight sync that uses server-cached projections
       // This sends only ~200 bytes instead of ~800KB
+      console.log(`[DraftRoom] Calling syncAuctionLite for room ${settings.couchManagerRoomId}`);
       const result = await syncAuctionLite(settings.couchManagerRoomId, settings);
+      console.log(`[DraftRoom] Sync successful! Matched ${result.matchedPlayers.length} players, ${result.auctionData.players.filter(p => p.status === 'drafted').length} drafted`);
       setSyncResult(result);
       // Cast to EnhancedInflationStats since the server now returns enhanced data
       setLiveInflationStats(result.inflationStats as EnhancedInflationStats);
@@ -255,13 +137,45 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         }
       });
 
+      // DEBUG: Log unmatched drafted players to diagnose sync issues
+      const unmatchedDrafted = result.auctionData.players
+        .filter(p => p.status === 'drafted')
+        .filter(p => !result.matchedPlayers.some(mp => mp.scrapedPlayer.couchManagersId === p.couchManagersId && mp.projectionPlayerId));
+      if (unmatchedDrafted.length > 0) {
+        console.warn('[DraftRoom] WARNING: Drafted players not matched to projections:',
+          unmatchedDrafted.map(p => ({ name: p.fullName, team: p.mlbTeam, cmId: p.couchManagersId })));
+      }
+
       // Update players state with drafted info and build drafted list
       // IMPORTANT: Reset ALL players to their correct status based on current scrape data
+      // Also inject out-of-pool players that are drafted or on_block
       setPlayers(prevPlayers => {
+        // Build set of existing player IDs for quick lookup
+        const existingPlayerIds = new Set(prevPlayers.map(p => p.id));
+
+        // DEBUG: Check for players in frontend that should match drafted scraped players
+        const draftedScrapedNames = new Set(
+          result.auctionData.players
+            .filter(p => p.status === 'drafted')
+            .map(p => p.fullName.toLowerCase())
+        );
+        const unmatchedFrontendPlayers = prevPlayers.filter(p => {
+          const normalizedName = p.name.toLowerCase();
+          return draftedScrapedNames.has(normalizedName) && !matchedByProjectionId.has(p.id);
+        });
+        if (unmatchedFrontendPlayers.length > 0) {
+          console.warn('[DraftRoom] WARNING: Frontend players that match drafted names but have no projectionId match:',
+            unmatchedFrontendPlayers.map(p => ({ name: p.name, id: p.id })));
+        }
+
         const updatedPlayers = prevPlayers.map(p => {
           const matched = matchedByProjectionId.get(p.id);
           if (matched) {
             if (matched.scrapedPlayer.status === 'drafted') {
+              // DEBUG: Log specific player updates
+              if (p.name.toLowerCase().includes('yordan') || p.name.toLowerCase().includes('alvarez')) {
+                console.log('[DraftRoom] UPDATING player to drafted:', { name: p.name, id: p.id, matchedName: matched.scrapedPlayer.fullName });
+              }
               return {
                 ...p,
                 status: 'drafted' as const,
@@ -273,11 +187,16 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
               };
             } else if (matched.scrapedPlayer.status === 'on_block') {
               // Player is currently being auctioned - mark as on_block with current bid info
+              // Find the correct auction data for THIS specific player by matching couchManagersId
+              const playerAuction = result.auctionData.activeAuctions?.find(
+                auction => auction.playerId === matched.scrapedPlayer.couchManagersId
+              );
               return {
                 ...p,
                 status: 'on_block' as const,
-                currentBid: result.auctionData.currentAuction?.currentBid,
-                currentBidder: result.auctionData.currentAuction?.currentBidder,
+                currentBid: playerAuction?.currentBid ?? result.auctionData.currentAuction?.currentBid,
+                currentBidder: playerAuction?.currentBidder ?? result.auctionData.currentAuction?.currentBidder,
+                timeRemaining: playerAuction?.timeRemaining ?? result.auctionData.currentAuction?.timeRemaining,
                 // Clear drafted fields
                 draftedPrice: undefined,
                 draftedBy: undefined,
@@ -293,30 +212,78 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                 draftedBy: undefined,
                 currentBid: undefined,
                 currentBidder: undefined,
+                timeRemaining: undefined,
               };
             }
           }
           // No match found - if player was on_block, reset to available
           // (the player might have been on_block but is no longer in the scraped data)
+          // DEBUG: Log when Yordan/Alvarez is NOT matched
+          if (p.name.toLowerCase().includes('yordan') || p.name.toLowerCase().includes('alvarez')) {
+            console.warn('[DraftRoom] NOT MATCHED:', { name: p.name, id: p.id, currentStatus: p.status });
+          }
           if (p.status === 'on_block') {
             return {
               ...p,
               status: 'available' as const,
               currentBid: undefined,
               currentBidder: undefined,
+              timeRemaining: undefined,
             };
           }
           return p;
         });
+
+        // Inject out-of-pool players that are drafted or on_block but not in our players list
+        // This ensures we track ALL auction activity, not just players in the projection pool
+        const outOfPoolPlayers: Player[] = [];
+        result.matchedPlayers.forEach(mp => {
+          const playerId = mp.projectionPlayerId || `cm-${mp.scrapedPlayer.couchManagersId}`;
+          if (!existingPlayerIds.has(playerId) &&
+              (mp.scrapedPlayer.status === 'drafted' || mp.scrapedPlayer.status === 'on_block')) {
+            const playerAuction = result.auctionData.activeAuctions?.find(
+              auction => auction.playerId === mp.scrapedPlayer.couchManagersId
+            );
+            outOfPoolPlayers.push({
+              id: playerId,
+              name: mp.scrapedPlayer.fullName,
+              team: mp.scrapedPlayer.mlbTeam,
+              positions: mp.scrapedPlayer.positions,
+              projectedValue: mp.projectedValue || 0,
+              adjustedValue: mp.projectedValue || 0,
+              projectedStats: {},
+              status: mp.scrapedPlayer.status as 'drafted' | 'on_block',
+              draftedPrice: mp.scrapedPlayer.winningBid,
+              draftedBy: mp.scrapedPlayer.winningTeam || 'Unknown',
+              currentBid: mp.scrapedPlayer.status === 'on_block' ? playerAuction?.currentBid : undefined,
+              currentBidder: mp.scrapedPlayer.status === 'on_block' ? playerAuction?.currentBidder : undefined,
+              timeRemaining: mp.scrapedPlayer.status === 'on_block' ? playerAuction?.timeRemaining : undefined,
+              tier: 10,
+              isInDraftPool: false,
+            });
+          }
+        });
+
+        if (outOfPoolPlayers.length > 0) {
+          console.log('[DraftRoom] Injecting out-of-pool players into player list:', outOfPoolPlayers.map(p => p.name));
+          return [...updatedPlayers, ...outOfPoolPlayers];
+        }
+
         return updatedPlayers;
       });
 
       // Build the allDrafted list from matched players who are drafted
+      // Include ALL drafted players, even those not in initialPlayers (out-of-pool players)
       const draftedPlayers: Player[] = [];
+      const missingFromPool: string[] = [];
+
       result.matchedPlayers.forEach(mp => {
-        if (mp.scrapedPlayer.status === 'drafted' && mp.projectionPlayerId) {
-          // Find the player from initialPlayers to get full player data
-          const basePlayer = initialPlayers.find(p => p.id === mp.projectionPlayerId);
+        if (mp.scrapedPlayer.status === 'drafted') {
+          // Try to find the player from initialPlayers to get full player data
+          const basePlayer = mp.projectionPlayerId
+            ? initialPlayers.find(p => p.id === mp.projectionPlayerId)
+            : null;
+
           if (basePlayer) {
             draftedPlayers.push({
               ...basePlayer,
@@ -324,9 +291,53 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
               draftedPrice: mp.scrapedPlayer.winningBid,
               draftedBy: mp.scrapedPlayer.winningTeam || 'Unknown',
             });
+          } else {
+            // Player was drafted but not in our projection pool - create a minimal player entry
+            // This ensures we don't lose track of drafted players for inflation calculations
+            missingFromPool.push(`${mp.scrapedPlayer.fullName} ($${mp.scrapedPlayer.winningBid})`);
+            draftedPlayers.push({
+              id: mp.projectionPlayerId || `cm-${mp.scrapedPlayer.couchManagersId}`,
+              name: mp.scrapedPlayer.fullName,
+              team: mp.scrapedPlayer.mlbTeam,
+              positions: mp.scrapedPlayer.positions,
+              projectedValue: mp.projectedValue || 0,
+              adjustedValue: mp.projectedValue || 0,
+              projectedStats: {},
+              status: 'drafted' as const,
+              draftedPrice: mp.scrapedPlayer.winningBid,
+              draftedBy: mp.scrapedPlayer.winningTeam || 'Unknown',
+              tier: 10, // Assign to lowest tier for out-of-pool players
+              isInDraftPool: false,
+            });
           }
         }
       });
+
+      // Also handle unmatched drafted players (no projection match at all)
+      result.unmatchedPlayers?.forEach(up => {
+        if (up.status === 'drafted') {
+          missingFromPool.push(`${up.fullName} ($${up.winningBid}) [unmatched]`);
+          draftedPlayers.push({
+            id: `cm-${up.couchManagersId}`,
+            name: up.fullName,
+            team: up.mlbTeam,
+            positions: up.positions,
+            projectedValue: 0,
+            adjustedValue: 0,
+            projectedStats: {},
+            status: 'drafted' as const,
+            draftedPrice: up.winningBid,
+            draftedBy: up.winningTeam || 'Unknown',
+            tier: 10,
+            isInDraftPool: false,
+          });
+        }
+      });
+
+      if (missingFromPool.length > 0) {
+        console.warn('[DraftRoom] Drafted players not in projection pool (included with $0 value):', missingFromPool);
+      }
+
       setAllDrafted(draftedPlayers);
 
       setSyncState(prev => ({
@@ -340,7 +351,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       if (isFirstSync) {
         setLoadingMessage('Ready!');
         // Small delay for smooth transition
-        setTimeout(() => setIsInitialLoading(false), 300);
+        setTimeout(() => setIsInitialLoading(false), LOADING_TRANSITION_DELAY_MS);
       }
     } catch (error) {
       console.error('Sync error:', error);
@@ -366,7 +377,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
     }
 
     // Initial sync with small delay to let component mount
-    const initialSyncTimeout = setTimeout(performSync, 300);
+    const initialSyncTimeout = setTimeout(performSync, INITIAL_SYNC_DELAY_MS);
 
     // Set up interval
     syncIntervalRef.current = window.setInterval(performSync, SYNC_INTERVAL_MS);
@@ -469,7 +480,8 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
     }
   }, [settings.couchManagerRoomId]);
 
-  const handleDraftPlayer = (player: Player, price: number, draftedBy: 'me' | 'other') => {
+  // Memoized handler for drafting a player
+  const handleDraftPlayer = useCallback((player: Player, price: number, draftedBy: 'me' | 'other') => {
     const draftedPlayer: Player = {
       ...player,
       status: draftedBy === 'me' ? 'onMyTeam' : 'drafted',
@@ -491,7 +503,25 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       setMyRoster(prev => [...prev, draftedPlayer]);
     }
     setAllDrafted(prev => [...prev, draftedPlayer]);
-  };
+  }, []);
+
+  // Handler for manual draft mode (when no room ID)
+  const handleManualDraft = useCallback((player: Player, price: number, toMyTeam: boolean) => {
+    handleDraftPlayer(player, price, toMyTeam ? 'me' : 'other');
+  }, [handleDraftPlayer]);
+
+  // Determine if we're in manual mode (no Couch Managers room ID)
+  const isManualMode = !settings.couchManagerRoomId;
+
+  // Memoized callback for player detail modal
+  const handlePlayerClick = useCallback((player: Player) => {
+    setSelectedPlayerForDetail(player);
+  }, []);
+
+  // Memoized callback for closing player detail modal
+  const handleClosePlayerDetail = useCallback(() => {
+    setSelectedPlayerForDetail(null);
+  }, []);
 
   const totalRosterSpots = Object.values(settings.rosterSpots).reduce((a, b) => a + b, 0);
   const isDraftComplete = myRoster.length >= totalRosterSpots;
@@ -499,7 +529,10 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   return (
     <div className="relative flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 h-screen overflow-hidden">
       {/* Loading overlay - appears on top of blurred draft room */}
-      {isInitialLoading && <LoadingOverlay message={loadingMessage} />}
+      <DraftRoomLoadingScreen
+        isVisible={isInitialLoading}
+        message={loadingMessage}
+      />
       {/* Header */}
       <DraftHeader
         settings={settings}
@@ -507,6 +540,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         rosterNeedsRemaining={rosterNeedsRemaining}
         totalDrafted={allDrafted.length}
         inflationRate={inflationRate}
+        liveInflationStats={liveInflationStats}
       />
 
       {/* Main Content - scrollable container */}
@@ -518,8 +552,10 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
             <div className="col-span-8 bg-slate-900/95 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50 flex flex-col">
               <PlayerQueue
                 players={players}
-                onPlayerClick={setSelectedPlayerForDetail}
+                onPlayerClick={handlePlayerClick}
                 positionalScarcity={inflationResult.positionalScarcity}
+                isManualMode={isManualMode}
+                onManualDraft={handleManualDraft}
               />
             </div>
 
@@ -532,6 +568,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                 availableTeams={availableTeams}
                 selectedTeam={selectedTeam}
                 onTeamSelect={handleTeamSelect}
+                isManualMode={isManualMode}
               />
             </div>
           </div>
@@ -579,7 +616,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       {/* Player Detail Modal */}
       <PlayerDetailModal
         player={selectedPlayerForDetail}
-        onClose={() => setSelectedPlayerForDetail(null)}
+        onClose={handleClosePlayerDetail}
       />
     </div>
   );

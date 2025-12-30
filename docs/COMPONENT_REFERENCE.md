@@ -10,9 +10,9 @@ This document provides a complete inventory of all React components in the Fanta
 
 | Category | Count | Location |
 |----------|-------|----------|
-| Business Components | 14 | `src/components/*.tsx` |
+| Business Components | 20 | `src/components/*.tsx` |
 | UI Library (shadcn/ui) | 46 | `src/components/ui/*.tsx` |
-| **Total** | **60** | |
+| **Total** | **66** | |
 
 ---
 
@@ -164,6 +164,162 @@ interface PostDraftAnalysisProps {
 
 ---
 
+#### AccountScreen.tsx
+
+**Purpose**: User account settings including email, password, and subscription management
+
+**Props**:
+```typescript
+interface AccountScreenProps {
+  userData: UserData;
+  onBack: () => void;
+  onUpdateUser: (updatedData: Partial<UserData>) => void;
+}
+```
+
+**Features**:
+- Email and password management (email users only)
+- Google OAuth detection (shows linked account)
+- Subscription tier display (free/premium)
+- Billing management (mock implementation)
+- Profile picture display
+
+**Used by**: App.tsx
+
+---
+
+### Loading Screen Components
+
+These components provide animated loading experiences.
+
+#### ProjectionsLoadingScreen.tsx
+
+**Purpose**: Animated loading screen while fetching and calculating projections
+
+**Props**:
+```typescript
+interface ProjectionsLoadingScreenProps {
+  isVisible: boolean;
+  projectionSystem: string;
+  leagueName: string;
+  onLoadingComplete?: () => void;
+}
+```
+
+**Features**:
+- Baseball-themed orb animation with seams
+- 6-stage progress indicator (connect → fetch → analyze → calculate → optimize → finalize)
+- Orbital ring animations
+- Floating particle effects
+- Framer Motion powered
+
+**Used by**: App.tsx
+
+---
+
+#### DraftRoomLoadingScreen.tsx
+
+**Purpose**: Animated loading screen while connecting to Couch Managers draft room
+
+**Props**:
+```typescript
+interface DraftRoomLoadingScreenProps {
+  isVisible: boolean;
+  message: string;
+  onComplete?: () => void;
+}
+```
+
+**Features**:
+- Connection hub visualization with data pulses
+- Connection line animations radiating outward
+- Status indicators (Auction Server, Player Data, Team Rosters, Live Updates)
+- Progress wave animation
+
+**Used by**: LoadingTransitionManager.tsx
+
+---
+
+#### LoadingTransitionManager.tsx
+
+**Purpose**: Orchestrates transitions between loading phases (projections → draft room)
+
+**Props**:
+```typescript
+type LoadingPhase = 'idle' | 'projections' | 'transitioning' | 'draftRoom' | 'complete';
+
+interface LoadingTransitionManagerProps {
+  phase: LoadingPhase;
+  projectionSystem: string;
+  leagueName: string;
+  hasCouchManagerRoom: boolean;
+  draftRoomMessage?: string;
+  onProjectionsComplete?: () => void;
+  onDraftRoomComplete?: () => void;
+}
+```
+
+**Features**:
+- Manages internal phase state
+- Radial wipe transition effect between screens
+- Coordinates ProjectionsLoadingScreen and DraftRoomLoadingScreen
+
+**Used by**: App.tsx
+
+---
+
+### Error Handling Components
+
+#### ErrorBoundary.tsx
+
+**Purpose**: Global error boundary that catches JavaScript errors and displays a fallback UI
+
+**Props**:
+```typescript
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ReactNode;  // Optional custom fallback UI
+}
+```
+
+**Features**:
+
+- Catches errors anywhere in child component tree
+- Displays user-friendly error message with retry button
+- Shows detailed stack traces in development mode
+- Page refresh on retry to ensure clean state
+- Prevents full app crash from component errors
+
+**Used by**: App.tsx (wraps entire application)
+
+---
+
+### Modal Components
+
+#### EditLeagueModal.tsx
+
+**Purpose**: Modal for editing league settings after creation
+
+**Props**:
+```typescript
+interface EditLeagueModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  league: SavedLeague;
+  onSave: (updatedSettings: LeagueSettings) => void;
+}
+```
+
+**Features**:
+- Edit league name, budget, team count
+- Update Couch Managers room ID
+- Dynasty settings support (dynasty weight, rankings source)
+- Scoring configuration updates
+
+**Used by**: LeaguesList.tsx, DraftRoom.tsx
+
+---
+
 ### Draft Components
 
 These components are used within the draft workflow.
@@ -189,7 +345,7 @@ interface DraftHeaderProps {
 
 #### PlayerQueue.tsx
 
-**Purpose**: Display available/drafted player lists with scarcity indicators
+**Purpose**: Display available/drafted player lists with scarcity indicators and manual draft support
 
 **Props**:
 ```typescript
@@ -197,17 +353,22 @@ interface PlayerQueueProps {
   players: Player[];
   onPlayerClick: (player: Player) => void;
   positionalScarcity?: PositionalScarcity[];
+  isManualMode?: boolean;  // When true, allow manual entry of actual $ values
+  onManualDraft?: (player: Player, price: number, toMyTeam: boolean) => void;
 }
 ```
 
 **Features**:
 
-- Filter by position, tier, status
-- Sort by various columns
+- Filter by position, tier, status (available/on_block/drafted/all)
+- Sort by various columns (name, projectedValue, adjustedValue)
 - Search by player name
 - Positional scarcity badges (severe/moderate/normal/surplus)
 - Color-coded value indicators
 - On-block player highlighting
+- **Manual mode**: Quick-draft buttons with inline price input
+- Draft to "My Team" or "Other Team" options
+- Pagination (50 players per page)
 
 **Used by**: DraftRoom.tsx
 
@@ -438,12 +599,19 @@ These are pre-built, accessible components from the shadcn/ui library.
 ```
 App.tsx (Root)
 │
+├── ErrorBoundary (wraps all screens)
+│   └── [Crash recovery with retry UI]
+│
 ├── LandingPage ───────────────────────────────────────┐
 │                                                       │
 ├── LoginPage ─────────────────────────────────────────┤
 │                                                       │
 ├── LeaguesList ───────────────────────────────────────┤
-│   └── [League cards]                                  │
+│   ├── [League cards]                                  │
+│   └── EditLeagueModal                                │
+│                                                       │
+├── AccountScreen ─────────────────────────────────────┤
+│   └── [Account/subscription settings]                │
 │                                                       │
 ├── TopMenuBar ◄───────────────────────────────────────┤
 │                                                       │ Uses UI Components:
@@ -451,9 +619,16 @@ App.tsx (Root)
 │   └── ScoringConfig                                   │ - Select, Checkbox
 │       └── [Category/points forms]                     │ - Tabs, Form, Label
 │                                                       │ - Dialog, Tooltip
-├── DraftRoom                                           │ - Table, Badge
-│   ├── DraftHeader                                     │ - Progress, Skeleton
-│   │   └── [Stats display]                             │ - ScrollArea
+├── ProjectionsLoadingScreen                           │ - Table, Badge
+│   └── [Baseball orb animation]                       │ - Progress, Skeleton
+│                                                       │ - ScrollArea
+├── LoadingTransitionManager                           │ - Framer Motion
+│   ├── ProjectionsLoadingScreen                       │
+│   └── DraftRoomLoadingScreen                         │
+│                                                       │
+├── DraftRoom                                           │
+│   ├── DraftHeader                                     │
+│   │   └── [Stats display]                             │
 │   ├── PlayerQueue                                     │
 │   │   └── [Player tables with actions]               │
 │   ├── RosterPanel                                     │
@@ -625,5 +800,5 @@ jest.mock('@/components/ui/button', () => ({
 
 ---
 
-*Document Version: 2.0*
-*Last Updated: December 2024*
+*Document Version: 3.1*
+*Last Updated: December 2025*

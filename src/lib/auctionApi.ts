@@ -82,6 +82,12 @@ export interface PlayerWithValue extends NormalizedProjection {
   pointsValue?: number;
   tier: number;
   isInDraftPool: boolean;
+  // Dynasty-specific fields
+  dynastyRank?: number;
+  dynastyValue?: number;
+  steamerValue?: number;
+  blendedScore?: number;
+  ageAdjustment?: number;
 }
 
 export interface CalculatedValuesResponse {
@@ -97,6 +103,8 @@ export interface CalculatedValuesResponse {
     pitcherPoolSize: number;
     hitterBudget: number;
     pitcherBudget: number;
+    leagueType?: 'redraft' | 'dynasty';
+    dynastyWeight?: number;
   };
   players: PlayerWithValue[];
 }
@@ -171,6 +179,7 @@ export async function syncAuction(
 /**
  * Lightweight sync that uses server-cached projections instead of sending full player list.
  * Much smaller payload - only sends league config and projection system.
+ * Supports both redraft and dynasty modes.
  */
 export async function syncAuctionLite(
   roomId: string,
@@ -198,6 +207,9 @@ export async function syncAuctionLite(
         hittingCategories: settings.hittingCategories,
         pitchingCategories: settings.pitchingCategories,
         pointsSettings: settings.pointsSettings,
+        // Dynasty settings
+        leagueType: settings.leagueType || 'redraft',
+        dynastySettings: settings.dynastySettings,
       },
     }),
   });
@@ -367,48 +379,248 @@ export async function getProjectionsCacheStatus(
   return response.json();
 }
 
+// =============================================================================
+// DYNASTY RANKINGS API
+// =============================================================================
+
+export interface DynastyRanking {
+  id: string;
+  name: string;
+  team: string;
+  positions: string[];
+  age: number | null;
+  level: 'MLB' | 'AAA' | 'AA' | 'A+' | 'A' | 'other';
+  overallRank: number;
+  positionRank: number;
+  dynastyValue: number;
+  normalizedValue: number;
+  trend: {
+    rank7Day: number;
+    rank30Day: number;
+    value7Day: number;
+    value30Day: number;
+  };
+}
+
+export interface DynastyRankingsResponse {
+  metadata: {
+    source: string;
+    fetchedAt: string;
+    playerCount: number;
+  };
+  rankings: DynastyRanking[];
+}
+
+/**
+ * Fetches dynasty rankings from Harry Knows Ball
+ * Used for dynasty league value calculations
+ */
+export async function fetchDynastyRankings(): Promise<DynastyRankingsResponse> {
+  const response = await fetch(`${PROJECTIONS_BASE}/dynasty-rankings`);
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch dynasty rankings');
+  }
+
+  return response.json();
+}
+
+/**
+ * Gets the cache status for dynasty rankings
+ */
+export async function getDynastyRankingsCacheStatus(): Promise<{
+  isCached: boolean;
+  fetchedAt: string | null;
+  expiresAt: string | null;
+  playerCount: number;
+}> {
+  const response = await fetch(`${PROJECTIONS_BASE}/dynasty-rankings/status`);
+
+  if (!response.ok) {
+    throw new Error('Failed to get dynasty rankings cache status');
+  }
+
+  return response.json();
+}
+
+/**
+ * Forces a refresh of dynasty rankings cache
+ */
+export async function refreshDynastyRankings(): Promise<{
+  success: boolean;
+  playerCount: number;
+  refreshedAt: string;
+}> {
+  const response = await fetch(`${PROJECTIONS_BASE}/dynasty-rankings/refresh`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to refresh dynasty rankings');
+  }
+
+  return response.json();
+}
+
 /**
  * Converts calculated values to the Player format used by the draft room
+ * Handles two-way players (like Shohei Ohtani) by combining their hitter and pitcher entries
+ *
+ * IMPORTANT: Only includes players that are in the draft pool (isInDraftPool: true)
+ * This ensures only the top N players by value (where N = total roster spots * teams) are shown
  */
 export function convertToPlayers(
   calculatedValues: CalculatedValuesResponse
 ): Player[] {
-  return calculatedValues.players.map((p) => {
-    const projectedStats: Player['projectedStats'] = {};
+  // CRITICAL: Filter to only players in the draft pool BEFORE processing
+  // This excludes low-value players who won't realistically be drafted
+  // Pool size = numTeams * totalRosterSpots (e.g., 12 teams * 23 spots = 276 players)
+  const draftablePlayersOnly = calculatedValues.players.filter(p => p.isInDraftPool);
 
-    if (p.hitting) {
-      projectedStats.HR = p.hitting.homeRuns;
-      projectedStats.RBI = p.hitting.rbi;
-      projectedStats.SB = p.hitting.stolenBases;
-      projectedStats.AVG = p.hitting.battingAvg;
-      projectedStats.R = p.hitting.runs;
-      projectedStats.H = p.hitting.hits;
-      projectedStats.OBP = p.hitting.onBasePct;
-      projectedStats.SLG = p.hitting.sluggingPct;
-    }
+  // Debug: Check if problematic players are being included
+  const jesusCheck = calculatedValues.players.find(p => p.name.includes('Jesus Rodriguez'));
+  const rafaelCheck = calculatedValues.players.find(p => p.name.includes('Rafael Flores'));
+  if (jesusCheck || rafaelCheck) {
+    console.log('[convertToPlayers] Debug - Jesus Rodriguez:', jesusCheck ? { isInDraftPool: jesusCheck.isInDraftPool, tier: jesusCheck.tier, auctionValue: jesusCheck.auctionValue } : 'not found');
+    console.log('[convertToPlayers] Debug - Rafael Flores:', rafaelCheck ? { isInDraftPool: rafaelCheck.isInDraftPool, tier: rafaelCheck.tier, auctionValue: rafaelCheck.auctionValue } : 'not found');
+  }
+  console.log(`[convertToPlayers] Total players: ${calculatedValues.players.length}, In draft pool: ${draftablePlayersOnly.length}`);
 
-    if (p.pitching) {
-      projectedStats.W = p.pitching.wins;
-      projectedStats.K = p.pitching.strikeouts;
-      projectedStats.ERA = p.pitching.era;
-      projectedStats.WHIP = p.pitching.whip;
-      projectedStats.SV = p.pitching.saves;
-      projectedStats.IP = p.pitching.inningsPitched;
-    }
+  // Group players by externalId to identify two-way players
+  const playerMap = new Map<string, CalculatedValuesResponse['players']>();
 
-    return {
-      id: p.externalId,
-      externalId: p.externalId,
-      mlbamId: p.mlbamId,
-      name: p.name,
-      team: p.team,
-      positions: p.positions,
-      projectedValue: p.auctionValue,
-      adjustedValue: p.auctionValue, // Will be adjusted by inflation during draft
-      projectedStats,
-      status: 'available' as const,
-      tier: p.tier,
-      isInDraftPool: p.isInDraftPool,
-    };
+  draftablePlayersOnly.forEach((p) => {
+    const existing = playerMap.get(p.externalId) || [];
+    existing.push(p);
+    playerMap.set(p.externalId, existing);
   });
+
+  const players: Player[] = [];
+
+  playerMap.forEach((entries) => {
+    if (entries.length === 1) {
+      // Normal player - single entry
+      const p = entries[0];
+      players.push(createPlayerFromProjection(p));
+    } else {
+      // Two-way player (like Ohtani) - combine entries
+      const hitterEntry = entries.find(e => e.playerType === 'hitter');
+      const pitcherEntry = entries.find(e => e.playerType === 'pitcher');
+
+      if (hitterEntry && pitcherEntry) {
+        // Combine both entries into a single player
+        const combinedPlayer = combineTwoWayPlayer(hitterEntry, pitcherEntry);
+        players.push(combinedPlayer);
+      } else {
+        // Shouldn't happen, but handle gracefully - use highest value entry
+        const bestEntry = entries.reduce((best, current) =>
+          current.auctionValue > best.auctionValue ? current : best
+        );
+        players.push(createPlayerFromProjection(bestEntry));
+      }
+    }
+  });
+
+  return players;
+}
+
+/**
+ * Creates a Player object from a single projection entry
+ */
+function createPlayerFromProjection(p: CalculatedValuesResponse['players'][0]): Player {
+  const projectedStats: Player['projectedStats'] = {};
+
+  if (p.hitting) {
+    projectedStats.HR = p.hitting.homeRuns;
+    projectedStats.RBI = p.hitting.rbi;
+    projectedStats.SB = p.hitting.stolenBases;
+    projectedStats.AVG = p.hitting.battingAvg;
+    projectedStats.R = p.hitting.runs;
+    projectedStats.H = p.hitting.hits;
+    projectedStats.OBP = p.hitting.onBasePct;
+    projectedStats.SLG = p.hitting.sluggingPct;
+  }
+
+  if (p.pitching) {
+    projectedStats.W = p.pitching.wins;
+    projectedStats.K = p.pitching.strikeouts;
+    projectedStats.ERA = p.pitching.era;
+    projectedStats.WHIP = p.pitching.whip;
+    projectedStats.SV = p.pitching.saves;
+    projectedStats.IP = p.pitching.inningsPitched;
+  }
+
+  return {
+    id: p.externalId,
+    externalId: p.externalId,
+    mlbamId: p.mlbamId,
+    name: p.name,
+    team: p.team,
+    positions: p.positions,
+    projectedValue: p.auctionValue,
+    adjustedValue: p.auctionValue, // Will be adjusted by inflation during draft
+    projectedStats,
+    status: 'available' as const,
+    tier: p.tier,
+    isInDraftPool: p.isInDraftPool,
+  };
+}
+
+/**
+ * Combines a two-way player's hitter and pitcher projections into a single player
+ * Used for players like Shohei Ohtani who have separate hitter and pitcher entries
+ */
+function combineTwoWayPlayer(
+  hitter: CalculatedValuesResponse['players'][0],
+  pitcher: CalculatedValuesResponse['players'][0]
+): Player {
+  // Combine positions: include both hitting position(s) and pitching position(s)
+  const allPositions = [...new Set([...hitter.positions, ...pitcher.positions])];
+
+  // Combined auction value is sum of both (they contribute value in both ways)
+  const combinedValue = hitter.auctionValue + pitcher.auctionValue;
+
+  // Use the better tier (lower number = better)
+  const combinedTier = Math.min(hitter.tier, pitcher.tier);
+
+  // Combine stats from both projections
+  const projectedStats: Player['projectedStats'] = {};
+
+  // Hitting stats
+  if (hitter.hitting) {
+    projectedStats.HR = hitter.hitting.homeRuns;
+    projectedStats.RBI = hitter.hitting.rbi;
+    projectedStats.SB = hitter.hitting.stolenBases;
+    projectedStats.AVG = hitter.hitting.battingAvg;
+    projectedStats.R = hitter.hitting.runs;
+    projectedStats.H = hitter.hitting.hits;
+    projectedStats.OBP = hitter.hitting.onBasePct;
+    projectedStats.SLG = hitter.hitting.sluggingPct;
+  }
+
+  // Pitching stats
+  if (pitcher.pitching) {
+    projectedStats.W = pitcher.pitching.wins;
+    projectedStats.K = pitcher.pitching.strikeouts;
+    projectedStats.ERA = pitcher.pitching.era;
+    projectedStats.WHIP = pitcher.pitching.whip;
+    projectedStats.SV = pitcher.pitching.saves;
+    projectedStats.IP = pitcher.pitching.inningsPitched;
+  }
+
+  return {
+    id: hitter.externalId, // Same ID for both entries
+    externalId: hitter.externalId,
+    mlbamId: hitter.mlbamId,
+    name: hitter.name,
+    team: hitter.team,
+    positions: allPositions,
+    projectedValue: Math.round(combinedValue),
+    adjustedValue: Math.round(combinedValue),
+    projectedStats,
+    status: 'available' as const,
+    tier: combinedTier,
+    isInDraftPool: hitter.isInDraftPool || pitcher.isInDraftPool,
+    isTwoWayPlayer: true, // Flag to indicate this is a combined two-way player
+  };
 }

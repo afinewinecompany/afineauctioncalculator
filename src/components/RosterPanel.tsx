@@ -9,6 +9,7 @@ interface RosterPanelProps {
   availableTeams: string[];
   selectedTeam: string | null;
   onTeamSelect: (teamName: string) => void;
+  isManualMode?: boolean; // When true, hide team dropdown and show direct roster
 }
 
 export function RosterPanel({
@@ -17,7 +18,8 @@ export function RosterPanel({
   rosterNeedsRemaining,
   availableTeams,
   selectedTeam,
-  onTeamSelect
+  onTeamSelect,
+  isManualMode
 }: RosterPanelProps) {
   const stats = calculateTeamProjectedStats(roster);
   const totalRosterSpots = Object.values(settings.rosterSpots).reduce((a, b) => a + b, 0);
@@ -31,30 +33,39 @@ export function RosterPanel({
           <span className="text-emerald-400">{roster.length}/{totalRosterSpots}</span>
         </div>
 
-        {/* Team Selection Dropdown */}
-        <div className="relative">
-          <select
-            value={selectedTeam || ''}
-            onChange={(e) => onTeamSelect(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white appearance-none cursor-pointer hover:border-emerald-500 focus:border-emerald-500 focus:outline-none transition-colors"
-          >
-            <option value="" disabled>Select your team...</option>
-            {availableTeams.map(team => (
-              <option key={team} value={team}>{team}</option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-        </div>
+        {/* Team Selection Dropdown - hide in manual mode */}
+        {!isManualMode && (
+          <div className="relative">
+            <select
+              value={selectedTeam || ''}
+              onChange={(e) => onTeamSelect(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white appearance-none cursor-pointer hover:border-emerald-500 focus:border-emerald-500 focus:outline-none transition-colors"
+            >
+              <option value="" disabled>Select your team...</option>
+              {availableTeams.map(team => (
+                <option key={team} value={team}>{team}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
+        )}
 
-        {selectedTeam && (
+        {/* Manual mode hint */}
+        {isManualMode && (
+          <div className="text-slate-400 text-sm">
+            Use "Enter $" in player queue to add players
+          </div>
+        )}
+
+        {(selectedTeam || isManualMode) && (
           <div className="text-slate-400 mt-2">
             ${moneySpent} spent / ${settings.budgetPerTeam - moneySpent} left
           </div>
         )}
       </div>
 
-      {/* No Team Selected Message */}
-      {!selectedTeam && (
+      {/* No Team Selected Message - only show in non-manual mode */}
+      {!selectedTeam && !isManualMode && (
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center text-slate-500">
             <div className="text-lg mb-2">Select Your Team</div>
@@ -63,8 +74,8 @@ export function RosterPanel({
         </div>
       )}
 
-      {/* Position Groups - Only show when team is selected */}
-      {selectedTeam && (
+      {/* Position Groups - Show when team is selected OR in manual mode */}
+      {(selectedTeam || isManualMode) && (
         <>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {/* Hitters */}

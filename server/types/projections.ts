@@ -179,6 +179,53 @@ export interface CalculatedValuesResult {
     pitcherPoolSize: number;
     hitterBudget: number;
     pitcherBudget: number;
+    leagueType?: 'redraft' | 'dynasty';
+    dynastyWeight?: number;
   };
   players: PlayerWithValue[];
+}
+
+/**
+ * Dynasty ranking from external source (Harry Knows Ball)
+ */
+export interface DynastyRanking {
+  id: string;
+  name: string;
+  team: string;
+  positions: string[];
+  age: number | null;
+  level: 'MLB' | 'AAA' | 'AA' | 'A+' | 'A' | 'other';
+  overallRank: number;
+  positionRank: number;
+  dynastyValue: number; // Raw value from source (typically 1700-10000 range)
+  normalizedValue: number; // 0-100 scale for easy blending
+  trend: {
+    rank7Day: number; // Change in rank (negative = improved)
+    rank30Day: number;
+    value7Day: number;
+    value30Day: number;
+  };
+}
+
+/**
+ * Cache structure for dynasty rankings
+ */
+export interface DynastyRankingsCacheEntry {
+  metadata: {
+    source: string;
+    fetchedAt: string;
+    expiresAt: string;
+    playerCount: number;
+  };
+  rankings: DynastyRanking[];
+}
+
+/**
+ * Player with dynasty-adjusted value
+ */
+export interface PlayerWithDynastyValue extends PlayerWithValue {
+  dynastyRank?: number;
+  dynastyValue?: number; // Raw dynasty value
+  steamerValue?: number; // Original steamer-only auction value
+  blendedScore?: number; // Combined score before dollar conversion
 }

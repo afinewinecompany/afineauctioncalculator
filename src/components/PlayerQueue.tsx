@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, memo } from 'react';
 import { Player, PositionalScarcity } from '../lib/types';
 import { getDraftSurplus } from '../lib/calculations';
 import { getPlayerPhotoUrl } from '../lib/auctionApi';
-import { ArrowUpDown, Filter, TrendingUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User } from 'lucide-react';
+import { ArrowUpDown, Filter, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User, Check, X, UserPlus, Info } from 'lucide-react';
 
 // Players per page for pagination
 const PLAYERS_PER_PAGE = 50;
@@ -11,11 +11,16 @@ interface PlayerQueueProps {
   players: Player[];
   onPlayerClick: (player: Player) => void;
   positionalScarcity?: PositionalScarcity[];
+  isManualMode?: boolean; // When true, allow manual entry of actual $ values
+  onManualDraft?: (player: Player, price: number, toMyTeam: boolean) => void;
 }
 
-export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, positionalScarcity }: PlayerQueueProps) {
+export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, positionalScarcity, isManualMode, onManualDraft }: PlayerQueueProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPosition, setFilterPosition] = useState<string>('all');
+  // Track which player has manual entry input open, and the current input value
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [manualPriceInput, setManualPriceInput] = useState<string>('');
 
   // Build scarcity lookup map for quick access
   const scarcityByPosition = useMemo(() => {
@@ -35,7 +40,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     });
     return highestScarcity;
   }, [scarcityByPosition]);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'available'>('available');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'on_block' | 'drafted'>('available');
   const [sortBy, setSortBy] = useState<'name' | 'projectedValue' | 'adjustedValue'>('adjustedValue');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,12 +60,18 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
 
     const filtered = (players || []).filter(p => {
       // Status filtering:
-      // - 'available' filter: show available and on_block players (NOT drafted)
+      // - 'available' filter: show only available players (NOT on_block, NOT drafted)
+      // - 'on_block' filter: show only players currently being auctioned
+      // - 'drafted' filter: show only drafted players (drafted or onMyTeam)
       // - 'all' filter: show everything
       if (filterStatus === 'available') {
-        // Only show available and on_block - drafted players are excluded
-        if (p.status !== 'available' && p.status !== 'on_block') return false;
+        if (p.status !== 'available') return false;
+      } else if (filterStatus === 'on_block') {
+        if (p.status !== 'on_block') return false;
+      } else if (filterStatus === 'drafted') {
+        if (p.status !== 'drafted' && p.status !== 'onMyTeam') return false;
       }
+      // 'all' filter shows everything - no status filtering
 
       // Position filtering - special handling for UTIL, MI, CI
       if (filterPosition !== 'all') {
@@ -146,14 +157,30 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     setCurrentPage(1);
   }, []);
 
-  const handleStatusFilterChange = useCallback(() => {
-    setFilterStatus(prev => prev === 'all' ? 'available' : 'all');
+  const handleStatusFilterChange = useCallback((status: 'all' | 'available' | 'on_block' | 'drafted') => {
+    setFilterStatus(status);
     setCurrentPage(1);
   }, []);
 
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
+  }, []);
+
+  // Handler for manual draft entry
+  const handleManualDraftSubmit = useCallback((player: Player, toMyTeam: boolean) => {
+    const price = parseInt(manualPriceInput, 10);
+    if (!isNaN(price) && price >= 0 && onManualDraft) {
+      onManualDraft(player, price, toMyTeam);
+      setEditingPlayerId(null);
+      setManualPriceInput('');
+    }
+  }, [manualPriceInput, onManualDraft]);
+
+  // Cancel manual entry
+  const handleManualDraftCancel = useCallback(() => {
+    setEditingPlayerId(null);
+    setManualPriceInput('');
   }, []);
 
   const positions = ['all', 'C', '1B', '2B', '3B', 'SS', 'OF', 'CI', 'MI', 'UTIL', 'SP', 'RP', 'P'];
@@ -184,16 +211,25 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
             className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
           />
 
-          <button
-            onClick={handleStatusFilterChange}
-            className={`px-4 py-2 rounded-lg transition-all ${
-              filterStatus === 'available'
-                ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/30'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
-            }`}
-          >
-            {filterStatus === 'available' ? 'Available Only' : 'Show All'}
-          </button>
+          <div className="flex items-center gap-1">
+            {(['all', 'available', 'on_block', 'drafted'] as const).map(status => (
+              <button
+                key={status}
+                onClick={() => handleStatusFilterChange(status)}
+                className={`px-3 py-2 rounded-lg transition-all text-sm ${
+                  filterStatus === status
+                    ? status === 'on_block'
+                      ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30'
+                      : status === 'drafted'
+                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg shadow-slate-500/30'
+                      : 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/30'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
+                }`}
+              >
+                {status === 'all' ? 'All' : status === 'available' ? 'Available' : status === 'on_block' ? 'On Block' : 'Drafted'}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -225,27 +261,58 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
         <div className="col-span-2 text-slate-300">Position</div>
         <button
           onClick={() => handleSort('projectedValue')}
-          className="col-span-2 flex items-center gap-1 text-slate-300 hover:text-white transition-colors"
+          className="col-span-2 flex items-center gap-1 text-slate-300 hover:text-white transition-colors group relative"
         >
           Proj $ <ArrowUpDown className="w-3 h-3" />
+          <span className="ml-1 text-slate-500 group-hover:text-slate-400">
+            <Info className="w-3 h-3" />
+          </span>
+          <span className="absolute left-0 top-full mt-2 w-48 p-2 bg-slate-800 border border-slate-600 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+            Original Projected Auction Value based on projections and league settings
+          </span>
         </button>
         <button
           onClick={() => handleSort('adjustedValue')}
-          className="col-span-2 flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors"
+          className="col-span-2 flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors group relative"
         >
           Adj $ <ArrowUpDown className="w-3 h-3" />
+          <span className="ml-1 text-emerald-500/50 group-hover:text-emerald-400/70">
+            <Info className="w-3 h-3" />
+          </span>
+          <span className="absolute left-0 top-full mt-2 w-52 p-2 bg-slate-800 border border-emerald-600/50 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+            Adjusted Projected Value inclusive of current inflation rate based on draft results
+          </span>
         </button>
-        <div className="col-span-1 text-slate-300">Actual $</div>
+        <div className="col-span-1 text-slate-300 flex items-center gap-1 group relative">
+          Actual $
+          <span className="text-slate-500 group-hover:text-slate-400">
+            <Info className="w-3 h-3" />
+          </span>
+          <span className="absolute left-0 top-full mt-2 w-44 p-2 bg-slate-800 border border-slate-600 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+            Player's actual cost from Couch Managers auction
+          </span>
+        </div>
         <div className="col-span-2 text-slate-300">Key Stats</div>
       </div>
 
       {/* Player List */}
       <div className="flex-1 overflow-y-auto">
         {visiblePlayers.map((player) => {
-          const isPitcher = player.positions.some(p => ['SP', 'RP'].includes(p));
-          const keyStats = isPitcher
-            ? `${player.projectedStats.W}W ${player.projectedStats.K}K ${player.projectedStats.ERA?.toFixed(2)}ERA`
-            : `${player.projectedStats.HR}HR ${player.projectedStats.RBI}RBI ${player.projectedStats.AVG?.toFixed(3)}AVG`;
+          const isPitcher = player.positions.some(p => ['SP', 'RP', 'P'].includes(p));
+          const isHitter = player.positions.some(p => !['SP', 'RP', 'P'].includes(p));
+          const isTwoWay = player.isTwoWayPlayer || (isPitcher && isHitter);
+
+          // For two-way players, show both hitting and pitching stats
+          let keyStats: string;
+          if (isTwoWay) {
+            const hitStats = `${player.projectedStats.HR}HR ${player.projectedStats.SB}SB`;
+            const pitchStats = `${player.projectedStats.W}W ${player.projectedStats.ERA?.toFixed(2)}ERA`;
+            keyStats = `${hitStats} | ${pitchStats}`;
+          } else if (isPitcher) {
+            keyStats = `${player.projectedStats.W}W ${player.projectedStats.K}K ${player.projectedStats.ERA?.toFixed(2)}ERA`;
+          } else {
+            keyStats = `${player.projectedStats.HR}HR ${player.projectedStats.RBI}RBI ${player.projectedStats.AVG?.toFixed(3)}AVG`;
+          }
 
           // For available players: show inflation-adjusted value change
           // For drafted players: show surplus/deficit (how much over/under projection)
@@ -295,17 +362,27 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-white hover:text-emerald-400 transition-colors truncate">{player.name}</span>
+                      {isTwoWay && (
+                        <span className="px-1.5 py-0.5 text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/40 rounded-full">
+                          2-WAY
+                        </span>
+                      )}
                       {isOnBlock && (
-                        <span className="px-2 py-0.5 text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-full">
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-red-600 text-white border border-red-500 rounded-full animate-pulse">
                           LIVE
                         </span>
                       )}
                     </div>
                     {player.tier && (
-                      <div className="text-slate-500 text-sm">Tier {player.tier}</div>
+                      <div className={`text-sm ${isOnBlock ? 'text-slate-200' : 'text-slate-500'}`}>Tier {player.tier}</div>
                     )}
-                    {isOnBlock && player.currentBidder && (
-                      <div className="text-amber-300/70 text-xs">High: {player.currentBidder}</div>
+                    {isOnBlock && (
+                      <div className="text-white text-xs flex items-center gap-2 font-medium">
+                        {player.currentBidder && <span>High: {player.currentBidder}</span>}
+                        {player.timeRemaining !== undefined && player.timeRemaining > 0 && (
+                          <span className="text-yellow-400 font-bold">{player.timeRemaining}s</span>
+                        )}
+                      </div>
                     )}
                     {isDrafted && player.draftedBy && (
                       <div className="text-slate-500 text-xs">{player.draftedBy}</div>
@@ -315,7 +392,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
               </div>
 
               <div className="col-span-2 flex items-center gap-2">
-                <span className="text-slate-400">{player.positions.join(', ')}</span>
+                <span className={isOnBlock ? 'text-white' : 'text-slate-400'}>{player.positions.join(', ')}</span>
                 {/* Scarcity Badge */}
                 {playerScarcity && playerScarcity.scarcityLevel !== 'normal' && playerScarcity.scarcityLevel !== 'surplus' && (
                   <span
@@ -332,7 +409,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                 )}
               </div>
 
-              <div className="col-span-2 text-slate-400">
+              <div className="col-span-2 text-white">
                 ${player.projectedValue}
               </div>
 
@@ -356,34 +433,135 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                     </div>
                   </>
                 ) : (
-                  // For available/on_block players: show inflation-adjusted value
-                  <>
-                    <div className={isOnBlock ? 'text-amber-400' : 'text-emerald-400'}>${player.adjustedValue}</div>
+                  // For available/on_block players: show inflation-adjusted value with comparison indicator
+                  <div className="flex items-center gap-1">
+                    <span className="text-white">${player.adjustedValue}</span>
+                    {/* Value comparison indicator: Adj $ vs Proj $ */}
                     {valueChange !== null && valueChange !== 0 && (
-                      <div className={`text-xs ${valueChange > 0 ? 'text-amber-500' : 'text-blue-400'}`}>
-                        {valueChange > 0 ? '+' : ''}{valueChange}
-                      </div>
+                      (() => {
+                        if (valueChange > 0) {
+                          // Adjusted value is HIGHER than projected = inflation (red down arrow)
+                          return (
+                            <span
+                              className="inline-flex items-center text-red-400"
+                              title={`$${valueChange} above projected value due to inflation`}
+                            >
+                              <TrendingUp className="w-3.5 h-3.5" />
+                              <span className="text-xs ml-0.5">+{valueChange}</span>
+                            </span>
+                          );
+                        } else {
+                          // Adjusted value is LOWER than projected = deflation (green down arrow)
+                          return (
+                            <span
+                              className="inline-flex items-center text-emerald-400"
+                              title={`$${Math.abs(valueChange)} below projected value`}
+                            >
+                              <TrendingDown className="w-3.5 h-3.5" />
+                              <span className="text-xs ml-0.5">{valueChange}</span>
+                            </span>
+                          );
+                        }
+                      })()
                     )}
-                  </>
+                  </div>
                 )}
               </div>
 
               {/* Actual Cost Column */}
-              <div className="col-span-1">
-                {actualCost !== null && actualCost !== undefined ? (
-                  <div className={`font-medium ${
-                    isOnBlock ? 'text-amber-400' :
-                    isDrafted ? 'text-slate-300' :
-                    'text-slate-500'
-                  }`}>
-                    ${actualCost}
+              <div className="col-span-1" onClick={(e) => e.stopPropagation()}>
+                {/* Manual mode: show input for available players */}
+                {isManualMode && !isDrafted && editingPlayerId === player.id ? (
+                  <div className="flex items-center gap-1">
+                    <span className="text-slate-400">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={manualPriceInput}
+                      onChange={(e) => setManualPriceInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleManualDraftSubmit(player, true);
+                        if (e.key === 'Escape') handleManualDraftCancel();
+                      }}
+                      autoFocus
+                      className="w-12 px-1 py-0.5 bg-slate-700 border border-emerald-500 rounded text-white text-sm focus:outline-none"
+                      placeholder="0"
+                    />
+                    <button
+                      onClick={() => handleManualDraftSubmit(player, true)}
+                      className="p-0.5 text-emerald-400 hover:text-emerald-300 transition-colors"
+                      title="Add to My Team"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleManualDraftSubmit(player, false)}
+                      className="p-0.5 text-blue-400 hover:text-blue-300 transition-colors"
+                      title="Mark as Drafted (Other Team)"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleManualDraftCancel}
+                      className="p-0.5 text-slate-400 hover:text-slate-300 transition-colors"
+                      title="Cancel"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : isManualMode && !isDrafted ? (
+                  <button
+                    onClick={() => {
+                      setEditingPlayerId(player.id);
+                      setManualPriceInput(String(player.adjustedValue));
+                    }}
+                    className="px-2 py-0.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded border border-slate-600 hover:border-emerald-500 transition-all"
+                  >
+                    Enter $
+                  </button>
+                ) : actualCost !== null && actualCost !== undefined ? (
+                  <div className="flex items-center gap-1">
+                    <span className="text-white font-medium">
+                      ${actualCost}
+                    </span>
+                    {/* Value comparison indicator for on_block players */}
+                    {isOnBlock && player.currentBid !== undefined && (
+                      (() => {
+                        const bidDiff = player.adjustedValue - player.currentBid;
+                        if (bidDiff > 0) {
+                          // Current bid is LESS than adjusted value = good deal (green up arrow)
+                          return (
+                            <span
+                              className="inline-flex items-center text-emerald-400"
+                              title={`$${bidDiff} below adjusted value - good deal!`}
+                            >
+                              <TrendingUp className="w-3.5 h-3.5" />
+                              <span className="text-xs ml-0.5">+{bidDiff}</span>
+                            </span>
+                          );
+                        } else if (bidDiff < 0) {
+                          // Current bid is MORE than adjusted value = overpaying (red down arrow)
+                          return (
+                            <span
+                              className="inline-flex items-center text-red-400"
+                              title={`$${Math.abs(bidDiff)} above adjusted value - overpaying!`}
+                            >
+                              <TrendingDown className="w-3.5 h-3.5" />
+                              <span className="text-xs ml-0.5">{bidDiff}</span>
+                            </span>
+                          );
+                        }
+                        // Even - no indicator needed
+                        return null;
+                      })()
+                    )}
                   </div>
                 ) : (
-                  <span className="text-slate-600">—</span>
+                  <span className={isOnBlock ? 'text-slate-300' : 'text-slate-600'}>—</span>
                 )}
               </div>
 
-              <div className="col-span-2 text-slate-400">
+              <div className={`col-span-2 ${isOnBlock ? 'text-white' : 'text-slate-400'}`}>
                 {keyStats}
               </div>
             </div>

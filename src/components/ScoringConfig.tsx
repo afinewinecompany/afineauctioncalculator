@@ -1,5 +1,14 @@
+import { useState } from 'react';
 import { LeagueSettings } from '../lib/types';
-import { Trophy, Target } from 'lucide-react';
+import { Trophy, Target, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  hittingCategorySections,
+  pitchingCategorySections,
+  hittingPointSections,
+  pitchingPointSections,
+  hittingPointOptions,
+  pitchingPointOptions,
+} from '../lib/scoringCategories';
 
 interface ScoringConfigProps {
   settings: LeagueSettings;
@@ -10,55 +19,26 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
   const isCategories = settings.scoringType === 'rotisserie' || settings.scoringType === 'h2h-categories';
   const isPoints = settings.scoringType === 'h2h-points';
 
-  const hittingCategoryOptions = [
-    { key: 'R', label: 'Runs (R)', description: 'Runs scored' },
-    { key: 'HR', label: 'Home Runs (HR)', description: 'Home runs hit' },
-    { key: 'RBI', label: 'RBI', description: 'Runs batted in' },
-    { key: 'SB', label: 'Stolen Bases (SB)', description: 'Bases stolen' },
-    { key: 'AVG', label: 'Batting Average (AVG)', description: 'Hits divided by at-bats' },
-    { key: 'OBP', label: 'On-Base % (OBP)', description: 'On-base percentage' },
-    { key: 'SLG', label: 'Slugging % (SLG)', description: 'Slugging percentage' },
-    { key: 'OPS', label: 'OPS', description: 'On-base plus slugging' },
-    { key: 'H', label: 'Hits (H)', description: 'Total hits' },
-    { key: 'XBH', label: 'Extra Base Hits (XBH)', description: '2B + 3B + HR' }
-  ];
+  // Collapsed sections state for categories
+  const [expandedHitting, setExpandedHitting] = useState<Record<string, boolean>>({
+    'Core Stats': true,
+    'Rate Stats': true,
+  });
+  const [expandedPitching, setExpandedPitching] = useState<Record<string, boolean>>({
+    'Core Stats': true,
+    'Rate Stats': true,
+  });
+  // Collapsed sections state for points
+  const [expandedHittingPoints, setExpandedHittingPoints] = useState<Record<string, boolean>>({
+    'Core Stats': true,
+    'Negative Stats': true,
+  });
+  const [expandedPitchingPoints, setExpandedPitchingPoints] = useState<Record<string, boolean>>({
+    'Core Stats': true,
+    'Negative Stats': true,
+  });
 
-  const pitchingCategoryOptions = [
-    { key: 'W', label: 'Wins (W)', description: 'Pitching wins' },
-    { key: 'K', label: 'Strikeouts (K)', description: 'Strikeouts pitched' },
-    { key: 'ERA', label: 'ERA', description: 'Earned run average' },
-    { key: 'WHIP', label: 'WHIP', description: 'Walks + hits per inning' },
-    { key: 'SV', label: 'Saves (SV)', description: 'Games saved' },
-    { key: 'QS', label: 'Quality Starts (QS)', description: '6+ IP, 3 or fewer ER' },
-    { key: 'K_BB', label: 'K/BB Ratio', description: 'Strikeout to walk ratio' },
-    { key: 'K9', label: 'K/9', description: 'Strikeouts per 9 innings' },
-    { key: 'IP', label: 'Innings Pitched (IP)', description: 'Total innings pitched' },
-    { key: 'SV_HD', label: 'SV+HD', description: 'Saves plus holds' }
-  ];
-
-  const hittingPointOptions = [
-    { key: 'H', label: 'Single (1B)', defaultValue: 1 },
-    { key: '2B', label: 'Double (2B)', defaultValue: 2 },
-    { key: '3B', label: 'Triple (3B)', defaultValue: 3 },
-    { key: 'HR', label: 'Home Run (HR)', defaultValue: 4 },
-    { key: 'RBI', label: 'RBI', defaultValue: 1 },
-    { key: 'R', label: 'Run (R)', defaultValue: 1 },
-    { key: 'SB', label: 'Stolen Base (SB)', defaultValue: 2 },
-    { key: 'BB', label: 'Walk (BB)', defaultValue: 1 },
-    { key: 'K_hitter', label: 'Strikeout (K)', defaultValue: -1 }
-  ];
-
-  const pitchingPointOptions = [
-    { key: 'IP', label: 'Inning Pitched (IP)', defaultValue: 3 },
-    { key: 'W', label: 'Win (W)', defaultValue: 5 },
-    { key: 'K_pitcher', label: 'Strikeout (K)', defaultValue: 1 },
-    { key: 'QS', label: 'Quality Start (QS)', defaultValue: 3 },
-    { key: 'SV', label: 'Save (SV)', defaultValue: 5 },
-    { key: 'HD', label: 'Hold (HD)', defaultValue: 3 },
-    { key: 'ER', label: 'Earned Run (ER)', defaultValue: -2 },
-    { key: 'H_allowed', label: 'Hit Allowed (H)', defaultValue: -1 },
-    { key: 'BB_allowed', label: 'Walk Allowed (BB)', defaultValue: -1 }
-  ];
+  // Note: All category and point sections are now imported from '../lib/scoringCategories'
 
   const toggleCategory = (type: 'hitting' | 'pitching', key: string) => {
     if (type === 'hitting') {
@@ -121,59 +101,127 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
       {isCategories && (
         <div className="grid grid-cols-2 gap-6">
           {/* Hitting Categories */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-            <h3 className="text-emerald-400 mb-4 flex items-center gap-2">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 max-h-[600px] overflow-y-auto">
+            <h3 className="text-emerald-400 mb-4 flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm">
               <Target className="w-5 h-5" />
               Hitting Categories
+              <span className="ml-auto text-sm text-slate-400">
+                {Object.values(settings.hittingCategories || {}).filter(Boolean).length} selected
+              </span>
             </h3>
-            <div className="space-y-2">
-              {hittingCategoryOptions.map(option => (
-                <label
-                  key={option.key}
-                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer group"
-                >
-                  <input
-                    type="checkbox"
-                    checked={settings.hittingCategories?.[option.key as keyof typeof settings.hittingCategories] || false}
-                    onChange={() => toggleCategory('hitting', option.key)}
-                    className="mt-1 w-5 h-5 rounded border-slate-600 text-red-600 focus:ring-red-500 focus:ring-offset-slate-900 cursor-pointer"
-                  />
-                  <div className="flex-1">
-                    <div className="text-white group-hover:text-emerald-400 transition-colors">
-                      {option.label}
+            <div className="space-y-4">
+              {hittingCategorySections.map(section => (
+                <div key={section.name} className="border border-slate-700/50 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedHitting(prev => ({ ...prev, [section.name]: !prev[section.name] }))}
+                    className="w-full flex items-center gap-2 p-3 bg-slate-700/30 hover:bg-slate-700/50 transition-colors text-left"
+                  >
+                    {expandedHitting[section.name] ? (
+                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    )}
+                    <span className="text-slate-300 font-medium">{section.name}</span>
+                    <span className="ml-auto text-xs text-slate-500">
+                      {section.options.filter(o => settings.hittingCategories?.[o.key as keyof typeof settings.hittingCategories]).length}/{section.options.length}
+                    </span>
+                  </button>
+                  {expandedHitting[section.name] && (
+                    <div className="p-2 space-y-1">
+                      {section.options.map(option => (
+                        <label
+                          key={option.key}
+                          className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer group"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={settings.hittingCategories?.[option.key as keyof typeof settings.hittingCategories] || false}
+                            onChange={() => toggleCategory('hitting', option.key)}
+                            className="mt-0.5 w-4 h-4 rounded border-slate-600 text-red-600 focus:ring-red-500 focus:ring-offset-slate-900 cursor-pointer"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-sm group-hover:text-emerald-400 transition-colors">
+                                {option.label}
+                              </span>
+                              {option.isRatio && (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded">RATIO</span>
+                              )}
+                              {option.isNegative && (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-red-500/20 text-red-300 rounded">NEG</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-500 truncate">{option.description}</div>
+                          </div>
+                        </label>
+                      ))}
                     </div>
-                    <div className="text-sm text-slate-500">{option.description}</div>
-                  </div>
-                </label>
+                  )}
+                </div>
               ))}
             </div>
           </div>
 
           {/* Pitching Categories */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-            <h3 className="text-blue-400 mb-4 flex items-center gap-2">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 max-h-[600px] overflow-y-auto">
+            <h3 className="text-blue-400 mb-4 flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm">
               <Target className="w-5 h-5" />
               Pitching Categories
+              <span className="ml-auto text-sm text-slate-400">
+                {Object.values(settings.pitchingCategories || {}).filter(Boolean).length} selected
+              </span>
             </h3>
-            <div className="space-y-2">
-              {pitchingCategoryOptions.map(option => (
-                <label
-                  key={option.key}
-                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer group"
-                >
-                  <input
-                    type="checkbox"
-                    checked={settings.pitchingCategories?.[option.key as keyof typeof settings.pitchingCategories] || false}
-                    onChange={() => toggleCategory('pitching', option.key)}
-                    className="mt-1 w-5 h-5 rounded border-slate-600 text-red-600 focus:ring-red-500 focus:ring-offset-slate-900 cursor-pointer"
-                  />
-                  <div className="flex-1">
-                    <div className="text-white group-hover:text-blue-400 transition-colors">
-                      {option.label}
+            <div className="space-y-4">
+              {pitchingCategorySections.map(section => (
+                <div key={section.name} className="border border-slate-700/50 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPitching(prev => ({ ...prev, [section.name]: !prev[section.name] }))}
+                    className="w-full flex items-center gap-2 p-3 bg-slate-700/30 hover:bg-slate-700/50 transition-colors text-left"
+                  >
+                    {expandedPitching[section.name] ? (
+                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    )}
+                    <span className="text-slate-300 font-medium">{section.name}</span>
+                    <span className="ml-auto text-xs text-slate-500">
+                      {section.options.filter(o => settings.pitchingCategories?.[o.key as keyof typeof settings.pitchingCategories]).length}/{section.options.length}
+                    </span>
+                  </button>
+                  {expandedPitching[section.name] && (
+                    <div className="p-2 space-y-1">
+                      {section.options.map(option => (
+                        <label
+                          key={option.key}
+                          className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer group"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={settings.pitchingCategories?.[option.key as keyof typeof settings.pitchingCategories] || false}
+                            onChange={() => toggleCategory('pitching', option.key)}
+                            className="mt-0.5 w-4 h-4 rounded border-slate-600 text-red-600 focus:ring-red-500 focus:ring-offset-slate-900 cursor-pointer"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-sm group-hover:text-blue-400 transition-colors">
+                                {option.label}
+                              </span>
+                              {option.isRatio && (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded">RATIO</span>
+                              )}
+                              {option.isNegative && (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-red-500/20 text-red-300 rounded">NEG</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-500 truncate">{option.description}</div>
+                          </div>
+                        </label>
+                      ))}
                     </div>
-                    <div className="text-sm text-slate-500">{option.description}</div>
-                  </div>
-                </label>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -184,48 +232,110 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
       {isPoints && (
         <div className="grid grid-cols-2 gap-6">
           {/* Hitting Points */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-            <h3 className="text-emerald-400 mb-4 flex items-center gap-2">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 max-h-[600px] overflow-y-auto">
+            <h3 className="text-emerald-400 mb-4 flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm">
               <Target className="w-5 h-5" />
               Hitting Point Values
+              <span className="ml-auto text-sm text-slate-400">
+                {hittingPointOptions.filter(o => (settings.pointsSettings?.[o.key as keyof typeof settings.pointsSettings] ?? o.defaultValue) !== 0).length} active
+              </span>
             </h3>
-            <div className="space-y-3">
-              {hittingPointOptions.map(option => (
-                <div key={option.key} className="flex items-center justify-between group">
-                  <label className="text-slate-300 group-hover:text-white transition-colors">
-                    {option.label}
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.pointsSettings?.[option.key as keyof typeof settings.pointsSettings] ?? option.defaultValue}
-                    onChange={(e) => updatePointValue(option.key, Number(e.target.value))}
-                    className="w-24 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-center focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                    step="0.5"
-                  />
+            <div className="space-y-4">
+              {hittingPointSections.map(section => (
+                <div key={section.name} className="border border-slate-700/50 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedHittingPoints(prev => ({ ...prev, [section.name]: !prev[section.name] }))}
+                    className="w-full flex items-center gap-2 p-3 bg-slate-700/30 hover:bg-slate-700/50 transition-colors text-left"
+                  >
+                    {expandedHittingPoints[section.name] ? (
+                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    )}
+                    <span className="text-slate-300 font-medium">{section.name}</span>
+                    <span className="ml-auto text-xs text-slate-500">
+                      {section.options.filter(o => (settings.pointsSettings?.[o.key as keyof typeof settings.pointsSettings] ?? o.defaultValue) !== 0).length}/{section.options.length}
+                    </span>
+                  </button>
+                  {expandedHittingPoints[section.name] && (
+                    <div className="p-2 space-y-1">
+                      {section.options.map(option => (
+                        <div key={option.key} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/50 transition-colors group">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-slate-300 text-sm group-hover:text-emerald-400 transition-colors">
+                              {option.label}
+                            </span>
+                            {option.description && (
+                              <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-slate-600/50 text-slate-400 rounded">{option.description}</span>
+                            )}
+                          </div>
+                          <input
+                            type="number"
+                            value={settings.pointsSettings?.[option.key as keyof typeof settings.pointsSettings] ?? option.defaultValue}
+                            onChange={(e) => updatePointValue(option.key, Number(e.target.value))}
+                            className="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white text-center text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                            step="0.5"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
           {/* Pitching Points */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-            <h3 className="text-blue-400 mb-4 flex items-center gap-2">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 max-h-[600px] overflow-y-auto">
+            <h3 className="text-blue-400 mb-4 flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm">
               <Target className="w-5 h-5" />
               Pitching Point Values
+              <span className="ml-auto text-sm text-slate-400">
+                {pitchingPointOptions.filter(o => (settings.pointsSettings?.[o.key as keyof typeof settings.pointsSettings] ?? o.defaultValue) !== 0).length} active
+              </span>
             </h3>
-            <div className="space-y-3">
-              {pitchingPointOptions.map(option => (
-                <div key={option.key} className="flex items-center justify-between group">
-                  <label className="text-slate-300 group-hover:text-white transition-colors">
-                    {option.label}
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.pointsSettings?.[option.key as keyof typeof settings.pointsSettings] ?? option.defaultValue}
-                    onChange={(e) => updatePointValue(option.key, Number(e.target.value))}
-                    className="w-24 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-center focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                    step="0.5"
-                  />
+            <div className="space-y-4">
+              {pitchingPointSections.map(section => (
+                <div key={section.name} className="border border-slate-700/50 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPitchingPoints(prev => ({ ...prev, [section.name]: !prev[section.name] }))}
+                    className="w-full flex items-center gap-2 p-3 bg-slate-700/30 hover:bg-slate-700/50 transition-colors text-left"
+                  >
+                    {expandedPitchingPoints[section.name] ? (
+                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    )}
+                    <span className="text-slate-300 font-medium">{section.name}</span>
+                    <span className="ml-auto text-xs text-slate-500">
+                      {section.options.filter(o => (settings.pointsSettings?.[o.key as keyof typeof settings.pointsSettings] ?? o.defaultValue) !== 0).length}/{section.options.length}
+                    </span>
+                  </button>
+                  {expandedPitchingPoints[section.name] && (
+                    <div className="p-2 space-y-1">
+                      {section.options.map(option => (
+                        <div key={option.key} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-700/50 transition-colors group">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-slate-300 text-sm group-hover:text-blue-400 transition-colors">
+                              {option.label}
+                            </span>
+                            {option.description && (
+                              <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-slate-600/50 text-slate-400 rounded">{option.description}</span>
+                            )}
+                          </div>
+                          <input
+                            type="number"
+                            value={settings.pointsSettings?.[option.key as keyof typeof settings.pointsSettings] ?? option.defaultValue}
+                            onChange={(e) => updatePointValue(option.key, Number(e.target.value))}
+                            className="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white text-center text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                            step="0.5"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
