@@ -30,12 +30,22 @@ interface PlayerQueueProps {
   isManualMode?: boolean; // When true, allow manual entry of actual $ values
   onManualDraft?: (player: Player, price: number, toMyTeam: boolean) => void;
   isMobile?: boolean;
+  /**
+   * Maximum number of players to show in the queue.
+   * Players are sorted by projected value and only the top N are shown.
+   * This prevents MiLB prospects from appearing - they won't be in top projections.
+   * Default: 550 (enough for 10-team x 40-roster league + 150 buffer)
+   */
+  maxPlayers?: number;
 }
 
 // Mobile-specific row height for card layout
 const MOBILE_ROW_HEIGHT = 100;
 
-export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, positionalScarcity, isManualMode, onManualDraft, isMobile }: PlayerQueueProps) {
+// Default max players - enough for a large league plus buffer for variance
+const DEFAULT_MAX_PLAYERS = 550;
+
+export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, positionalScarcity, isManualMode, onManualDraft, isMobile, maxPlayers = DEFAULT_MAX_PLAYERS }: PlayerQueueProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPosition, setFilterPosition] = useState<string>('all');
   // Track which player has manual entry input open, and the current input value
@@ -79,11 +89,31 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     }
   };
 
+  // Pre-filter to only include top N players by projected value
+  // This is the key to preventing MiLB prospects from appearing - they won't be in top projections
+  const topPlayers = useMemo(() => {
+    if (!players || players.length === 0) return [];
+
+    // Sort all players by projected value descending
+    const sortedByValue = [...players].sort((a, b) => b.projectedValue - a.projectedValue);
+
+    // Take top N players, but ALWAYS include drafted/on_block players regardless of value
+    // (we need to track auction activity even for low-value players)
+    const topN = new Set(sortedByValue.slice(0, maxPlayers).map(p => p.id));
+
+    return players.filter(p =>
+      topN.has(p.id) ||
+      p.status === 'drafted' ||
+      p.status === 'onMyTeam' ||
+      p.status === 'on_block'
+    );
+  }, [players, maxPlayers]);
+
   // Memoize filtered and sorted players to avoid recalculating on every render
   const filteredPlayers = useMemo(() => {
     const searchLower = searchQuery.toLowerCase();
 
-    const filtered = (players || []).filter(p => {
+    const filtered = (topPlayers || []).filter(p => {
       // Status filtering:
       // - 'available' filter: show only available players (NOT on_block, NOT drafted)
       // - 'on_block' filter: show only players currently being auctioned
@@ -160,7 +190,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     });
 
     return filtered;
-  }, [players, filterStatus, filterPosition, searchQuery, sortBy, sortOrder, hideMiLB]);
+  }, [topPlayers, filterStatus, filterPosition, searchQuery, sortBy, sortOrder, hideMiLB]);
 
   // Determine if virtualization should be used
   const useVirtualization = filteredPlayers.length > VIRTUALIZATION_THRESHOLD;

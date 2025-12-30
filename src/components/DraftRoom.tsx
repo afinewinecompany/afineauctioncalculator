@@ -17,6 +17,9 @@ const SYNC_INTERVAL_MS = 2 * 60 * 1000; // Sync interval: 2 minutes
 const INITIAL_SYNC_DELAY_MS = 300; // Delay before first sync to let component mount
 const LOADING_TRANSITION_DELAY_MS = 300; // Delay for smooth loading transition
 
+// Buffer for draft pool size (extra players beyond roster needs for variance)
+const DRAFT_POOL_BUFFER = 150;
+
 interface DraftRoomProps {
   settings: LeagueSettings;
   players: Player[];
@@ -35,6 +38,16 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   // Mobile detection and tab state
   const isMobile = useIsMobile();
   const [mobileActiveTab, setMobileActiveTab] = useState<'players' | 'roster'>('players');
+
+  // Calculate max players to show in queue (draft pool size + buffer)
+  // This prevents MiLB prospects from appearing - they won't be in top projections
+  const maxPlayersInQueue = useMemo(() => {
+    const rs = settings.rosterSpots;
+    const totalRosterSpots = rs.C + rs['1B'] + rs['2B'] + rs['3B'] + rs.SS +
+      rs.OF + rs.CI + rs.MI + rs.UTIL +
+      rs.SP + rs.RP + rs.P + rs.Bench;
+    return settings.numTeams * totalRosterSpots + DRAFT_POOL_BUFFER;
+  }, [settings]);
 
   // Team selection for "My Team"
   const [availableTeams, setAvailableTeams] = useState<string[]>([]);
@@ -629,6 +642,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                     isManualMode={isManualMode}
                     onManualDraft={handleManualDraft}
                     isMobile={true}
+                    maxPlayers={maxPlayersInQueue}
                   />
                 </div>
               </TabsContent>
@@ -657,6 +671,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                   positionalScarcity={inflationResult.positionalScarcity}
                   isManualMode={isManualMode}
                   onManualDraft={handleManualDraft}
+                  maxPlayers={maxPlayersInQueue}
                 />
               </div>
 
