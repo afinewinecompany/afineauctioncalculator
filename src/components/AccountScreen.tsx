@@ -1,112 +1,15 @@
-import { useState } from 'react';
 import { UserData, SubscriptionInfo } from '../lib/types';
-import { User, Mail, Lock, CreditCard, CheckCircle, Crown, ArrowLeft, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, CreditCard, CheckCircle, Crown, ArrowLeft, Clock } from 'lucide-react';
 
 interface AccountScreenProps {
   userData: UserData;
-  onUpdateUser: (updatedUser: UserData) => void;
+  onUpdateUser?: (updatedUser: UserData) => void; // Reserved for future use
   onBack: () => void;
 }
 
-export function AccountScreen({ userData, onUpdateUser, onBack }: AccountScreenProps) {
-  const [email, setEmail] = useState(userData.email);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [emailSaved, setEmailSaved] = useState(false);
-  const [passwordSaved, setPasswordSaved] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-
+export function AccountScreen({ userData, onBack }: AccountScreenProps) {
   const isGoogleUser = userData.authProvider === 'google';
   const subscription = userData.subscription || { tier: 'free', status: 'active' } as SubscriptionInfo;
-
-  const handleEmailUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    setEmailError(null);
-
-    if (!email.trim()) {
-      setEmailError('Email is required');
-      return;
-    }
-
-    if (!email.includes('@')) {
-      setEmailError('Please enter a valid email address');
-      return;
-    }
-
-    onUpdateUser({
-      ...userData,
-      email
-    });
-    setEmailSaved(true);
-    setTimeout(() => setEmailSaved(false), 3000);
-  };
-
-  const handlePasswordUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-
-    if (!currentPassword) {
-      setPasswordError('Current password is required');
-      return;
-    }
-
-    if (!newPassword) {
-      setPasswordError('New password is required');
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return;
-    }
-
-    // In a real app, this would verify the current password and update via API
-    // For now, we'll just show success
-    setPasswordSaved(true);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setTimeout(() => setPasswordSaved(false), 3000);
-  };
-
-  const handleUpgradeClick = () => {
-    // In a real app, this would redirect to Stripe checkout
-    // For demo purposes, we'll simulate an upgrade
-    const updatedSubscription: SubscriptionInfo = {
-      tier: 'premium',
-      status: 'active',
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-      cancelAtPeriodEnd: false
-    };
-
-    onUpdateUser({
-      ...userData,
-      subscription: updatedSubscription
-    });
-  };
-
-  const handleCancelSubscription = () => {
-    if (!confirm('Are you sure you want to cancel your subscription? You will keep access until the end of your current billing period.')) {
-      return;
-    }
-
-    onUpdateUser({
-      ...userData,
-      subscription: {
-        ...subscription,
-        cancelAtPeriodEnd: true
-      }
-    });
-  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -163,126 +66,45 @@ export function AccountScreen({ userData, onUpdateUser, onBack }: AccountScreenP
               <h2 className="text-xl text-white">Email Address</h2>
             </div>
 
-            <form onSubmit={handleEmailUpdate} className="space-y-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-slate-300 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                  placeholder="Enter your email"
-                />
-              </div>
-
-              {emailError && (
-                <div className="flex items-center gap-2 text-red-400 text-sm">
-                  <AlertCircle className="w-4 h-4" />
-                  {emailError}
+                <label className="block text-slate-300 mb-2">Current Email</label>
+                <div className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-slate-300">
+                  {userData.email}
                 </div>
-              )}
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30"
-                >
-                  Update Email
-                </button>
-                {emailSaved && (
-                  <span className="flex items-center gap-2 text-emerald-400 text-sm">
-                    <CheckCircle className="w-4 h-4" />
-                    Email updated successfully
-                  </span>
-                )}
               </div>
-            </form>
+
+              <div className="flex items-center gap-3 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                <div>
+                  <p className="text-amber-300 font-medium">Email Changes Coming Soon</p>
+                  <p className="text-slate-400 text-sm">
+                    Email updates require verification which is not yet implemented. This feature will be available in a future update.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Password Section - Only show for email users */}
           {!isGoogleUser && (
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-6 shadow-xl backdrop-blur-sm animate-slideInLeft" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-purple-600/20 rounded-lg flex items-center justify-center">
                   <Lock className="w-5 h-5 text-purple-400" />
                 </div>
                 <h2 className="text-xl text-white">Change Password</h2>
               </div>
 
-              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                <Clock className="w-6 h-6 text-amber-400 flex-shrink-0" />
                 <div>
-                  <label className="block text-slate-300 mb-2">Current Password</label>
-                  <div className="relative">
-                    <input
-                      type={showCurrentPassword ? 'text' : 'password'}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all pr-12"
-                      placeholder="Enter current password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                    >
-                      {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
+                  <p className="text-amber-300 font-medium">Coming Soon</p>
+                  <p className="text-slate-400 text-sm">
+                    Password change functionality is not yet available. This feature will be added in a future update.
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block text-slate-300 mb-2">New Password</label>
-                  <div className="relative">
-                    <input
-                      type={showNewPassword ? 'text' : 'password'}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all pr-12"
-                      placeholder="Enter new password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                    >
-                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 mb-2">Confirm New Password</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                    placeholder="Confirm new password"
-                  />
-                </div>
-
-                {passwordError && (
-                  <div className="flex items-center gap-2 text-red-400 text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    {passwordError}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3">
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30"
-                  >
-                    Update Password
-                  </button>
-                  {passwordSaved && (
-                    <span className="flex items-center gap-2 text-emerald-400 text-sm">
-                      <CheckCircle className="w-4 h-4" />
-                      Password updated successfully
-                    </span>
-                  )}
-                </div>
-              </form>
+              </div>
             </div>
           )}
 
@@ -398,52 +220,35 @@ export function AccountScreen({ userData, onUpdateUser, onBack }: AccountScreenP
               </div>
             </div>
 
-            {/* Upgrade/Manage Buttons */}
+            {/* Upgrade/Manage Section */}
             {subscription.tier === 'free' ? (
               <div className="space-y-4">
                 <div className="p-4 bg-gradient-to-br from-amber-900/20 to-amber-950/20 border border-amber-500/30 rounded-lg">
-                  <h4 className="text-amber-400 font-semibold mb-2">Upgrade to Premium</h4>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="text-amber-400 font-semibold">Premium Plan</h4>
+                    <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-xs rounded-full border border-amber-500/30">
+                      Coming Soon
+                    </span>
+                  </div>
                   <p className="text-slate-300 text-sm mb-4">
-                    Get access to advanced features, unlimited leagues, and live auction sync for just $10/month.
+                    Premium subscriptions with advanced features, unlimited leagues, and live auction sync will be available soon.
                   </p>
-                  <button
-                    onClick={handleUpgradeClick}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2"
-                  >
-                    <Crown className="w-5 h-5" />
-                    Upgrade to Premium - $10/month
-                  </button>
+                  <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg">
+                    <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                    <p className="text-slate-400 text-sm">
+                      Payment processing is not yet available. Check back later for premium upgrade options.
+                    </p>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="flex gap-3">
-                {!subscription.cancelAtPeriodEnd && (
-                  <button
-                    onClick={handleCancelSubscription}
-                    className="px-6 py-2 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg hover:bg-red-900/30 hover:text-red-400 hover:border-red-500/30 transition-all"
-                  >
-                    Cancel Subscription
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    // In a real app, redirect to Stripe customer portal
-                    alert('This would open the billing portal to manage payment methods.');
-                  }}
-                  className="px-6 py-2 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-700 transition-all"
-                >
-                  Manage Billing
-                </button>
+              <div className="flex items-center gap-3 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                <p className="text-slate-400 text-sm">
+                  Subscription management is not yet available. This feature will be added when payment processing is implemented.
+                </p>
               </div>
             )}
-          </div>
-
-          {/* Demo Notice */}
-          <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg text-center">
-            <p className="text-blue-300 text-sm">
-              <strong>Demo Mode:</strong> Account changes are stored locally in your browser.
-              In production, this would connect to a real authentication and payment system.
-            </p>
           </div>
         </div>
       </div>

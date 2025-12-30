@@ -555,6 +555,7 @@ export async function scrapeAuction(roomId: string): Promise<ScrapedAuctionData>
     throw error;
   } finally {
     await page.close();
+    pageCount--; // Decrement page count to accurately track open pages
   }
 }
 

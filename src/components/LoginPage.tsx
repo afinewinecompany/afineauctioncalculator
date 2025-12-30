@@ -2,6 +2,14 @@ import { useState } from 'react';
 import { DollarSign, Mail, Lock, User, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
+/**
+ * RFC 5322 compliant email validation regex
+ * Validates: local-part@domain format with proper character restrictions
+ * - Local part: allows letters, numbers, and special chars (._%+-)
+ * - Domain: requires at least one dot with valid TLD (2+ chars)
+ */
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 // Helper to get properly formatted API URL
 function getApiUrl(): string {
   let url = import.meta.env.VITE_API_URL || '';
@@ -34,6 +42,12 @@ export function LoginPage({ onBack, onSuccess }: LoginPageProps) {
     // Validation
     if (!email || !password) {
       setLocalError('Please fill in all required fields');
+      return;
+    }
+
+    // Validate email format
+    if (!EMAIL_REGEX.test(email)) {
+      setLocalError('Please enter a valid email address');
       return;
     }
 

@@ -294,10 +294,13 @@ router.post('/calculate-values', async (req: Request, res: Response) => {
     if (error instanceof Error) {
       console.error('Stack trace:', error.stack);
     }
+
+    // Only include stack trace in development mode to avoid leaking implementation details
+    const isDevelopment = process.env.NODE_ENV !== 'production';
     res.status(500).json({
       error: 'Failed to calculate auction values',
       message: error instanceof Error ? error.message : undefined,
-      stack: error instanceof Error ? error.stack : undefined,
+      ...(isDevelopment && error instanceof Error ? { stack: error.stack } : {}),
     });
   }
 });

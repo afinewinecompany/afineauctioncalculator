@@ -12,7 +12,31 @@
 import { getRedisClient, isRedisHealthy } from './redisClient.js';
 
 // In-memory fallback cache (development only)
-const memoryCache = new Map<string, { value: string; expiresAt: number | null }>();
+const memoryCache = new Map<string, { value: string; expiresAt: number | null; createdAt: number }>();
+
+// Maximum number of entries in the in-memory cache to prevent unbounded growth
+const MAX_CACHE_SIZE = 1000;
+
+/**
+ * Evict oldest entries from memory cache when size limit is exceeded.
+ * Uses LRU-style eviction based on creation time.
+ */
+function evictOldestEntries(): void {
+  if (memoryCache.size <= MAX_CACHE_SIZE) {
+    return;
+  }
+
+  // Sort entries by creation time and remove oldest until under limit
+  const entries = Array.from(memoryCache.entries())
+    .sort((a, b) => a[1].createdAt - b[1].createdAt);
+
+  const entriesToRemove = entries.slice(0, memoryCache.size - MAX_CACHE_SIZE + 1);
+  for (const [key] of entriesToRemove) {
+    memoryCache.delete(key);
+  }
+
+  console.log(`[Cache] Evicted ${entriesToRemove.length} oldest entries from memory cache (size now: ${memoryCache.size})`);
+}
 
 /**
  * Get a value from cache
@@ -80,7 +104,11 @@ export async function cacheSet(
   memoryCache.set(key, {
     value,
     expiresAt: ttlSeconds ? Date.now() + ttlSeconds * 1000 : null,
+    createdAt: Date.now(),
   });
+
+  // Evict oldest entries if cache exceeds size limit
+  evictOldestEntries();
 }
 
 /**

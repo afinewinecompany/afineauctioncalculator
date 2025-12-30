@@ -3,6 +3,10 @@ import { Component, ErrorInfo, ReactNode } from 'react';
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
+  /** Optional callback to navigate back to a safe screen instead of refreshing */
+  onReset?: () => void;
+  /** Name of the screen for better error messages */
+  screenName?: string;
 }
 
 interface ErrorBoundaryState {
@@ -45,8 +49,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       error: null,
       errorInfo: null,
     });
-    // Force a page refresh to ensure clean state
-    window.location.reload();
+
+    // If an onReset callback is provided, use it instead of refreshing
+    if (this.props.onReset) {
+      this.props.onReset();
+    } else {
+      // Force a page refresh to ensure clean state
+      window.location.reload();
+    }
   };
 
   render(): ReactNode {
@@ -78,12 +88,16 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </div>
 
             <h2 className="text-2xl font-bold text-slate-100 mb-3">
-              Something went wrong
+              {this.props.screenName
+                ? `Error in ${this.props.screenName}`
+                : 'Something went wrong'}
             </h2>
 
             <p className="text-slate-400 mb-6">
               An unexpected error occurred. We apologize for the inconvenience.
-              Please try refreshing the page.
+              {this.props.onReset
+                ? ' Click below to return to a safe screen.'
+                : ' Please try refreshing the page.'}
             </p>
 
             {/* Show error details in development */}
@@ -105,7 +119,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               onClick={this.handleRetry}
               className="w-full px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white font-semibold rounded-lg hover:from-emerald-700 hover:to-green-800 transition-all shadow-lg shadow-emerald-500/20 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-800"
             >
-              Refresh Page
+              {this.props.onReset ? 'Go to Dashboard' : 'Refresh Page'}
             </button>
 
             <p className="mt-4 text-xs text-slate-500">

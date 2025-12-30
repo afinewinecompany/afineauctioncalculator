@@ -56,34 +56,5 @@ export async function checkDatabaseHealth(): Promise<boolean> {
   }
 }
 
-/**
- * Graceful shutdown handler
- */
-export async function gracefulShutdown(): Promise<void> {
-  console.log('\n🛑 Shutting down gracefully...');
-  await disconnectDatabase();
-}
-
-// Register shutdown handlers
-process.on('SIGINT', async () => {
-  await gracefulShutdown();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  await gracefulShutdown();
-  process.exit(0);
-});
-
-// Handle uncaught errors
-process.on('uncaughtException', async (error) => {
-  console.error('❌ Uncaught Exception:', error);
-  await gracefulShutdown();
-  process.exit(1);
-});
-
-process.on('unhandledRejection', async (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-  await gracefulShutdown();
-  process.exit(1);
-});
+// Note: Shutdown handlers are registered in index.ts to avoid race conditions
+// from duplicate handlers. The index.ts shutdown handler calls prisma.$disconnect()

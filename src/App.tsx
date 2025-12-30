@@ -514,23 +514,34 @@ function AppContent() {
       )}
 
       {currentScreen === 'leagues' && userData && (
-        <LeaguesList
-          username={userData.username}
-          leagues={userData.leagues}
-          onCreateNew={handleCreateNewLeague}
-          onContinueDraft={handleContinueDraft}
-          onDeleteLeague={handleDeleteLeague}
-          onEditLeague={handleEditLeague}
-          onReloadProjections={handleReloadProjections}
-          onLogout={handleLogout}
-          onAccount={() => setCurrentScreen('account')}
-          profilePicture={userData.profilePicture}
-          subscription={userData.subscription}
-        />
+        <ErrorBoundary
+          screenName="Leagues List"
+          onReset={() => {
+            // Reset to a clean state by refreshing (leagues is already a safe screen)
+            window.location.reload();
+          }}
+        >
+          <LeaguesList
+            username={userData.username}
+            leagues={userData.leagues}
+            onCreateNew={handleCreateNewLeague}
+            onContinueDraft={handleContinueDraft}
+            onDeleteLeague={handleDeleteLeague}
+            onEditLeague={handleEditLeague}
+            onReloadProjections={handleReloadProjections}
+            onLogout={handleLogout}
+            onAccount={() => setCurrentScreen('account')}
+            profilePicture={userData.profilePicture}
+            subscription={userData.subscription}
+          />
+        </ErrorBoundary>
       )}
 
       {currentScreen === 'setup' && userData && (
-        <>
+        <ErrorBoundary
+          screenName="League Setup"
+          onReset={handleBackToLeagues}
+        >
           <TopMenuBar
             currentLeague={null}
             allLeagues={userData.leagues}
@@ -546,7 +557,7 @@ function AppContent() {
               <p className="text-red-300 text-sm mt-1">Using fallback mock data instead.</p>
             </div>
           )}
-        </>
+        </ErrorBoundary>
       )}
 
       {/* Animated Projections Loading Screen - rendered at top level for proper exit animations */}
@@ -557,7 +568,10 @@ function AppContent() {
       />
 
       {currentScreen === 'draft' && currentLeague && userData && (
-        <>
+        <ErrorBoundary
+          screenName="Draft Room"
+          onReset={handleBackToLeagues}
+        >
           <TopMenuBar
             currentLeague={currentLeague}
             allLeagues={userData.leagues}
@@ -569,11 +583,14 @@ function AppContent() {
             players={players}
             onComplete={handleDraftComplete}
           />
-        </>
+        </ErrorBoundary>
       )}
 
       {currentScreen === 'analysis' && currentLeague && userData && (
-        <>
+        <ErrorBoundary
+          screenName="Post-Draft Analysis"
+          onReset={handleBackToLeagues}
+        >
           <TopMenuBar
             currentLeague={currentLeague}
             allLeagues={userData.leagues}
@@ -585,15 +602,20 @@ function AppContent() {
             settings={currentLeague.settings}
             onRestart={handleBackToLeagues}
           />
-        </>
+        </ErrorBoundary>
       )}
 
       {currentScreen === 'account' && userData && (
-        <AccountScreen
-          userData={userData}
-          onUpdateUser={setUserData}
-          onBack={handleBackToLeagues}
-        />
+        <ErrorBoundary
+          screenName="Account Settings"
+          onReset={handleBackToLeagues}
+        >
+          <AccountScreen
+            userData={userData}
+            onUpdateUser={setUserData}
+            onBack={handleBackToLeagues}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Toast notifications for storage warnings and other alerts */}

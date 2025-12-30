@@ -49,6 +49,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   const syncIntervalRef = useRef<number | null>(null);
   const isSyncingRef = useRef(false);
   const isFirstSyncRef = useRef(true);
+  const isMountedRef = useRef(true);
 
   const moneySpent = myRoster.reduce((sum, p) => sum + (p.draftedPrice || 0), 0);
   const moneyRemaining = settings.budgetPerTeam - moneySpent;
@@ -86,6 +87,13 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       // This sends only ~200 bytes instead of ~800KB
       console.log(`[DraftRoom] Calling syncAuctionLite for room ${settings.couchManagerRoomId}`);
       const result = await syncAuctionLite(settings.couchManagerRoomId, settings);
+
+      // Check if component is still mounted before updating state
+      if (!isMountedRef.current) {
+        console.log('[DraftRoom] Component unmounted during sync, discarding results');
+        return;
+      }
+
       console.log(`[DraftRoom] Sync successful! Matched ${result.matchedPlayers.length} players, ${result.auctionData.players.filter(p => p.status === 'drafted').length} drafted`);
       setSyncResult(result);
       // Cast to EnhancedInflationStats since the server now returns enhanced data
@@ -371,6 +379,9 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
 
   // Auto-sync on mount and every 2 minutes if roomId is set
   useEffect(() => {
+    // Mark component as mounted
+    isMountedRef.current = true;
+
     if (!settings.couchManagerRoomId) {
       setIsInitialLoading(false);
       return;
@@ -383,6 +394,8 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
     syncIntervalRef.current = window.setInterval(performSync, SYNC_INTERVAL_MS);
 
     return () => {
+      // Mark component as unmounted to prevent state updates after cleanup
+      isMountedRef.current = false;
       clearTimeout(initialSyncTimeout);
       if (syncIntervalRef.current) {
         clearInterval(syncIntervalRef.current);
