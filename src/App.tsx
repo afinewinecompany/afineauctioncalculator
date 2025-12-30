@@ -143,9 +143,14 @@ function AppContent() {
   }, [userData]);
 
   // Sync auth state with userData when user logs in via AuthContext
+  // Note: Logout is handled explicitly in handleLogout(), not here
   useEffect(() => {
+    // Skip during OAuth callback processing
+    if (currentScreen === 'google-callback') return;
+
     if (isAuthenticated && user && !userData) {
       // User logged in via real auth - create userData from auth user
+      console.log('[App] Auth sync: Creating userData from auth user');
       const newUserData: UserData = {
         username: user.name || user.email.split('@')[0],
         email: user.email,
@@ -154,15 +159,15 @@ function AppContent() {
         profilePicture: user.profilePictureUrl || undefined
       };
       setUserData(newUserData);
-      setCurrentScreen('leagues');
-    } else if (!isAuthenticated && !authLoading && userData) {
-      // User logged out - clear userData
-      setUserData(null);
-      setCurrentLeague(null);
-      setPlayers([]);
-      setCurrentScreen('landing');
+      // Only navigate to leagues if we're on landing or login
+      if (currentScreen === 'landing' || currentScreen === 'login') {
+        setCurrentScreen('leagues');
+      }
     }
-  }, [isAuthenticated, user, authLoading, userData]);
+    // Note: We don't auto-clear userData when isAuthenticated becomes false
+    // because that could happen during token refresh or temporary network issues.
+    // Logout is handled explicitly via handleLogout() which clears everything.
+  }, [isAuthenticated, user, authLoading, userData, currentScreen]);
 
   const handleLoginSuccess = () => {
     // Auth context handles the user state, this just triggers navigation

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { handleGoogleCallback } from '../lib/authApi';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
@@ -12,9 +12,18 @@ export function GoogleCallbackHandler({ onSuccess, onError }: GoogleCallbackHand
   const { refreshUser } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Guard against double execution (React StrictMode)
+  const hasProcessedRef = useRef(false);
 
   useEffect(() => {
     async function processCallback() {
+      // Prevent double execution
+      if (hasProcessedRef.current) {
+        console.log('[GoogleCallback] Already processed, skipping duplicate call');
+        return;
+      }
+      hasProcessedRef.current = true;
+
       try {
         // Get the code from URL
         const urlParams = new URLSearchParams(window.location.search);
