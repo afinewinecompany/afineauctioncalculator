@@ -238,8 +238,12 @@ export async function startServer(): Promise<void> {
     // Create Express app
     const app = createServer();
 
-    // Start listening
-    const server = app.listen(env.PORT, () => {
+    // Log the port we're about to bind to
+    console.log(`[Startup] Binding to port ${env.PORT} (from env: ${process.env.PORT || 'not set, using default'})`);
+
+    // Start listening - bind to 0.0.0.0 for Railway/Docker compatibility
+    const server = app.listen(env.PORT, '0.0.0.0', () => {
+      console.log(`[Startup] Server is now listening on 0.0.0.0:${env.PORT}`);
       logger.info({
         port: env.PORT,
         environment: env.NODE_ENV,
