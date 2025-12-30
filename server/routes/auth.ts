@@ -514,6 +514,7 @@ router.get('/google', (req: Request, res: Response) => {
 router.post('/google/callback', async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
+    console.log('[Auth] Google callback received, code present:', !!code);
 
     if (!code || typeof code !== 'string') {
       return res.status(400).json({
@@ -533,6 +534,9 @@ router.post('/google/callback', async (req: Request, res: Response) => {
     }
 
     // Exchange code for tokens
+    const redirectUri = env.GOOGLE_CALLBACK_URL || `${env.FRONTEND_URL}/auth/google/callback`;
+    console.log('[Auth] Token exchange redirect_uri:', redirectUri);
+
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -541,17 +545,18 @@ router.post('/google/callback', async (req: Request, res: Response) => {
         client_secret: env.GOOGLE_CLIENT_SECRET,
         code,
         grant_type: 'authorization_code',
-        redirect_uri: env.GOOGLE_CALLBACK_URL || `${env.FRONTEND_URL}/auth/google/callback`,
+        redirect_uri: redirectUri,
       }),
     });
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json().catch(() => ({}));
-      console.error('[Auth] Google token exchange failed:', errorData);
+      console.error('[Auth] Google token exchange failed:', JSON.stringify(errorData));
       return res.status(400).json({
         error: 'OAuth failed',
         code: 'TOKEN_EXCHANGE_FAILED',
         message: 'Failed to exchange authorization code. Please try again.',
+        details: errorData,
       });
     }
 
@@ -588,12 +593,14 @@ router.post('/google/callback', async (req: Request, res: Response) => {
     }
 
     // Find or create user in database
+    console.log('[Auth] Looking up/creating user for:', googleUser.email);
     const user = await findOrCreateGoogleUser({
       email: googleUser.email,
       name: googleUser.name || googleUser.email.split('@')[0],
       picture: googleUser.picture,
       sub: googleUser.id,
     });
+    console.log('[Auth] User found/created:', user.id);
 
     // Generate tokens
     const accessToken = generateAccessToken(user);
@@ -601,6 +608,7 @@ router.post('/google/callback', async (req: Request, res: Response) => {
 
     // Store refresh token in database
     await storeRefreshToken(user.id, refreshToken);
+    console.log('[Auth] Tokens generated and stored');
 
     // Prepare response
     const response: AuthResponse = {
@@ -613,7 +621,8 @@ router.post('/google/callback', async (req: Request, res: Response) => {
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('[Auth] Google OAuth error:', error);
+    console.error('[Auth] Google OAuth error:', error instanceof Error ? error.message : error);
+    console.error('[Auth] Stack trace:', error instanceof Error ? error.stack : 'No stack');
     return res.status(500).json({
       error: 'OAuth failed',
       code: 'OAUTH_ERROR',
