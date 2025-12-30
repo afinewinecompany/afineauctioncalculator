@@ -460,26 +460,41 @@ router.get('/google/status', (req: Request, res: Response) => {
  * After authorization, Google redirects to the callback URL.
  */
 router.get('/google', (req: Request, res: Response) => {
-  // Check if Google OAuth is configured
-  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
-    return res.status(501).json({
-      error: 'Google OAuth not configured',
-      code: 'OAUTH_NOT_CONFIGURED',
-      message: 'Google OAuth is not available. Please use email/password login.',
+  try {
+    // Check if Google OAuth is configured
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      return res.status(501).json({
+        error: 'Google OAuth not configured',
+        code: 'OAUTH_NOT_CONFIGURED',
+        message: 'Google OAuth is not available. Please use email/password login.',
+      });
+    }
+
+    // Build the Google OAuth URL
+    const redirectUri = env.GOOGLE_CALLBACK_URL || `${env.FRONTEND_URL}/auth/google/callback`;
+    console.log('[Auth] Google OAuth redirect_uri:', redirectUri);
+
+    const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    googleAuthUrl.searchParams.set('client_id', env.GOOGLE_CLIENT_ID);
+    googleAuthUrl.searchParams.set('redirect_uri', redirectUri);
+    googleAuthUrl.searchParams.set('response_type', 'code');
+    googleAuthUrl.searchParams.set('scope', 'openid email profile');
+    googleAuthUrl.searchParams.set('access_type', 'offline');
+    googleAuthUrl.searchParams.set('prompt', 'consent');
+
+    const finalUrl = googleAuthUrl.toString();
+    console.log('[Auth] Redirecting to Google OAuth:', finalUrl.substring(0, 100) + '...');
+
+    // Redirect to Google
+    return res.redirect(finalUrl);
+  } catch (error) {
+    console.error('[Auth] Error in /google route:', error);
+    return res.status(500).json({
+      error: 'OAuth redirect failed',
+      code: 'OAUTH_REDIRECT_ERROR',
+      message: 'Failed to initiate Google login.',
     });
   }
-
-  // Build the Google OAuth URL
-  const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  googleAuthUrl.searchParams.set('client_id', env.GOOGLE_CLIENT_ID);
-  googleAuthUrl.searchParams.set('redirect_uri', env.GOOGLE_CALLBACK_URL || `${env.FRONTEND_URL}/auth/google/callback`);
-  googleAuthUrl.searchParams.set('response_type', 'code');
-  googleAuthUrl.searchParams.set('scope', 'openid email profile');
-  googleAuthUrl.searchParams.set('access_type', 'offline');
-  googleAuthUrl.searchParams.set('prompt', 'consent');
-
-  // Redirect to Google
-  return res.redirect(googleAuthUrl.toString());
 });
 
 /**
