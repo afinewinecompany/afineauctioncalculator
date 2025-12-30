@@ -6,6 +6,10 @@ builder = "nixpacks"
 # Build both frontend and backend (npm ci is handled by Nixpacks install phase)
 buildCommand = "npx prisma generate && npm run build"
 
+# Install Chromium for Puppeteer scraping
+[build.nixpacks]
+aptPkgs = ["chromium"]
+
 [deploy]
 # Run migrations then start the backend (which also serves frontend static files)
 startCommand = "npx prisma migrate deploy && npm run start:backend"
@@ -15,6 +19,9 @@ restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 5
 
 [env]
+# Chromium path for puppeteer-core
+CHROME_BIN = "/usr/bin/chromium"
+
 # Railway will auto-inject these from plugins:
 # - DATABASE_URL (PostgreSQL plugin)
 # - REDIS_URL (Redis plugin, optional)

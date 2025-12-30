@@ -1,6 +1,40 @@
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer, { Browser, Page } from 'puppeteer-core';
 import type { ScrapedAuctionData, ScrapedPlayer, ScrapedTeam, CurrentAuction } from '../types/auction.js';
 import { normalizeName } from './playerMatcher.js';
+
+// Find Chrome/Chromium executable path based on environment
+function getChromePath(): string {
+  // Railway/Nixpacks provides Chromium at this path
+  if (process.env.CHROME_BIN) {
+    return process.env.CHROME_BIN;
+  }
+
+  // Common paths for different environments
+  const possiblePaths = [
+    '/usr/bin/chromium-browser',      // Nixpacks/Railway
+    '/usr/bin/chromium',              // Some Linux distros
+    '/usr/bin/google-chrome',         // Google Chrome on Linux
+    '/usr/bin/google-chrome-stable',  // Chrome stable
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Windows
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe', // Windows x86
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', // macOS
+  ];
+
+  // In development, try to use local Chrome
+  for (const chromePath of possiblePaths) {
+    try {
+      const fs = require('fs');
+      if (fs.existsSync(chromePath)) {
+        return chromePath;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  // Fallback - let puppeteer-core fail with a helpful message
+  throw new Error('Chrome/Chromium not found. Set CHROME_BIN environment variable or install Chrome.');
+}
 
 // Browser instance management constants
 const MAX_PAGES = 5; // Maximum concurrent pages before recycling browser
@@ -74,15 +108,18 @@ async function getBrowser(): Promise<Browser> {
   }
 
   // Create new browser instance
-  console.log('[Scraper] Creating new browser instance...');
+  const chromePath = getChromePath();
+  console.log(`[Scraper] Creating new browser instance with Chrome at: ${chromePath}`);
   browserInstance = await puppeteer.launch({
     headless: true,
+    executablePath: chromePath,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-accelerated-2d-canvas',
       '--disable-gpu',
+      '--single-process', // Required for some containerized environments
     ],
   });
   browserCreatedAt = Date.now();
