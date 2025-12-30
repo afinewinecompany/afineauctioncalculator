@@ -33,19 +33,17 @@ function AppContent() {
   // Track if we've already shown the storage warning to prevent spamming
   const storageWarningShownRef = useRef(false);
 
-  // Check for Google OAuth callback on mount
+  // Check for Google OAuth callback and load user data on mount
   useEffect(() => {
     const path = window.location.pathname;
+
+    // Handle OAuth callback
     if (path === '/auth/google/callback' || path.includes('/auth/google/callback')) {
       setCurrentScreen('google-callback');
+      return; // Don't load localStorage during OAuth callback
     }
-  }, []);
 
-  // Load user data from localStorage
-  useEffect(() => {
-    // Don't load localStorage if we're handling OAuth callback
-    if (currentScreen === 'google-callback') return;
-
+    // Load user data from localStorage (only on initial mount)
     try {
       const savedUser = localStorage.getItem('fantasyBaseballUser');
       if (savedUser) {
@@ -60,7 +58,7 @@ function AppContent() {
       // Clear corrupted data
       localStorage.removeItem('fantasyBaseballUser');
     }
-  }, [currentScreen]);
+  }, []); // Empty dependency - only run on mount
 
   // Save user data to localStorage whenever it changes
   // Note: Only save league metadata, not the full player arrays to avoid quota issues
