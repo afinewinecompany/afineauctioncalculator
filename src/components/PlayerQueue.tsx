@@ -29,9 +29,13 @@ interface PlayerQueueProps {
   positionalScarcity?: PositionalScarcity[];
   isManualMode?: boolean; // When true, allow manual entry of actual $ values
   onManualDraft?: (player: Player, price: number, toMyTeam: boolean) => void;
+  isMobile?: boolean;
 }
 
-export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, positionalScarcity, isManualMode, onManualDraft }: PlayerQueueProps) {
+// Mobile-specific row height for card layout
+const MOBILE_ROW_HEIGHT = 100;
+
+export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, positionalScarcity, isManualMode, onManualDraft, isMobile }: PlayerQueueProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPosition, setFilterPosition] = useState<string>('all');
   // Track which player has manual entry input open, and the current input value
@@ -161,8 +165,11 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
   // Determine if virtualization should be used
   const useVirtualization = filteredPlayers.length > VIRTUALIZATION_THRESHOLD;
 
+  // Calculate row height based on mobile state
+  const rowHeight = isMobile ? MOBILE_ROW_HEIGHT : ROW_HEIGHT;
+
   // Calculate total height of the list for virtualization
-  const totalHeight = filteredPlayers.length * ROW_HEIGHT;
+  const totalHeight = filteredPlayers.length * rowHeight;
 
   // Calculate which players are visible based on scroll position
   const { visiblePlayers, offsetTop } = useMemo(() => {
@@ -175,18 +182,18 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     }
 
     // Calculate visible range with buffer
-    const visibleRowCount = Math.ceil(containerHeight / ROW_HEIGHT);
-    const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER_SIZE);
+    const visibleRowCount = Math.ceil(containerHeight / rowHeight);
+    const start = Math.max(0, Math.floor(scrollTop / rowHeight) - BUFFER_SIZE);
     const end = Math.min(
       filteredPlayers.length,
-      Math.floor(scrollTop / ROW_HEIGHT) + visibleRowCount + BUFFER_SIZE
+      Math.floor(scrollTop / rowHeight) + visibleRowCount + BUFFER_SIZE
     );
 
     return {
       visiblePlayers: filteredPlayers.slice(start, end),
-      offsetTop: start * ROW_HEIGHT
+      offsetTop: start * rowHeight
     };
-  }, [filteredPlayers, scrollTop, containerHeight, useVirtualization]);
+  }, [filteredPlayers, scrollTop, containerHeight, useVirtualization, rowHeight]);
 
   // Handle scroll events for virtualization
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -267,22 +274,28 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
   return (
     <div className="flex flex-col h-full bg-slate-900">
       {/* Filters */}
-      <div className="p-4 border-b border-slate-700 space-y-3 bg-slate-800/50">
-        <div className="flex items-center gap-3">
+      <div className={`border-b border-slate-700 bg-slate-800/50 ${isMobile ? 'p-2 space-y-2' : 'p-4 space-y-3'}`}>
+        {/* Search and Status Filters */}
+        <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center gap-3'}`}>
           <input
             type="text"
             placeholder="Search players..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+            className={`flex-1 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${
+              isMobile ? 'px-2 py-1.5 text-sm' : 'px-3 py-2'
+            }`}
           />
 
-          <div className="flex items-center gap-1">
+          {/* Status filters - scrollable on mobile */}
+          <div className={`flex items-center gap-1 ${isMobile ? 'overflow-x-auto pb-1 -mx-2 px-2' : ''}`}>
             {(['all', 'available', 'on_block', 'drafted'] as const).map(status => (
               <button
                 key={status}
                 onClick={() => handleStatusFilterChange(status)}
-                className={`px-3 py-2 rounded-lg transition-all text-sm ${
+                className={`rounded-lg transition-all whitespace-nowrap ${
+                  isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'
+                } ${
                   filterStatus === status
                     ? status === 'on_block'
                       ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30'
@@ -292,88 +305,125 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                     : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
                 }`}
               >
-                {status === 'all' ? 'All' : status === 'available' ? 'Available' : status === 'on_block' ? 'On Block' : 'Drafted'}
+                {isMobile
+                  ? (status === 'all' ? 'All' : status === 'available' ? 'Avail' : status === 'on_block' ? 'Live' : 'Gone')
+                  : (status === 'all' ? 'All' : status === 'available' ? 'Available' : status === 'on_block' ? 'On Block' : 'Drafted')
+                }
+              </button>
+            ))}
+
+            {/* MiLB Filter Toggle */}
+            <button
+              onClick={() => setHideMiLB(!hideMiLB)}
+              className={`rounded-lg transition-all flex items-center gap-1 whitespace-nowrap ${
+                isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm gap-1.5'
+              } ${
+                hideMiLB
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30'
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
+              }`}
+              title={hideMiLB ? 'Click to show minor league players' : 'Click to hide minor league players'}
+            >
+              <AlertTriangle className="w-3 h-3" />
+              {isMobile ? 'MiLB' : (hideMiLB ? 'MiLB Hidden' : 'Show All')}
+            </button>
+          </div>
+        </div>
+
+        {/* Position filters - horizontally scrollable */}
+        <div className={`overflow-x-auto ${isMobile ? '-mx-2 px-2' : ''}`}>
+          <div className={`flex items-center min-w-max ${isMobile ? 'gap-1' : 'gap-2 flex-wrap'}`}>
+            <Filter className="w-4 h-4 text-slate-500 flex-shrink-0" />
+            {positions.map(pos => (
+              <button
+                key={pos}
+                onClick={() => handleFilterChange(pos)}
+                className={`rounded-lg transition-all whitespace-nowrap ${
+                  isMobile ? 'px-2 py-0.5 text-xs' : 'px-3 py-1'
+                } ${
+                  filterPosition === pos
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
+                }`}
+              >
+                {pos === 'all' ? 'All' : pos}
               </button>
             ))}
           </div>
-
-          {/* MiLB Filter Toggle */}
-          <button
-            onClick={() => setHideMiLB(!hideMiLB)}
-            className={`px-3 py-2 rounded-lg transition-all text-sm flex items-center gap-1.5 ${
-              hideMiLB
-                ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
-            }`}
-            title={hideMiLB ? 'Click to show minor league players' : 'Click to hide minor league players'}
-          >
-            <AlertTriangle className="w-3 h-3" />
-            {hideMiLB ? 'MiLB Hidden' : 'Show All'}
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="w-4 h-4 text-slate-500" />
-          {positions.map(pos => (
-            <button
-              key={pos}
-              onClick={() => handleFilterChange(pos)}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                filterPosition === pos
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
-              }`}
-            >
-              {pos === 'all' ? 'All' : pos}
-            </button>
-          ))}
         </div>
       </div>
 
       {/* Column Headers */}
-      <div className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 z-10">
-        <button
-          onClick={() => handleSort('name')}
-          className="col-span-3 flex items-center gap-1 text-slate-300 hover:text-white transition-colors"
-        >
-          Player <ArrowUpDown className="w-3 h-3" />
-        </button>
-        <div className="col-span-2 text-slate-300">Position</div>
-        <button
-          onClick={() => handleSort('projectedValue')}
-          className="col-span-2 flex items-center gap-1 text-slate-300 hover:text-white transition-colors group relative"
-        >
-          Proj $ <ArrowUpDown className="w-3 h-3" />
-          <span className="ml-1 text-slate-500 group-hover:text-slate-400">
-            <Info className="w-3 h-3" />
-          </span>
-          <span className="absolute left-0 top-full mt-2 w-48 p-2 bg-slate-800 border border-slate-600 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
-            Original Projected Auction Value based on projections and league settings
-          </span>
-        </button>
-        <button
-          onClick={() => handleSort('adjustedValue')}
-          className="col-span-2 flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors group relative"
-        >
-          Adj $ <ArrowUpDown className="w-3 h-3" />
-          <span className="ml-1 text-emerald-500/50 group-hover:text-emerald-400/70">
-            <Info className="w-3 h-3" />
-          </span>
-          <span className="absolute left-0 top-full mt-2 w-52 p-2 bg-slate-800 border border-emerald-600/50 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
-            Adjusted Projected Value inclusive of current inflation rate based on draft results
-          </span>
-        </button>
-        <div className="col-span-1 text-slate-300 flex items-center gap-1 group relative">
-          Actual $
-          <span className="text-slate-500 group-hover:text-slate-400">
-            <Info className="w-3 h-3" />
-          </span>
-          <span className="absolute left-0 top-full mt-2 w-44 p-2 bg-slate-800 border border-slate-600 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
-            Player's actual cost from Couch Managers auction
-          </span>
+      {isMobile ? (
+        /* MOBILE: Simplified header */
+        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 z-10">
+          <button
+            onClick={() => handleSort('name')}
+            className="flex items-center gap-1 text-slate-300 text-sm"
+          >
+            Player <ArrowUpDown className="w-3 h-3" />
+          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleSort('projectedValue')}
+              className="flex items-center gap-1 text-slate-300 text-sm"
+            >
+              Proj <ArrowUpDown className="w-3 h-3" />
+            </button>
+            <button
+              onClick={() => handleSort('adjustedValue')}
+              className="flex items-center gap-1 text-emerald-400 text-sm"
+            >
+              Adj <ArrowUpDown className="w-3 h-3" />
+            </button>
+          </div>
         </div>
-        <div className="col-span-2 text-slate-300">Key Stats</div>
-      </div>
+      ) : (
+        /* DESKTOP: Full 12-column header */
+        <div className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 z-10">
+          <button
+            onClick={() => handleSort('name')}
+            className="col-span-3 flex items-center gap-1 text-slate-300 hover:text-white transition-colors"
+          >
+            Player <ArrowUpDown className="w-3 h-3" />
+          </button>
+          <div className="col-span-2 text-slate-300">Position</div>
+          <button
+            onClick={() => handleSort('projectedValue')}
+            className="col-span-2 flex items-center gap-1 text-slate-300 hover:text-white transition-colors group relative"
+          >
+            Proj $ <ArrowUpDown className="w-3 h-3" />
+            <span className="ml-1 text-slate-500 group-hover:text-slate-400">
+              <Info className="w-3 h-3" />
+            </span>
+            <span className="absolute left-0 top-full mt-2 w-48 p-2 bg-slate-800 border border-slate-600 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+              Original Projected Auction Value based on projections and league settings
+            </span>
+          </button>
+          <button
+            onClick={() => handleSort('adjustedValue')}
+            className="col-span-2 flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors group relative"
+          >
+            Adj $ <ArrowUpDown className="w-3 h-3" />
+            <span className="ml-1 text-emerald-500/50 group-hover:text-emerald-400/70">
+              <Info className="w-3 h-3" />
+            </span>
+            <span className="absolute left-0 top-full mt-2 w-52 p-2 bg-slate-800 border border-emerald-600/50 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+              Adjusted Projected Value inclusive of current inflation rate based on draft results
+            </span>
+          </button>
+          <div className="col-span-1 text-slate-300 flex items-center gap-1 group relative">
+            Actual $
+            <span className="text-slate-500 group-hover:text-slate-400">
+              <Info className="w-3 h-3" />
+            </span>
+            <span className="absolute left-0 top-full mt-2 w-44 p-2 bg-slate-800 border border-slate-600 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+              Player's actual cost from Couch Managers auction
+            </span>
+          </div>
+          <div className="col-span-2 text-slate-300">Key Stats</div>
+        </div>
+      )}
 
       {/* Player List */}
       <div
@@ -415,6 +465,122 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
           // Actual cost: drafted price for drafted players, current bid for on_block players
           const actualCost = isDrafted ? player.draftedPrice : (isOnBlock ? player.currentBid : null);
 
+          // MOBILE: Card-based layout
+          if (isMobile) {
+            return (
+              <div
+                key={player.id}
+                onClick={() => onPlayerClick(player)}
+                style={useVirtualization ? { height: MOBILE_ROW_HEIGHT } : undefined}
+                className={`mx-2 my-1 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                  isOnBlock
+                    ? 'bg-gradient-to-r from-amber-900/40 to-orange-900/40 border-amber-500/50 animate-pulse'
+                    : player.status === 'drafted'
+                    ? 'bg-slate-800/50 border-slate-700 opacity-60'
+                    : player.status === 'onMyTeam'
+                    ? 'bg-gradient-to-r from-emerald-900/30 to-green-900/30 border-emerald-700/50'
+                    : 'bg-slate-800/80 border-slate-700 active:border-emerald-500/50'
+                }`}
+              >
+                {/* Top row: Photo, Name, badges */}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0 flex items-center justify-center">
+                    {player.mlbamId ? (
+                      <img
+                        src={getPlayerPhotoUrl(player.mlbamId) || ''}
+                        alt={player.name}
+                        className="w-full h-full object-cover object-[center_20%]"
+                        onError={(e) => {
+                          const parent = e.currentTarget.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<svg class="w-4 h-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+                          }
+                        }}
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-slate-500" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-white text-sm font-medium truncate">{player.name}</span>
+                      {isOnBlock && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-600 text-white rounded-full animate-pulse">
+                          LIVE
+                        </span>
+                      )}
+                      {isTwoWay && (
+                        <span className="px-1 py-0.5 text-[10px] bg-purple-500/30 text-purple-400 border border-purple-500/40 rounded-full">
+                          2W
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-slate-400 text-xs flex items-center gap-1.5">
+                      <span>{getPlayingPositions(player.positions).join(', ') || 'UTIL'}</span>
+                      {player.tier && <span className="text-slate-500">• T{player.tier}</span>}
+                      {isMinorLeaguePlayer(player.positions) && (
+                        <span className="text-yellow-400 text-[10px]">MiLB</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom row: Values */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-center">
+                      <div className="text-slate-500 text-[9px] uppercase">Proj</div>
+                      <div className="text-white text-sm">${player.projectedValue}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-emerald-500 text-[9px] uppercase">Adj</div>
+                      <div className="text-emerald-400 text-sm font-medium">${player.adjustedValue}</div>
+                    </div>
+                    {isDrafted && player.draftedPrice !== undefined && (
+                      <div className="text-center">
+                        <div className="text-slate-500 text-[9px] uppercase">Paid</div>
+                        <div className="text-white text-sm">${player.draftedPrice}</div>
+                      </div>
+                    )}
+                    {isOnBlock && player.currentBid !== undefined && (
+                      <div className="text-center">
+                        <div className="text-amber-500 text-[9px] uppercase">Bid</div>
+                        <div className="text-amber-400 text-sm font-bold">${player.currentBid}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Surplus/Value indicator or manual draft button */}
+                  <div className="flex items-center gap-2">
+                    {isDrafted && draftSurplus !== null && draftSurplus !== 0 && (
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                        draftSurplus > 0 ? 'bg-red-900/50 text-red-400' : 'bg-emerald-900/50 text-emerald-400'
+                      }`}>
+                        {draftSurplus > 0 ? '+' : ''}{draftSurplus}
+                      </span>
+                    )}
+                    {isManualMode && !isDrafted && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingPlayerId(player.id);
+                          setManualPriceInput(String(player.adjustedValue));
+                        }}
+                        className="px-2 py-1 text-xs bg-slate-700 text-slate-300 rounded border border-slate-600"
+                      >
+                        Draft
+                      </button>
+                    )}
+                    {isDrafted && player.draftedBy && (
+                      <span className="text-slate-500 text-xs truncate max-w-[80px]">{player.draftedBy}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // DESKTOP: Original grid layout
           return (
             <div
               key={player.id}
@@ -674,20 +840,20 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
       </div>
 
       {/* Footer with Player Count */}
-      <div className="p-4 border-t border-slate-700 bg-slate-800/50">
+      <div className={`border-t border-slate-700 bg-slate-800/50 ${isMobile ? 'p-2' : 'p-4'}`}>
         <div className="flex items-center justify-between">
           {/* Player count info */}
-          <div className="text-slate-400 text-sm">
+          <div className={`text-slate-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
             {filteredPlayers.length} player{filteredPlayers.length !== 1 ? 's' : ''}
-            {useVirtualization && (
+            {!isMobile && useVirtualization && (
               <span className="text-slate-500 ml-2">
-                (virtualized for performance)
+                (virtualized)
               </span>
             )}
           </div>
 
           {/* Scroll hint for large lists */}
-          {useVirtualization && (
+          {!isMobile && useVirtualization && (
             <div className="text-slate-500 text-xs">
               Scroll to browse all players
             </div>

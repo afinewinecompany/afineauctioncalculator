@@ -13,6 +13,7 @@ interface InflationTrackerProps {
   liveInflationStats?: InflationStats | null;
   currentAuction?: CurrentAuction | null;
   onManualSync?: () => void;
+  isMobile?: boolean;
 }
 
 export function InflationTracker({
@@ -24,6 +25,7 @@ export function InflationTracker({
   liveInflationStats,
   currentAuction,
   onManualSync,
+  isMobile,
 }: InflationTrackerProps) {
   const [showTierBreakdown, setShowTierBreakdown] = useState(false);
   const [showScarcity, setShowScarcity] = useState(false);
@@ -78,9 +80,9 @@ export function InflationTracker({
   };
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-5 backdrop-blur-sm shadow-xl">
+    <div className={`bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl backdrop-blur-sm shadow-xl ${isMobile ? 'p-3' : 'p-5'}`}>
       {/* ROW 1: Header Bar - Sync Status & Current Auction */}
-      <div className="flex items-center justify-between mb-5">
+      <div className={`flex items-center justify-between ${isMobile ? 'mb-3 flex-wrap gap-2' : 'mb-5'}`}>
         {/* Sync Status */}
         {settings.couchManagerRoomId && syncState && (
           <div className="flex items-center gap-3">
@@ -127,7 +129,7 @@ export function InflationTracker({
       </div>
 
       {/* ROW 2: Main Metrics - 6 Equal Columns */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-5">
+      <div className={`grid gap-3 ${isMobile ? 'grid-cols-2 mb-3' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-5'}`}>
         {/* Column 1: Hero Inflation */}
         <div className={`relative overflow-hidden rounded-xl border-2 ${getSeverityClasses('border')} ${getSeverityClasses('bg')}`}>
           <div className="p-4">
@@ -212,7 +214,8 @@ export function InflationTracker({
         </div>
       </div>
 
-      {/* ROW 3: Secondary Metrics & Insights - 3 Columns */}
+      {/* ROW 3: Secondary Metrics & Insights - 3 Columns (hide on mobile to save space) */}
+      {!isMobile && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Column 1: Budget Analysis - Always Visible */}
         <div className="space-y-3">
@@ -453,14 +456,17 @@ export function InflationTracker({
           </div>
         </div>
       </div>
+      )}
 
       {/* Footer - Explanation */}
-      <div className="mt-5 pt-4 border-t border-slate-700/50">
-        <div className="flex items-center justify-between text-sm">
+      <div className={`border-t border-slate-700/50 ${isMobile ? 'mt-3 pt-2' : 'mt-5 pt-4'}`}>
+        <div className={`flex items-center justify-between ${isMobile ? 'text-xs flex-wrap gap-1' : 'text-sm'}`}>
           <span className="text-blue-400 font-medium">{inflationIndicator.label}</span>
+          {!isMobile && (
           <span className="text-slate-500">
             Values use remaining budget method: Money Left ÷ Value Left
           </span>
+          )}
         </div>
       </div>
     </div>

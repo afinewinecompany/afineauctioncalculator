@@ -8,6 +8,9 @@ import { RosterPanel } from './RosterPanel';
 import { InflationTracker } from './InflationTracker';
 import { PlayerDetailModal } from './PlayerDetailModal';
 import { DraftRoomLoadingScreen } from './DraftRoomLoadingScreen';
+import { useIsMobile } from './ui/use-mobile';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+import { Users, ListFilter } from 'lucide-react';
 
 // Timing constants
 const SYNC_INTERVAL_MS = 2 * 60 * 1000; // Sync interval: 2 minutes
@@ -28,6 +31,10 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   const [inflationRate, setInflationRate] = useState(0);
   const [rosterNeedsRemaining, setRosterNeedsRemaining] = useState(settings.rosterSpots);
   const [selectedPlayerForDetail, setSelectedPlayerForDetail] = useState<Player | null>(null);
+
+  // Mobile detection and tab state
+  const isMobile = useIsMobile();
+  const [mobileActiveTab, setMobileActiveTab] = useState<'players' | 'roster'>('players');
 
   // Team selection for "My Team"
   const [availableTeams, setAvailableTeams] = useState<string[]>([]);
@@ -582,37 +589,91 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         totalDrafted={allDrafted.length}
         inflationRate={inflationRate}
         liveInflationStats={liveInflationStats}
+        isMobile={isMobile}
       />
 
       {/* Main Content - scrollable container */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="flex flex-col gap-4 p-4 pb-6">
+        <div className="flex flex-col gap-2 md:gap-4 p-2 md:p-4 pb-4 md:pb-6">
           {/* Top Section - Player Queue & Roster Panel */}
-          <div className="grid grid-cols-12 gap-4" style={{ minHeight: '55vh' }}>
-            {/* Left Panel - Player Queue (primary focus area) */}
-            <div className="col-span-8 bg-slate-900/95 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50 flex flex-col">
-              <PlayerQueue
-                players={players}
-                onPlayerClick={handlePlayerClick}
-                positionalScarcity={inflationResult.positionalScarcity}
-                isManualMode={isManualMode}
-                onManualDraft={handleManualDraft}
-              />
-            </div>
+          {isMobile ? (
+            /* MOBILE: Tab-based layout */
+            <Tabs
+              value={mobileActiveTab}
+              onValueChange={(v) => setMobileActiveTab(v as 'players' | 'roster')}
+              className="flex flex-col flex-1"
+            >
+              <TabsList className="w-full grid grid-cols-2 bg-slate-800/80 border border-slate-700/50 rounded-xl p-1">
+                <TabsTrigger
+                  value="players"
+                  className="flex items-center justify-center gap-2 data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-lg py-2"
+                >
+                  <ListFilter className="w-4 h-4" />
+                  <span>Players</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="roster"
+                  className="flex items-center justify-center gap-2 data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-lg py-2"
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Roster ({myRoster.length})</span>
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Right Panel - My Roster */}
-            <div className="col-span-4 flex flex-col">
-              <RosterPanel
-                roster={myRoster}
-                settings={settings}
-                rosterNeedsRemaining={rosterNeedsRemaining}
-                availableTeams={availableTeams}
-                selectedTeam={selectedTeam}
-                onTeamSelect={handleTeamSelect}
-                isManualMode={isManualMode}
-              />
+              <TabsContent value="players" className="flex-1 mt-2" style={{ minHeight: '55vh' }}>
+                <div className="h-full bg-slate-900/95 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50 flex flex-col">
+                  <PlayerQueue
+                    players={players}
+                    onPlayerClick={handlePlayerClick}
+                    positionalScarcity={inflationResult.positionalScarcity}
+                    isManualMode={isManualMode}
+                    onManualDraft={handleManualDraft}
+                    isMobile={true}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="roster" className="flex-1 mt-2" style={{ minHeight: '55vh' }}>
+                <RosterPanel
+                  roster={myRoster}
+                  settings={settings}
+                  rosterNeedsRemaining={rosterNeedsRemaining}
+                  availableTeams={availableTeams}
+                  selectedTeam={selectedTeam}
+                  onTeamSelect={handleTeamSelect}
+                  isManualMode={isManualMode}
+                  isMobile={true}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            /* DESKTOP: Original grid layout */
+            <div className="grid grid-cols-12 gap-4" style={{ minHeight: '55vh' }}>
+              {/* Left Panel - Player Queue (primary focus area) */}
+              <div className="col-span-8 bg-slate-900/95 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50 flex flex-col">
+                <PlayerQueue
+                  players={players}
+                  onPlayerClick={handlePlayerClick}
+                  positionalScarcity={inflationResult.positionalScarcity}
+                  isManualMode={isManualMode}
+                  onManualDraft={handleManualDraft}
+                />
+              </div>
+
+              {/* Right Panel - My Roster */}
+              <div className="col-span-4 flex flex-col">
+                <RosterPanel
+                  roster={myRoster}
+                  settings={settings}
+                  rosterNeedsRemaining={rosterNeedsRemaining}
+                  availableTeams={availableTeams}
+                  selectedTeam={selectedTeam}
+                  onTeamSelect={handleTeamSelect}
+                  isManualMode={isManualMode}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Bottom Section - Full Width Inflation Tracker */}
           <div className="w-full">
@@ -625,6 +686,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
               liveInflationStats={liveInflationStats}
               currentAuction={syncResult?.auctionData.currentAuction}
               onManualSync={performSync}
+              isMobile={isMobile}
             />
           </div>
         </div>
