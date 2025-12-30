@@ -3,6 +3,7 @@ import { toast, Toaster } from 'sonner';
 import { LeagueSettings, Player, SavedLeague, UserData } from './lib/types';
 import { generateMockPlayers } from './lib/mockData';
 import { calculateLeagueAuctionValues, convertToPlayers } from './lib/auctionApi';
+import { fetchLeagues, createLeague as createLeagueApi, updateLeague as updateLeagueApi, deleteLeague as deleteLeagueApi } from './lib/leaguesApi';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
@@ -168,18 +169,37 @@ function AppContent() {
     if (currentScreen === 'google-callback') return;
 
     if (isAuthenticated && user && !userData) {
-      // User logged in via real auth - create userData from auth user
+      // User logged in via real auth - create userData from auth user and fetch leagues
       if (import.meta.env.DEV) {
-        console.log('[App] Auth sync: Creating userData from auth user');
+        console.log('[App] Auth sync: Creating userData from auth user and fetching leagues');
       }
-      const newUserData: UserData = {
+
+      // Immediately set user data with empty leagues, then fetch from backend
+      const initialUserData: UserData = {
         username: user.name || user.email.split('@')[0],
         email: user.email,
         leagues: [],
         authProvider: user.authProvider,
         profilePicture: user.profilePictureUrl || undefined
       };
-      setUserData(newUserData);
+      setUserData(initialUserData);
+
+      // Fetch leagues from backend
+      fetchLeagues()
+        .then((backendLeagues) => {
+          if (import.meta.env.DEV) {
+            console.log('[App] Fetched leagues from backend:', backendLeagues.length);
+          }
+          setUserData((prev) => prev ? { ...prev, leagues: backendLeagues } : null);
+        })
+        .catch((error) => {
+          console.error('[App] Failed to fetch leagues from backend:', error);
+          // Don't fail silently - show a toast to the user
+          toast.error('Failed to load your leagues', {
+            description: 'Your leagues could not be loaded. Please try refreshing the page.',
+          });
+        });
+
       // Only navigate to leagues if we're on landing or login
       if (currentScreen === 'landing' || currentScreen === 'login') {
         setCurrentScreen('leagues');
@@ -251,17 +271,36 @@ function AppContent() {
         status: 'drafting'
       };
 
+      // Save league to backend for persistence
+      let savedLeague = newLeague;
+      try {
+        if (import.meta.env.DEV) {
+          console.log('[App] Saving league to backend...');
+        }
+        savedLeague = await createLeagueApi(newLeague);
+        // Merge backend ID with local player data (backend doesn't store players)
+        savedLeague = { ...savedLeague, players: projectedPlayers };
+        if (import.meta.env.DEV) {
+          console.log('[App] League saved to backend with ID:', savedLeague.id);
+        }
+      } catch (error) {
+        console.error('[App] Failed to save league to backend:', error);
+        toast.error('League saved locally only', {
+          description: 'Your league could not be saved to the server. It will be saved locally.',
+        });
+      }
+
       // Add league to user's leagues
       if (userData) {
         const updatedUser = {
           ...userData,
-          leagues: [...userData.leagues, newLeague]
+          leagues: [...userData.leagues, savedLeague]
         };
         setUserData(updatedUser);
       }
 
-      setCurrentLeague(newLeague);
-      setPlayers(newLeague.players);
+      setCurrentLeague(savedLeague);
+      setPlayers(savedLeague.players);
 
       // Ensure minimum loading time for good UX
       const elapsedTime = Date.now() - loadingStartTime;
@@ -283,7 +322,7 @@ function AppContent() {
 
       // Fallback to mock data if projections fail
       const fallbackPlayers = generateMockPlayers();
-      const newLeague: SavedLeague = {
+      const fallbackLeague: SavedLeague = {
         id: `league-${Date.now()}`,
         leagueName: settings.leagueName,
         settings,
@@ -293,16 +332,25 @@ function AppContent() {
         status: 'drafting'
       };
 
+      // Try to save fallback league to backend too
+      let savedFallbackLeague = fallbackLeague;
+      try {
+        savedFallbackLeague = await createLeagueApi(fallbackLeague);
+        savedFallbackLeague = { ...savedFallbackLeague, players: fallbackPlayers };
+      } catch (backendError) {
+        console.error('[App] Failed to save fallback league to backend:', backendError);
+      }
+
       if (userData) {
         const updatedUser = {
           ...userData,
-          leagues: [...userData.leagues, newLeague]
+          leagues: [...userData.leagues, savedFallbackLeague]
         };
         setUserData(updatedUser);
       }
 
-      setCurrentLeague(newLeague);
-      setPlayers(newLeague.players);
+      setCurrentLeague(savedFallbackLeague);
+      setPlayers(savedFallbackLeague.players);
       setCurrentScreen('draft');
     } finally {
       if (import.meta.env.DEV) {
@@ -376,18 +424,35 @@ function AppContent() {
     }
   };
 
-  const handleDeleteLeague = (leagueId: string) => {
+  const handleDeleteLeague = async (leagueId: string) => {
     if (userData) {
+      // Optimistically update UI first
       const updatedUser = {
         ...userData,
         leagues: userData.leagues.filter(l => l.id !== leagueId)
       };
       setUserData(updatedUser);
+
+      // Delete from backend (only if it's a backend-stored league)
+      if (!leagueId.startsWith('league-')) {
+        try {
+          await deleteLeagueApi(leagueId);
+          if (import.meta.env.DEV) {
+            console.log('[App] League deleted from backend:', leagueId);
+          }
+        } catch (error) {
+          console.error('[App] Failed to delete league from backend:', error);
+          toast.error('Failed to delete league from server', {
+            description: 'The league was removed locally but may still exist on the server.',
+          });
+        }
+      }
     }
   };
 
-  const handleEditLeague = (updatedLeague: SavedLeague) => {
+  const handleEditLeague = async (updatedLeague: SavedLeague) => {
     if (userData) {
+      // Optimistically update UI first
       const updatedUser = {
         ...userData,
         leagues: userData.leagues.map(l =>
@@ -395,6 +460,21 @@ function AppContent() {
         )
       };
       setUserData(updatedUser);
+
+      // Update on backend (only if it's a backend-stored league)
+      if (!updatedLeague.id.startsWith('league-')) {
+        try {
+          await updateLeagueApi(updatedLeague.id, updatedLeague);
+          if (import.meta.env.DEV) {
+            console.log('[App] League updated on backend:', updatedLeague.id);
+          }
+        } catch (error) {
+          console.error('[App] Failed to update league on backend:', error);
+          toast.error('Failed to save league changes to server', {
+            description: 'Changes were saved locally but may not persist after logout.',
+          });
+        }
+      }
     }
   };
 

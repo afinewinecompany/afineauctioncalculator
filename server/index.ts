@@ -23,6 +23,7 @@ import { existsSync } from 'fs';
 import authRoutes from './routes/auth.js';
 import auctionRoutes, { cleanupAuctionRoutes } from './routes/auction.js';
 import projectionsRoutes from './routes/projections.js';
+import leaguesRoutes from './routes/leagues.js';
 import { closeBrowser, prewarmBrowser } from './services/couchManagersScraper.js';
 import { apiLimiter, authLimiter, scrapingLimiter } from './middleware/rateLimiter.js';
 import { sanitizeBody } from './middleware/sanitize.js';
@@ -157,6 +158,9 @@ export function createServer(): Express {
 
   // Projections routes
   app.use('/api/projections', projectionsRoutes);
+
+  // Leagues routes (CRUD for user leagues)
+  app.use('/api/leagues', leaguesRoutes);
 
   // ==========================================================================
   // STATIC FILE SERVING (Production only - serves built frontend if present)
