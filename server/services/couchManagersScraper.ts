@@ -1,19 +1,25 @@
 import puppeteer, { Browser, Page } from 'puppeteer-core';
 import { existsSync } from 'fs';
+import { execSync } from 'child_process';
 import type { ScrapedAuctionData, ScrapedPlayer, ScrapedTeam, CurrentAuction } from '../types/auction.js';
 import { normalizeName } from './playerMatcher.js';
 
 // Find Chrome/Chromium executable path based on environment
 function getChromePath(): string {
-  // Railway/Nixpacks provides Chromium at this path
-  if (process.env.CHROME_BIN) {
+  // Railway/Nixpacks provides Chromium - check CHROME_BIN first
+  if (process.env.CHROME_BIN && existsSync(process.env.CHROME_BIN)) {
     return process.env.CHROME_BIN;
   }
 
   // Common paths for different environments
+  // Nixpacks adds chromium to PATH, so 'chromium' should work
   const possiblePaths = [
-    '/usr/bin/chromium-browser',      // Nixpacks/Railway
+    // Nixpacks/Railway - chromium is in PATH, check common Nix store patterns
+    '/app/.nix-profile/bin/chromium',
+    '/nix/var/nix/profiles/default/bin/chromium',
+    // Try to find in PATH (Nixpacks adds to PATH)
     '/usr/bin/chromium',              // Some Linux distros
+    '/usr/bin/chromium-browser',      // Debian/Ubuntu
     '/usr/bin/google-chrome',         // Google Chrome on Linux
     '/usr/bin/google-chrome-stable',  // Chrome stable
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Windows
@@ -24,12 +30,24 @@ function getChromePath(): string {
   // In development, try to use local Chrome
   for (const chromePath of possiblePaths) {
     if (existsSync(chromePath)) {
+      console.log(`[Scraper] Found Chrome at: ${chromePath}`);
       return chromePath;
     }
   }
 
+  // For Nixpacks: try to find chromium via which command (it's in PATH)
+  try {
+    const chromiumPath = execSync('which chromium 2>/dev/null || which chromium-browser 2>/dev/null || echo ""', { encoding: 'utf8' }).trim();
+    if (chromiumPath && existsSync(chromiumPath)) {
+      console.log(`[Scraper] Found Chromium via PATH: ${chromiumPath}`);
+      return chromiumPath;
+    }
+  } catch (e) {
+    // Ignore errors from which command
+  }
+
   // Fallback - let puppeteer-core fail with a helpful message
-  throw new Error('Chrome/Chromium not found. Set CHROME_BIN environment variable or install Chrome.');
+  throw new Error('Chrome/Chromium not found. Set CHROME_BIN environment variable or install Chrome. Checked paths: ' + possiblePaths.join(', '));
 }
 
 // Browser instance management constants

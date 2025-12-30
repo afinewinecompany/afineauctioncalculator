@@ -69,7 +69,9 @@ export function LeaguesList({
           }));
         })
         .catch(error => {
-          console.warn(`Failed to fetch room ${roomId} data:`, error);
+          if (import.meta.env.DEV) {
+            console.warn(`Failed to fetch room ${roomId} data:`, error);
+          }
           setRoomDataCache(prev => ({
             ...prev,
             [roomId]: { data: null, loading: false, error: error.message }

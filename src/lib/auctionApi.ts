@@ -512,13 +512,15 @@ export function convertToPlayers(
   const draftablePlayersOnly = calculatedValues.players.filter(p => p.isInDraftPool);
 
   // Debug: Check if problematic players are being included
-  const jesusCheck = calculatedValues.players.find(p => p.name.includes('Jesus Rodriguez'));
-  const rafaelCheck = calculatedValues.players.find(p => p.name.includes('Rafael Flores'));
-  if (jesusCheck || rafaelCheck) {
-    console.log('[convertToPlayers] Debug - Jesus Rodriguez:', jesusCheck ? { isInDraftPool: jesusCheck.isInDraftPool, tier: jesusCheck.tier, auctionValue: jesusCheck.auctionValue } : 'not found');
-    console.log('[convertToPlayers] Debug - Rafael Flores:', rafaelCheck ? { isInDraftPool: rafaelCheck.isInDraftPool, tier: rafaelCheck.tier, auctionValue: rafaelCheck.auctionValue } : 'not found');
+  if (import.meta.env.DEV) {
+    const jesusCheck = calculatedValues.players.find(p => p.name.includes('Jesus Rodriguez'));
+    const rafaelCheck = calculatedValues.players.find(p => p.name.includes('Rafael Flores'));
+    if (jesusCheck || rafaelCheck) {
+      console.log('[convertToPlayers] Debug - Jesus Rodriguez:', jesusCheck ? { isInDraftPool: jesusCheck.isInDraftPool, tier: jesusCheck.tier, auctionValue: jesusCheck.auctionValue } : 'not found');
+      console.log('[convertToPlayers] Debug - Rafael Flores:', rafaelCheck ? { isInDraftPool: rafaelCheck.isInDraftPool, tier: rafaelCheck.tier, auctionValue: rafaelCheck.auctionValue } : 'not found');
+    }
+    console.log(`[convertToPlayers] Total players: ${calculatedValues.players.length}, In draft pool: ${draftablePlayersOnly.length}`);
   }
-  console.log(`[convertToPlayers] Total players: ${calculatedValues.players.length}, In draft pool: ${draftablePlayersOnly.length}`);
 
   // Group players by externalId to identify two-way players
   const playerMap = new Map<string, CalculatedValuesResponse['players']>();

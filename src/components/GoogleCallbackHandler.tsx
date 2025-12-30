@@ -19,7 +19,9 @@ export function GoogleCallbackHandler({ onSuccess, onError }: GoogleCallbackHand
     async function processCallback() {
       // Prevent double execution
       if (hasProcessedRef.current) {
-        console.log('[GoogleCallback] Already processed, skipping duplicate call');
+        if (import.meta.env.DEV) {
+          console.log('[GoogleCallback] Already processed, skipping duplicate call');
+        }
         return;
       }
       hasProcessedRef.current = true;
@@ -54,7 +56,9 @@ export function GoogleCallbackHandler({ onSuccess, onError }: GoogleCallbackHand
           onSuccess();
         }, 1000);
       } catch (err) {
-        console.error('Google OAuth callback failed:', err);
+        if (import.meta.env.DEV) {
+          console.error('Google OAuth callback failed:', err);
+        }
         const message = err instanceof Error ? err.message : 'Failed to complete Google login';
         setErrorMessage(message);
         setStatus('error');

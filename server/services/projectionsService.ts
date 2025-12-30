@@ -8,6 +8,7 @@ import type {
   FanGraphsPitcher,
   NormalizedProjection,
 } from '../types/projections.js';
+import { logger } from './logger.js';
 
 const FANGRAPHS_BASE_URL = 'https://www.fangraphs.com/api/projections';
 
@@ -18,68 +19,68 @@ const FANGRAPHS_BASE_URL = 'https://www.fangraphs.com/api/projections';
 function validateProjection(proj: NormalizedProjection): boolean {
   // Basic validation - must have a name and external ID
   if (!proj.name || !proj.externalId) {
-    console.warn(`Invalid projection: missing name or ID`);
+    logger.warn({ name: proj.name, externalId: proj.externalId }, 'Invalid projection: missing name or ID');
     return false;
   }
 
   if (proj.playerType === 'hitter') {
     if (!proj.hitting) {
-      console.warn(`Invalid hitter projection for ${proj.name}: missing hitting stats`);
+      logger.warn({ player: proj.name }, 'Invalid hitter projection: missing hitting stats');
       return false;
     }
     const h = proj.hitting;
 
     // Plate appearances should be reasonable (0-800 for a full season)
     if (h.plateAppearances < 0 || h.plateAppearances > 800) {
-      console.warn(`Invalid hitter projection for ${proj.name}: PA=${h.plateAppearances} out of range`);
+      logger.warn({ player: proj.name, PA: h.plateAppearances }, 'Invalid hitter projection: PA out of range');
       return false;
     }
 
     // Batting average must be between 0 and 1
     if (h.battingAvg < 0 || h.battingAvg > 1) {
-      console.warn(`Invalid hitter projection for ${proj.name}: AVG=${h.battingAvg} out of range`);
+      logger.warn({ player: proj.name, AVG: h.battingAvg }, 'Invalid hitter projection: AVG out of range');
       return false;
     }
 
     // WAR should be realistic (-5 to 15)
     if (h.war < -5 || h.war > 15) {
-      console.warn(`Invalid hitter projection for ${proj.name}: WAR=${h.war} out of range (flagged as outlier)`);
+      logger.warn({ player: proj.name, WAR: h.war }, 'Invalid hitter projection: WAR out of range');
       return false;
     }
 
     // OBP should be between 0 and 1
     if (h.onBasePct < 0 || h.onBasePct > 1) {
-      console.warn(`Invalid hitter projection for ${proj.name}: OBP=${h.onBasePct} out of range`);
+      logger.warn({ player: proj.name, OBP: h.onBasePct }, 'Invalid hitter projection: OBP out of range');
       return false;
     }
   } else if (proj.playerType === 'pitcher') {
     if (!proj.pitching) {
-      console.warn(`Invalid pitcher projection for ${proj.name}: missing pitching stats`);
+      logger.warn({ player: proj.name }, 'Invalid pitcher projection: missing pitching stats');
       return false;
     }
     const p = proj.pitching;
 
     // Innings pitched should be reasonable (0-300 for a full season)
     if (p.inningsPitched < 0 || p.inningsPitched > 300) {
-      console.warn(`Invalid pitcher projection for ${proj.name}: IP=${p.inningsPitched} out of range`);
+      logger.warn({ player: proj.name, IP: p.inningsPitched }, 'Invalid pitcher projection: IP out of range');
       return false;
     }
 
     // ERA should be reasonable (0-15, allowing for small sample size projections)
     if (p.era < 0 || p.era > 15) {
-      console.warn(`Invalid pitcher projection for ${proj.name}: ERA=${p.era} out of range`);
+      logger.warn({ player: proj.name, ERA: p.era }, 'Invalid pitcher projection: ERA out of range');
       return false;
     }
 
     // WHIP should be reasonable (0-3)
     if (p.whip < 0 || p.whip > 3) {
-      console.warn(`Invalid pitcher projection for ${proj.name}: WHIP=${p.whip} out of range`);
+      logger.warn({ player: proj.name, WHIP: p.whip }, 'Invalid pitcher projection: WHIP out of range');
       return false;
     }
 
     // WAR should be realistic (-5 to 15)
     if (p.war < -5 || p.war > 15) {
-      console.warn(`Invalid pitcher projection for ${proj.name}: WAR=${p.war} out of range (flagged as outlier)`);
+      logger.warn({ player: proj.name, WAR: p.war }, 'Invalid pitcher projection: WAR out of range');
       return false;
     }
   }
@@ -91,7 +92,7 @@ function validateProjection(proj: NormalizedProjection): boolean {
  * Fetches Steamer projections for both hitters and pitchers from FanGraphs
  */
 export async function fetchSteamerProjections(): Promise<NormalizedProjection[]> {
-  console.log('Fetching Steamer projections from FanGraphs...');
+  logger.info('Fetching Steamer projections from FanGraphs');
 
   // Fetch both batting and pitching in parallel
   const [hittersResponse, pitchersResponse] = await Promise.all([
@@ -109,7 +110,7 @@ export async function fetchSteamerProjections(): Promise<NormalizedProjection[]>
   const hitters: FanGraphsHitter[] = await hittersResponse.json();
   const pitchers: FanGraphsPitcher[] = await pitchersResponse.json();
 
-  console.log(`Fetched ${hitters.length} hitters and ${pitchers.length} pitchers`);
+  logger.info({ hitters: hitters.length, pitchers: pitchers.length }, 'Fetched projections from FanGraphs');
 
   // Normalize all projections
   const normalizedHitters = hitters.map(normalizeHitter);
@@ -123,10 +124,10 @@ export async function fetchSteamerProjections(): Promise<NormalizedProjection[]>
   const filteredPitchers = normalizedPitchers.length - validPitchers.length;
 
   if (filteredHitters > 0 || filteredPitchers > 0) {
-    console.log(`Filtered out ${filteredHitters} invalid hitters and ${filteredPitchers} invalid pitchers`);
+    logger.info({ filteredHitters, filteredPitchers }, 'Filtered out invalid projections');
   }
 
-  console.log(`Returning ${validHitters.length} valid hitters and ${validPitchers.length} valid pitchers`);
+  logger.info({ validHitters: validHitters.length, validPitchers: validPitchers.length }, 'Returning valid projections');
 
   return [...validHitters, ...validPitchers];
 }

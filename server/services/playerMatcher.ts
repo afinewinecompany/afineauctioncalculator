@@ -1,4 +1,5 @@
 import type { ScrapedPlayer, MatchedPlayer } from '../types/auction.js';
+import { logger } from './logger.js';
 
 interface ProjectionPlayer {
   id: string;
@@ -242,9 +243,12 @@ export function matchPlayer(
     // Check if there's ambiguity (multiple similar scores)
     if (scoredMatches.length > 1 && scoredMatches[1].score > bestMatch.score - 30) {
       // Too much ambiguity - could be wrong player
-      console.warn(`[PlayerMatcher] Ambiguous match for "${scrapedPlayer.fullName}" (${scrapedPlayer.mlbTeam}): ` +
-        `Best: ${bestMatch.player.name} (${bestMatch.player.team}) score=${bestMatch.score}, ` +
-        `Second: ${scoredMatches[1].player.name} (${scoredMatches[1].player.team}) score=${scoredMatches[1].score}`);
+      logger.warn({
+        player: scrapedPlayer.fullName,
+        team: scrapedPlayer.mlbTeam,
+        bestMatch: { name: bestMatch.player.name, team: bestMatch.player.team, score: bestMatch.score },
+        secondMatch: { name: scoredMatches[1].player.name, team: scoredMatches[1].player.team, score: scoredMatches[1].score },
+      }, 'Ambiguous player match');
       return { player: null, confidence: 'unmatched' };
     }
     confidence = 'partial';
@@ -257,8 +261,12 @@ export function matchPlayer(
   // for significant money, something might be wrong
   if (scrapedPlayer.status === 'drafted' && scrapedPlayer.winningBid && scrapedPlayer.winningBid > 10) {
     if (bestMatch.player.projectedValue <= 2) {
-      console.warn(`[PlayerMatcher] Suspicious match: "${scrapedPlayer.fullName}" drafted for $${scrapedPlayer.winningBid} ` +
-        `matched to "${bestMatch.player.name}" with projectedValue=$${bestMatch.player.projectedValue}`);
+      logger.warn({
+        scrapedPlayer: scrapedPlayer.fullName,
+        winningBid: scrapedPlayer.winningBid,
+        matchedPlayer: bestMatch.player.name,
+        projectedValue: bestMatch.player.projectedValue,
+      }, 'Suspicious match: high draft value matched to low projection');
       // Still return the match, but log the warning for investigation
     }
   }
@@ -316,8 +324,14 @@ function deduplicateScrapedPlayers(players: ScrapedPlayer[]): ScrapedPlayer[] {
 
     // Log duplicate consolidation for debugging
     if (group.length > 1) {
-      console.log(`[PlayerMatcher] Consolidated ${group.length} duplicate entries for "${best.fullName}" (${best.mlbTeam}). ` +
-        `Selected couchManagersId=${best.couchManagersId} with winningBid=${best.winningBid}, winningTeam=${best.winningTeam}`);
+      logger.debug({
+        player: best.fullName,
+        team: best.mlbTeam,
+        duplicateCount: group.length,
+        selectedId: best.couchManagersId,
+        winningBid: best.winningBid,
+        winningTeam: best.winningTeam,
+      }, 'Consolidated duplicate player entries');
     }
 
     deduplicated.push(best);
@@ -340,7 +354,7 @@ export function matchAllPlayers(
   const dedupedPlayers = deduplicateScrapedPlayers(scrapedPlayers);
 
   if (dedupedPlayers.length !== scrapedPlayers.length) {
-    console.log(`[PlayerMatcher] Deduplicated ${scrapedPlayers.length} -> ${dedupedPlayers.length} scraped players`);
+    logger.debug({ before: scrapedPlayers.length, after: dedupedPlayers.length }, 'Deduplicated scraped players');
   }
 
   // Track which projection players have been matched to prevent double-matching
@@ -352,7 +366,11 @@ export function matchAllPlayers(
     if (player && confidence !== 'unmatched') {
       // Check if this projection player was already matched
       if (usedProjectionIds.has(player.id)) {
-        console.warn(`[PlayerMatcher] Duplicate match attempt: "${scraped.fullName}" trying to match to already-used "${player.name}" (${player.id})`);
+        logger.warn({
+          scrapedPlayer: scraped.fullName,
+          matchedPlayer: player.name,
+          playerId: player.id,
+        }, 'Duplicate match attempt to already-used projection player');
         unmatched.push(scraped);
         continue;
       }

@@ -19,6 +19,7 @@ import {
 } from '../services/dynastyRankingsScraper.js';
 import { calculateAuctionValues } from '../services/valueCalculator.js';
 import { refreshLimiter } from '../middleware/rateLimiter.js';
+import { logger } from '../services/logger.js';
 import type { LeagueSettings } from '../../src/lib/types.js';
 
 const router = Router();
@@ -91,7 +92,7 @@ router.get('/:system', async (req: Request, res: Response) => {
       fromCache: false,
     });
   } catch (error) {
-    console.error(`Error fetching ${system} projections:`, error);
+    logger.error({ error, system }, 'Error fetching projections');
     res.status(503).json({
       error: 'Failed to fetch projections. FanGraphs API may be unavailable.',
       message: error instanceof Error ? error.message : undefined,
@@ -119,7 +120,7 @@ router.get('/:system/status', async (req: Request, res: Response) => {
       ...status,
     });
   } catch (error) {
-    console.error(`Error getting cache status for ${system}:`, error);
+    logger.error({ error, system }, 'Error getting cache status');
     res.status(500).json({
       error: 'Failed to get cache status',
     });
@@ -176,7 +177,7 @@ router.post('/:system/refresh', refreshLimiter, async (req: Request, res: Respon
       refreshedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error(`Error refreshing ${system} projections:`, error);
+    logger.error({ error, system }, 'Error refreshing projections');
     res.status(503).json({
       error: 'Failed to refresh projections',
       message: error instanceof Error ? error.message : undefined,
@@ -236,7 +237,7 @@ router.post('/calculate-values', async (req: Request, res: Response) => {
     let cached = await getCachedProjections(projectionSystem);
 
     if (!cached) {
-      console.log(`No cached projections for ${projectionSystem}, fetching fresh...`);
+      logger.info({ projectionSystem }, 'No cached projections, fetching fresh');
 
       let projections;
       switch (projectionSystem) {
@@ -265,15 +266,15 @@ router.post('/calculate-values', async (req: Request, res: Response) => {
     }
 
     // For dynasty leagues, also fetch dynasty rankings
-    console.log(`[API] calculate-values called with leagueType: ${leagueSettings.leagueType}, dynastyWeight: ${leagueSettings.dynastySettings?.dynastyWeight}`);
+    logger.debug({ leagueType: leagueSettings.leagueType, dynastyWeight: leagueSettings.dynastySettings?.dynastyWeight }, 'calculate-values called');
     let dynastyRankings;
     if (leagueSettings.leagueType === 'dynasty') {
-      console.log('[API] Dynasty mode - fetching dynasty rankings');
+      logger.info('Dynasty mode - fetching dynasty rankings');
       try {
         dynastyRankings = await getDynastyRankings();
-        console.log(`[API] Loaded ${dynastyRankings.length} dynasty rankings`);
+        logger.info({ count: dynastyRankings.length }, 'Loaded dynasty rankings');
       } catch (dynastyError) {
-        console.warn('[API] Failed to load dynasty rankings, falling back to steamer-only:', dynastyError);
+        logger.warn({ error: dynastyError }, 'Failed to load dynasty rankings, falling back to steamer-only');
         // Continue without dynasty rankings - will use steamer-only values
       }
     }
@@ -290,10 +291,7 @@ router.post('/calculate-values', async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error calculating auction values:', error);
-    if (error instanceof Error) {
-      console.error('Stack trace:', error.stack);
-    }
+    logger.error({ error }, 'Error calculating auction values');
 
     // Only include stack trace in development mode to avoid leaking implementation details
     const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -327,7 +325,7 @@ router.get('/dynasty-rankings', async (req: Request, res: Response) => {
       rankings,
     });
   } catch (error) {
-    console.error('Error fetching dynasty rankings:', error);
+    logger.error({ error }, 'Error fetching dynasty rankings');
     res.status(503).json({
       error: 'Failed to fetch dynasty rankings',
       message: error instanceof Error ? error.message : undefined,
@@ -344,7 +342,7 @@ router.get('/dynasty-rankings/status', async (req: Request, res: Response) => {
     const status = await getDynastyRankingsCacheStatus();
     res.json(status);
   } catch (error) {
-    console.error('Error getting dynasty rankings cache status:', error);
+    logger.error({ error }, 'Error getting dynasty rankings cache status');
     res.status(500).json({
       error: 'Failed to get cache status',
     });
@@ -367,7 +365,7 @@ router.post('/dynasty-rankings/refresh', refreshLimiter, async (req: Request, re
       refreshedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error refreshing dynasty rankings:', error);
+    logger.error({ error }, 'Error refreshing dynasty rankings');
     res.status(503).json({
       error: 'Failed to refresh dynasty rankings',
       message: error instanceof Error ? error.message : undefined,

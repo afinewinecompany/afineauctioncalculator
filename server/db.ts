@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { env, isDevelopment } from './config/env.js';
+import { logger } from './services/logger.js';
 
 /**
  * Prisma Client singleton
@@ -28,9 +29,9 @@ if (isDevelopment) {
 export async function connectDatabase(): Promise<void> {
   try {
     await prisma.$connect();
-    console.log('✅ Database connected successfully');
+    logger.info('Database connected successfully');
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    logger.error({ error }, 'Database connection failed');
     throw error;
   }
 }
@@ -40,7 +41,7 @@ export async function connectDatabase(): Promise<void> {
  */
 export async function disconnectDatabase(): Promise<void> {
   await prisma.$disconnect();
-  console.log('Database disconnected');
+  logger.info('Database disconnected');
 }
 
 /**
@@ -51,7 +52,7 @@ export async function checkDatabaseHealth(): Promise<boolean> {
     await prisma.$queryRaw`SELECT 1`;
     return true;
   } catch (error) {
-    console.error('Database health check failed:', error);
+    logger.error({ error }, 'Database health check failed');
     return false;
   }
 }

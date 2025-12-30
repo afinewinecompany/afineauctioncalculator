@@ -284,6 +284,100 @@ export async function cleanupExpiredTokens(): Promise<number> {
 }
 
 // =============================================================================
+// PASSWORD RESET OPERATIONS
+// =============================================================================
+
+/**
+ * Generate a secure password reset token
+ *
+ * @returns Object containing raw token and hashed token
+ */
+export function generatePasswordResetToken(): { token: string; tokenHash: string } {
+  // Generate a secure random token (32 bytes = 64 hex characters)
+  const token = crypto.randomBytes(32).toString('hex');
+  // Hash the token for secure storage
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  return { token, tokenHash };
+}
+
+/**
+ * Store password reset token for a user
+ *
+ * @param userId - User ID
+ * @param tokenHash - Hashed reset token
+ * @param expiresInMinutes - Token expiration in minutes (default: 60)
+ */
+export async function storePasswordResetToken(
+  userId: string,
+  tokenHash: string,
+  expiresInMinutes: number = 60
+): Promise<void> {
+  const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpires: expiresAt,
+    },
+  });
+}
+
+/**
+ * Verify a password reset token and return the user if valid
+ *
+ * @param token - Raw reset token
+ * @returns User object if token is valid, null otherwise
+ */
+export async function verifyPasswordResetToken(token: string) {
+  // Hash the provided token to compare with stored hash
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await prisma.user.findFirst({
+    where: {
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpires: {
+        gt: new Date(), // Token must not be expired
+      },
+    },
+  });
+
+  return user;
+}
+
+/**
+ * Clear password reset token after successful reset or expiration
+ *
+ * @param userId - User ID
+ */
+export async function clearPasswordResetToken(userId: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      passwordResetTokenHash: null,
+      passwordResetExpires: null,
+    },
+  });
+}
+
+/**
+ * Update user password and clear reset token
+ *
+ * @param userId - User ID
+ * @param newPasswordHash - Hashed new password
+ */
+export async function updatePassword(userId: string, newPasswordHash: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      passwordHash: newPasswordHash,
+      passwordResetTokenHash: null,
+      passwordResetExpires: null,
+    },
+  });
+}
+
+// =============================================================================
 // USER OPERATIONS
 // =============================================================================
 

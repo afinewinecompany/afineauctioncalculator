@@ -22,9 +22,10 @@ function getApiUrl(): string {
 interface LoginPageProps {
   onBack: () => void;
   onSuccess: () => void;
+  onForgotPassword: () => void;
 }
 
-export function LoginPage({ onBack, onSuccess }: LoginPageProps) {
+export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProps) {
   const { login, register, isLoading, error, clearError } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -106,7 +107,9 @@ export function LoginPage({ onBack, onSuccess }: LoginPageProps) {
       // Google OAuth is configured, proceed with redirect
       window.location.href = `${apiUrl}/api/auth/google`;
     } catch (err) {
-      console.error('Google OAuth check failed:', err);
+      if (import.meta.env.DEV) {
+        console.error('Google OAuth check failed:', err);
+      }
       // If the check fails, show a user-friendly error
       setLocalError('Google sign-in is temporarily unavailable. Please use email/password instead.');
       setIsGoogleLoading(false);
@@ -216,6 +219,17 @@ export function LoginPage({ onBack, onSuccess }: LoginPageProps) {
                 required
                 disabled={isLoading}
               />
+              {!isSignUp && (
+                <div className="mt-2 text-right">
+                  <button
+                    type="button"
+                    onClick={onForgotPassword}
+                    className="text-sm text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </div>
 
             {isSignUp && (

@@ -307,3 +307,21 @@ export const refreshLimiter = createRateLimiter({
     });
   },
 });
+
+/**
+ * Password reset rate limiter (very strict)
+ * 3 requests per 15 minutes for password reset requests
+ * Prevents abuse and email enumeration attacks
+ */
+export const passwordResetLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // 3 requests per 15 minutes
+  prefix: 'password-reset',
+  handler: (req: Request, res: Response) => {
+    console.warn(`[RateLimit] Password reset rate limit exceeded for IP: ${req.ip}`);
+    res.status(429).json({
+      ...createRateLimitResponse(900), // 15 minutes in seconds
+      message: 'Too many password reset requests. Please try again later.',
+    });
+  },
+});

@@ -23,6 +23,10 @@ model User {
   authProvider     String    @default("email") // "email" | "google"
   subscriptionTier String    @default("free") // "free" | "premium"
 
+  // Password reset fields
+  passwordResetTokenHash String?   // Hashed reset token
+  passwordResetExpires   DateTime? // Token expiration time
+
   // Timestamps
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -35,6 +39,7 @@ model User {
   draftPicks       DraftPick[]    @relation("DraftedBy")
 
   @@index([email])
+  @@index([passwordResetTokenHash])
   @@map("users")
 }
 

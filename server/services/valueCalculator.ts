@@ -17,6 +17,7 @@ import type {
 } from '../types/projections.js';
 import type { LeagueSettings } from '../../src/lib/types.js';
 import { matchDynastyRankingsToProjections } from './dynastyRankingsScraper.js';
+import { logger } from './logger.js';
 
 // Default hitter/pitcher budget split
 const DEFAULT_HITTER_SPLIT = 0.68;
@@ -462,7 +463,7 @@ export function calculateAuctionValues(
 
   // Apply dynasty adjustments if in dynasty mode with rankings
   if (settings.leagueType === 'dynasty' && dynastyRankings && dynastyRankings.length > 0) {
-    console.log(`[ValueCalc] Applying dynasty adjustments with ${dynastyRankings.length} rankings`);
+    logger.info({ rankingsCount: dynastyRankings.length }, 'Applying dynasty adjustments');
     playersWithValues = applyDynastyAdjustments(
       playersWithValues,
       dynastyRankings,
@@ -1947,7 +1948,7 @@ function applyDynastyAdjustments(
   if (!includeMinors) {
     const beforeCount = dynastyRankings.length;
     filteredRankings = dynastyRankings.filter(r => r.level === 'MLB');
-    console.log(`[Dynasty] Filtered rankings: ${beforeCount} -> ${filteredRankings.length} (excludeMinors mode, MLB only)`);
+    logger.debug({ before: beforeCount, after: filteredRankings.length }, 'Filtered rankings to MLB only (excludeMinors mode)');
   }
 
   // Match dynasty rankings to projections
@@ -1956,18 +1957,28 @@ function applyDynastyAdjustments(
     players.map(p => ({ externalId: p.externalId, name: p.name, team: p.team }))
   );
 
-  console.log(`[Dynasty] Matched ${rankingMap.size}/${players.length} players to dynasty rankings`);
+  logger.debug({ matched: rankingMap.size, total: players.length }, 'Matched players to dynasty rankings');
 
   // Debug: Check if specific players are in dynasty rankings
   const jesusPlayer = players.find(p => p.name.includes('Jesus Rodriguez'));
   const rafaelPlayer = players.find(p => p.name.includes('Rafael Flores'));
   if (jesusPlayer) {
     const jesusRanking = rankingMap.get(jesusPlayer.externalId);
-    console.log(`[Dynasty Debug] Jesus Rodriguez - externalId: ${jesusPlayer.externalId}, matched: ${!!jesusRanking}, rank: ${jesusRanking?.overallRank || 'N/A'}`);
+    logger.debug({
+      player: 'Jesus Rodriguez',
+      externalId: jesusPlayer.externalId,
+      matched: !!jesusRanking,
+      rank: jesusRanking?.overallRank,
+    }, 'Dynasty debug - player match');
   }
   if (rafaelPlayer) {
     const rafaelRanking = rankingMap.get(rafaelPlayer.externalId);
-    console.log(`[Dynasty Debug] Rafael Flores - externalId: ${rafaelPlayer.externalId}, matched: ${!!rafaelRanking}, rank: ${rafaelRanking?.overallRank || 'N/A'}`);
+    logger.debug({
+      player: 'Rafael Flores',
+      externalId: rafaelPlayer.externalId,
+      matched: !!rafaelRanking,
+      rank: rafaelRanking?.overallRank,
+    }, 'Dynasty debug - player match');
   }
 
   // Separate hitters and pitchers
@@ -2110,7 +2121,12 @@ function calculateDynastyAdjustedValuesDollarBased(
   // Combine: all ranked players first, then unranked players (for output ordering)
   const sortedPlayers = [...rankedPlayers, ...unrankedPlayers];
 
-  console.log(`[Dynasty] Requested pool: ${poolSize}, Ranked available: ${rankedPlayers.length}, Effective pool: ${effectivePoolSize}, Unranked (excluded): ${unrankedPlayers.length}`);
+  logger.debug({
+    requestedPool: poolSize,
+    rankedAvailable: rankedPlayers.length,
+    effectivePool: effectivePoolSize,
+    unrankedExcluded: unrankedPlayers.length,
+  }, 'Dynasty pool size calculation');
 
   const results = sortedPlayers.map((player, index) => {
     // In dynasty mode, ONLY ranked players can be in the draft pool
@@ -2121,7 +2137,13 @@ function calculateDynastyAdjustedValuesDollarBased(
 
     // Debug: Log specific players to track why they might appear in pool
     if (player.name.includes('Jesus Rodriguez') || player.name.includes('Rafael Flores')) {
-      console.log(`[Dynasty Debug] ${player.name}: index=${index}, effectivePoolSize=${effectivePoolSize}, hasNoDynastyData=${player.hasNoDynastyData}, isInPool=${isInPool}`);
+      logger.debug({
+        player: player.name,
+        index,
+        effectivePoolSize,
+        hasNoDynastyData: player.hasNoDynastyData,
+        isInPool,
+      }, 'Dynasty debug - pool check');
     }
 
     if (isInPool && totalAdjustedValue > 0 && player.adjustedValue > 0) {

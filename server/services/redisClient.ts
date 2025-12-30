@@ -10,6 +10,7 @@
 
 import Redis from 'ioredis';
 import { env, isDevelopment, isProduction } from '../config/env.js';
+import { logger } from './logger.js';
 
 let redisClient: Redis | null = null;
 let isRedisAvailable = false;
@@ -21,11 +22,11 @@ export function initializeRedis(): Redis | null {
   // Skip Redis in development if REDIS_URL not configured
   if (!env.REDIS_URL) {
     if (isDevelopment) {
-      console.log('[Redis] No REDIS_URL configured - running without Redis (development only)');
-      console.log('[Redis] File-based caching will be used as fallback');
+      logger.info('No REDIS_URL configured - running without Redis (development only)');
+      logger.info('File-based caching will be used as fallback');
       return null;
     } else {
-      console.warn('[Redis] WARNING: No REDIS_URL configured in production - this is not recommended');
+      logger.warn('No REDIS_URL configured in production - this is not recommended');
       return null;
     }
   }
@@ -35,7 +36,7 @@ export function initializeRedis(): Redis | null {
       // Connection retry strategy
       retryStrategy(times) {
         const delay = Math.min(times * 50, 2000);
-        console.log(`[Redis] Retrying connection (attempt ${times}) in ${delay}ms...`);
+        logger.info({ attempt: times, delayMs: delay }, 'Retrying Redis connection');
         return delay;
       },
 
@@ -64,36 +65,36 @@ export function initializeRedis(): Redis | null {
 
     // Connection event handlers
     redisClient.on('connect', () => {
-      console.log('[Redis] Connecting to Redis...');
+      logger.info('Connecting to Redis');
     });
 
     redisClient.on('ready', () => {
-      console.log('[Redis] Connected successfully');
+      logger.info('Redis connected successfully');
       isRedisAvailable = true;
     });
 
     redisClient.on('error', (error) => {
-      console.error('[Redis] Error:', error.message);
+      logger.error({ error: error.message }, 'Redis error');
       isRedisAvailable = false;
 
       // In development, log but don't crash
       if (isDevelopment) {
-        console.log('[Redis] Continuing without Redis (development mode)');
+        logger.info('Continuing without Redis (development mode)');
       }
     });
 
     redisClient.on('close', () => {
-      console.log('[Redis] Connection closed');
+      logger.info('Redis connection closed');
       isRedisAvailable = false;
     });
 
     redisClient.on('reconnecting', (delay: number) => {
-      console.log(`[Redis] Reconnecting in ${delay}ms...`);
+      logger.info({ delayMs: delay }, 'Redis reconnecting');
     });
 
     // Connect immediately
     redisClient.connect().catch(error => {
-      console.error('[Redis] Failed to connect:', error.message);
+      logger.error({ error: error.message }, 'Failed to connect to Redis');
       if (!isDevelopment) {
         throw error;
       }
@@ -101,7 +102,7 @@ export function initializeRedis(): Redis | null {
 
     return redisClient;
   } catch (error) {
-    console.error('[Redis] Failed to initialize:', error);
+    logger.error({ error }, 'Failed to initialize Redis');
     if (!isDevelopment) {
       throw error;
     }
@@ -129,7 +130,7 @@ export async function checkRedisHealth(): Promise<boolean> {
     const pong = await redisClient.ping();
     return pong === 'PONG';
   } catch (error) {
-    console.error('[Redis] Health check failed:', error);
+    logger.error({ error }, 'Redis health check failed');
     return false;
   }
 }
@@ -139,12 +140,12 @@ export async function checkRedisHealth(): Promise<boolean> {
  */
 export async function closeRedis(): Promise<void> {
   if (redisClient) {
-    console.log('[Redis] Closing connection...');
+    logger.info('Closing Redis connection');
     try {
       await redisClient.quit();
-      console.log('[Redis] Connection closed gracefully');
+      logger.info('Redis connection closed gracefully');
     } catch (error) {
-      console.error('[Redis] Error during shutdown:', error);
+      logger.error({ error }, 'Error during Redis shutdown');
       // Force disconnect if graceful shutdown fails
       redisClient.disconnect();
     }

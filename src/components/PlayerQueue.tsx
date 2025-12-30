@@ -1,11 +1,13 @@
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import { Player, PositionalScarcity } from '../lib/types';
 import { getDraftSurplus } from '../lib/calculations';
 import { getPlayerPhotoUrl } from '../lib/auctionApi';
-import { ArrowUpDown, Filter, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User, Check, X, UserPlus, Info } from 'lucide-react';
+import { ArrowUpDown, Filter, TrendingUp, TrendingDown, User, Check, X, UserPlus, Info } from 'lucide-react';
 
-// Players per page for pagination
-const PLAYERS_PER_PAGE = 50;
+// Virtualization constants
+const ROW_HEIGHT = 64; // Height of each player row in pixels
+const BUFFER_SIZE = 5; // Number of extra rows to render above/below viewport
+const VIRTUALIZATION_THRESHOLD = 100; // Only virtualize if more than this many players
 
 interface PlayerQueueProps {
   players: Player[];
@@ -21,6 +23,11 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
   // Track which player has manual entry input open, and the current input value
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [manualPriceInput, setManualPriceInput] = useState<string>('');
+
+  // Virtualization state
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
 
   // Build scarcity lookup map for quick access
   const scarcityByPosition = useMemo(() => {
@@ -43,7 +50,6 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'on_block' | 'drafted'>('available');
   const [sortBy, setSortBy] = useState<'name' | 'projectedValue' | 'adjustedValue'>('adjustedValue');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [currentPage, setCurrentPage] = useState(1);
 
   const handleSort = (field: typeof sortBy) => {
     if (sortBy === field) {
@@ -133,38 +139,79 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     return filtered;
   }, [players, filterStatus, filterPosition, searchQuery, sortBy, sortOrder]);
 
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredPlayers.length / PLAYERS_PER_PAGE);
+  // Determine if virtualization should be used
+  const useVirtualization = filteredPlayers.length > VIRTUALIZATION_THRESHOLD;
 
-  // Reset to page 1 when filters change
-  const effectiveCurrentPage = useMemo(() => {
-    if (currentPage > totalPages) {
-      return 1;
+  // Calculate total height of the list for virtualization
+  const totalHeight = filteredPlayers.length * ROW_HEIGHT;
+
+  // Calculate which players are visible based on scroll position
+  const { visiblePlayers, offsetTop } = useMemo(() => {
+    if (!useVirtualization) {
+      // For small lists, render all players without virtualization
+      return {
+        visiblePlayers: filteredPlayers,
+        offsetTop: 0
+      };
     }
-    return currentPage;
-  }, [currentPage, totalPages]);
 
-  // Get players for current page
-  const visiblePlayers = useMemo(() => {
-    const startIndex = (effectiveCurrentPage - 1) * PLAYERS_PER_PAGE;
-    const endIndex = startIndex + PLAYERS_PER_PAGE;
-    return filteredPlayers.slice(startIndex, endIndex);
-  }, [filteredPlayers, effectiveCurrentPage]);
+    // Calculate visible range with buffer
+    const visibleRowCount = Math.ceil(containerHeight / ROW_HEIGHT);
+    const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER_SIZE);
+    const end = Math.min(
+      filteredPlayers.length,
+      Math.floor(scrollTop / ROW_HEIGHT) + visibleRowCount + BUFFER_SIZE
+    );
 
-  // Reset page when filters change
+    return {
+      visiblePlayers: filteredPlayers.slice(start, end),
+      offsetTop: start * ROW_HEIGHT
+    };
+  }, [filteredPlayers, scrollTop, containerHeight, useVirtualization]);
+
+  // Handle scroll events for virtualization
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (useVirtualization) {
+      setScrollTop(e.currentTarget.scrollTop);
+    }
+  }, [useVirtualization]);
+
+  // Set up container height observer for virtualization
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || !useVirtualization) return;
+
+    const updateHeight = () => {
+      setContainerHeight(container.clientHeight);
+    };
+
+    updateHeight();
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, [useVirtualization]);
+
+  // Reset scroll position when filters change
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+      setScrollTop(0);
+    }
+  }, [filterStatus, filterPosition, searchQuery, sortBy, sortOrder]);
+
+  // Filter change handlers
   const handleFilterChange = useCallback((newFilter: string) => {
     setFilterPosition(newFilter);
-    setCurrentPage(1);
   }, []);
 
   const handleStatusFilterChange = useCallback((status: 'all' | 'available' | 'on_block' | 'drafted') => {
     setFilterStatus(status);
-    setCurrentPage(1);
   }, []);
 
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
-    setCurrentPage(1);
   }, []);
 
   // Handler for manual draft entry
@@ -296,8 +343,16 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
       </div>
 
       {/* Player List */}
-      <div className="flex-1 overflow-y-auto">
-        {visiblePlayers.map((player) => {
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto"
+        onScroll={handleScroll}
+      >
+        {/* Virtualization container */}
+        <div style={useVirtualization ? { height: totalHeight, position: 'relative' } : undefined}>
+          {/* Offset spacer for virtualized content */}
+          <div style={useVirtualization ? { transform: `translateY(${offsetTop}px)` } : undefined}>
+            {visiblePlayers.map((player, index) => {
           const isPitcher = player.positions.some(p => ['SP', 'RP', 'P'].includes(p));
           const isHitter = player.positions.some(p => !['SP', 'RP', 'P'].includes(p));
           const isTwoWay = player.isTwoWayPlayer || (isPitcher && isHitter);
@@ -331,6 +386,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
             <div
               key={player.id}
               onClick={() => onPlayerClick(player)}
+              style={useVirtualization ? { height: ROW_HEIGHT } : undefined}
               className={`grid grid-cols-12 gap-3 px-4 py-3 border-b border-slate-800 hover:bg-gradient-to-r hover:from-blue-900/20 hover:to-emerald-900/20 transition-all cursor-pointer ${
                 player.status === 'onMyTeam' ? 'bg-gradient-to-r from-emerald-900/30 to-green-900/30 border-emerald-700/50' : ''
               } ${isOnBlock ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/30 border-amber-500/50 animate-pulse' : ''} ${player.status === 'drafted' ? 'opacity-50' : ''}`}
@@ -567,81 +623,27 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
             </div>
           );
         })}
+          </div>
+        </div>
       </div>
 
-      {/* Footer with Pagination */}
+      {/* Footer with Player Count */}
       <div className="p-4 border-t border-slate-700 bg-slate-800/50">
         <div className="flex items-center justify-between">
           {/* Player count info */}
           <div className="text-slate-400 text-sm">
-            Showing {((effectiveCurrentPage - 1) * PLAYERS_PER_PAGE) + 1}-{Math.min(effectiveCurrentPage * PLAYERS_PER_PAGE, filteredPlayers.length)} of {filteredPlayers.length} players
+            {filteredPlayers.length} player{filteredPlayers.length !== 1 ? 's' : ''}
+            {useVirtualization && (
+              <span className="text-slate-500 ml-2">
+                (virtualized for performance)
+              </span>
+            )}
           </div>
 
-          {/* Pagination controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              {/* First page */}
-              <button
-                onClick={() => setCurrentPage(1)}
-                disabled={effectiveCurrentPage === 1}
-                className={`p-1.5 rounded-lg transition-all ${
-                  effectiveCurrentPage === 1
-                    ? 'text-slate-600 cursor-not-allowed'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
-                }`}
-                title="First page"
-              >
-                <ChevronsLeft className="w-4 h-4" />
-              </button>
-
-              {/* Previous page */}
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={effectiveCurrentPage === 1}
-                className={`p-1.5 rounded-lg transition-all ${
-                  effectiveCurrentPage === 1
-                    ? 'text-slate-600 cursor-not-allowed'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
-                }`}
-                title="Previous page"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {/* Page indicator */}
-              <div className="flex items-center gap-1 px-3">
-                <span className="text-white font-medium">{effectiveCurrentPage}</span>
-                <span className="text-slate-500">/</span>
-                <span className="text-slate-400">{totalPages}</span>
-              </div>
-
-              {/* Next page */}
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={effectiveCurrentPage === totalPages}
-                className={`p-1.5 rounded-lg transition-all ${
-                  effectiveCurrentPage === totalPages
-                    ? 'text-slate-600 cursor-not-allowed'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
-                }`}
-                title="Next page"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              {/* Last page */}
-              <button
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={effectiveCurrentPage === totalPages}
-                className={`p-1.5 rounded-lg transition-all ${
-                  effectiveCurrentPage === totalPages
-                    ? 'text-slate-600 cursor-not-allowed'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
-                }`}
-                title="Last page"
-              >
-                <ChevronsRight className="w-4 h-4" />
-              </button>
+          {/* Scroll hint for large lists */}
+          {useVirtualization && (
+            <div className="text-slate-500 text-xs">
+              Scroll to browse all players
             </div>
           )}
         </div>

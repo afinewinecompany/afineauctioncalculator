@@ -57,14 +57,20 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   // Sync with Couch Managers - stable callback that doesn't depend on players state
   const performSync = useCallback(async () => {
     if (!settings.couchManagerRoomId) {
-      console.log('[DraftRoom] No couchManagerRoomId set, skipping sync');
+      if (import.meta.env.DEV) {
+        console.log('[DraftRoom] No couchManagerRoomId set, skipping sync');
+      }
       return;
     }
-    console.log(`[DraftRoom] Starting sync for room ${settings.couchManagerRoomId}`);
+    if (import.meta.env.DEV) {
+      console.log(`[DraftRoom] Starting sync for room ${settings.couchManagerRoomId}`);
+    }
 
     // Prevent concurrent syncs
     if (isSyncingRef.current) {
-      console.log('Sync already in progress, skipping...');
+      if (import.meta.env.DEV) {
+        console.log('Sync already in progress, skipping...');
+      }
       return;
     }
 
@@ -85,16 +91,22 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
 
       // Use lightweight sync that uses server-cached projections
       // This sends only ~200 bytes instead of ~800KB
-      console.log(`[DraftRoom] Calling syncAuctionLite for room ${settings.couchManagerRoomId}`);
+      if (import.meta.env.DEV) {
+        console.log(`[DraftRoom] Calling syncAuctionLite for room ${settings.couchManagerRoomId}`);
+      }
       const result = await syncAuctionLite(settings.couchManagerRoomId, settings);
 
       // Check if component is still mounted before updating state
       if (!isMountedRef.current) {
-        console.log('[DraftRoom] Component unmounted during sync, discarding results');
+        if (import.meta.env.DEV) {
+          console.log('[DraftRoom] Component unmounted during sync, discarding results');
+        }
         return;
       }
 
-      console.log(`[DraftRoom] Sync successful! Matched ${result.matchedPlayers.length} players, ${result.auctionData.players.filter(p => p.status === 'drafted').length} drafted`);
+      if (import.meta.env.DEV) {
+        console.log(`[DraftRoom] Sync successful! Matched ${result.matchedPlayers.length} players, ${result.auctionData.players.filter(p => p.status === 'drafted').length} drafted`);
+      }
       setSyncResult(result);
       // Cast to EnhancedInflationStats since the server now returns enhanced data
       setLiveInflationStats(result.inflationStats as EnhancedInflationStats);
@@ -124,16 +136,18 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       }
 
       // DEBUG: Log team names and drafted players to diagnose team selection issue
-      console.log('[DraftRoom] Available teams:', teamNames);
-      console.log('[DraftRoom] Drafted players sample:', result.matchedPlayers
-        .filter(mp => mp.scrapedPlayer.status === 'drafted')
-        .slice(0, 5)
-        .map(mp => ({
-          name: mp.scrapedPlayer.fullName,
-          winningTeam: mp.scrapedPlayer.winningTeam,
-          draftedBy: mp.scrapedPlayer.winningTeam || 'Unknown'
-        }))
-      );
+      if (import.meta.env.DEV) {
+        console.log('[DraftRoom] Available teams:', teamNames);
+        console.log('[DraftRoom] Drafted players sample:', result.matchedPlayers
+          .filter(mp => mp.scrapedPlayer.status === 'drafted')
+          .slice(0, 5)
+          .map(mp => ({
+            name: mp.scrapedPlayer.fullName,
+            winningTeam: mp.scrapedPlayer.winningTeam,
+            draftedBy: mp.scrapedPlayer.winningTeam || 'Unknown'
+          }))
+        );
+      }
 
       setAvailableTeams(teamNames);
 
@@ -146,12 +160,14 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       });
 
       // DEBUG: Log unmatched drafted players to diagnose sync issues
-      const unmatchedDrafted = result.auctionData.players
-        .filter(p => p.status === 'drafted')
-        .filter(p => !result.matchedPlayers.some(mp => mp.scrapedPlayer.couchManagersId === p.couchManagersId && mp.projectionPlayerId));
-      if (unmatchedDrafted.length > 0) {
-        console.warn('[DraftRoom] WARNING: Drafted players not matched to projections:',
-          unmatchedDrafted.map(p => ({ name: p.fullName, team: p.mlbTeam, cmId: p.couchManagersId })));
+      if (import.meta.env.DEV) {
+        const unmatchedDrafted = result.auctionData.players
+          .filter(p => p.status === 'drafted')
+          .filter(p => !result.matchedPlayers.some(mp => mp.scrapedPlayer.couchManagersId === p.couchManagersId && mp.projectionPlayerId));
+        if (unmatchedDrafted.length > 0) {
+          console.warn('[DraftRoom] WARNING: Drafted players not matched to projections:',
+            unmatchedDrafted.map(p => ({ name: p.fullName, team: p.mlbTeam, cmId: p.couchManagersId })));
+        }
       }
 
       // Update players state with drafted info and build drafted list
@@ -162,18 +178,20 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         const existingPlayerIds = new Set(prevPlayers.map(p => p.id));
 
         // DEBUG: Check for players in frontend that should match drafted scraped players
-        const draftedScrapedNames = new Set(
-          result.auctionData.players
-            .filter(p => p.status === 'drafted')
-            .map(p => p.fullName.toLowerCase())
-        );
-        const unmatchedFrontendPlayers = prevPlayers.filter(p => {
-          const normalizedName = p.name.toLowerCase();
-          return draftedScrapedNames.has(normalizedName) && !matchedByProjectionId.has(p.id);
-        });
-        if (unmatchedFrontendPlayers.length > 0) {
-          console.warn('[DraftRoom] WARNING: Frontend players that match drafted names but have no projectionId match:',
-            unmatchedFrontendPlayers.map(p => ({ name: p.name, id: p.id })));
+        if (import.meta.env.DEV) {
+          const draftedScrapedNames = new Set(
+            result.auctionData.players
+              .filter(p => p.status === 'drafted')
+              .map(p => p.fullName.toLowerCase())
+          );
+          const unmatchedFrontendPlayers = prevPlayers.filter(p => {
+            const normalizedName = p.name.toLowerCase();
+            return draftedScrapedNames.has(normalizedName) && !matchedByProjectionId.has(p.id);
+          });
+          if (unmatchedFrontendPlayers.length > 0) {
+            console.warn('[DraftRoom] WARNING: Frontend players that match drafted names but have no projectionId match:',
+              unmatchedFrontendPlayers.map(p => ({ name: p.name, id: p.id })));
+          }
         }
 
         const updatedPlayers = prevPlayers.map(p => {
@@ -181,8 +199,10 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
           if (matched) {
             if (matched.scrapedPlayer.status === 'drafted') {
               // DEBUG: Log specific player updates
-              if (p.name.toLowerCase().includes('yordan') || p.name.toLowerCase().includes('alvarez')) {
-                console.log('[DraftRoom] UPDATING player to drafted:', { name: p.name, id: p.id, matchedName: matched.scrapedPlayer.fullName });
+              if (import.meta.env.DEV) {
+                if (p.name.toLowerCase().includes('yordan') || p.name.toLowerCase().includes('alvarez')) {
+                  console.log('[DraftRoom] UPDATING player to drafted:', { name: p.name, id: p.id, matchedName: matched.scrapedPlayer.fullName });
+                }
               }
               return {
                 ...p,
@@ -227,8 +247,10 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
           // No match found - if player was on_block, reset to available
           // (the player might have been on_block but is no longer in the scraped data)
           // DEBUG: Log when Yordan/Alvarez is NOT matched
-          if (p.name.toLowerCase().includes('yordan') || p.name.toLowerCase().includes('alvarez')) {
-            console.warn('[DraftRoom] NOT MATCHED:', { name: p.name, id: p.id, currentStatus: p.status });
+          if (import.meta.env.DEV) {
+            if (p.name.toLowerCase().includes('yordan') || p.name.toLowerCase().includes('alvarez')) {
+              console.warn('[DraftRoom] NOT MATCHED:', { name: p.name, id: p.id, currentStatus: p.status });
+            }
           }
           if (p.status === 'on_block') {
             return {
@@ -273,7 +295,9 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         });
 
         if (outOfPoolPlayers.length > 0) {
-          console.log('[DraftRoom] Injecting out-of-pool players into player list:', outOfPoolPlayers.map(p => p.name));
+          if (import.meta.env.DEV) {
+            console.log('[DraftRoom] Injecting out-of-pool players into player list:', outOfPoolPlayers.map(p => p.name));
+          }
           return [...updatedPlayers, ...outOfPoolPlayers];
         }
 
@@ -342,7 +366,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         }
       });
 
-      if (missingFromPool.length > 0) {
+      if (import.meta.env.DEV && missingFromPool.length > 0) {
         console.warn('[DraftRoom] Drafted players not in projection pool (included with $0 value):', missingFromPool);
       }
 
@@ -362,7 +386,9 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         setTimeout(() => setIsInitialLoading(false), LOADING_TRANSITION_DELAY_MS);
       }
     } catch (error) {
-      console.error('Sync error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Sync error:', error);
+      }
       setSyncState(prev => ({
         ...prev,
         syncError: error instanceof Error ? error.message : 'Sync failed',
@@ -465,13 +491,15 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
     const teamPlayers = allDrafted.filter(p => p.draftedBy === selectedTeam);
 
     // DEBUG: Log team selection and filtering
-    console.log('[DraftRoom] Selected team:', selectedTeam);
-    console.log('[DraftRoom] All drafted players:', allDrafted.map(p => ({
-      name: p.name,
-      draftedBy: p.draftedBy,
-      matchesSelected: p.draftedBy === selectedTeam
-    })));
-    console.log('[DraftRoom] Filtered team players:', teamPlayers.length, 'players');
+    if (import.meta.env.DEV) {
+      console.log('[DraftRoom] Selected team:', selectedTeam);
+      console.log('[DraftRoom] All drafted players:', allDrafted.map(p => ({
+        name: p.name,
+        draftedBy: p.draftedBy,
+        matchesSelected: p.draftedBy === selectedTeam
+      })));
+      console.log('[DraftRoom] Filtered team players:', teamPlayers.length, 'players');
+    }
 
     setMyRoster(teamPlayers);
   }, [selectedTeam, allDrafted]);

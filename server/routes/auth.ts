@@ -1,7 +1,7 @@
 /**
  * Authentication Routes
  *
- * Handles user registration, login, token refresh, and logout.
+ * Handles user registration, login, token refresh, logout, and password reset.
  * All routes use Zod for request validation.
  */
 
@@ -21,16 +21,40 @@ import {
   findUserById,
   createUser,
   findOrCreateGoogleUser,
+  generatePasswordResetToken,
+  storePasswordResetToken,
+  verifyPasswordResetToken,
+  updatePassword,
 } from '../services/authService.js';
 import { env } from '../config/env.js';
 import { requireAuth } from '../middleware/auth.js';
+import { passwordResetLimiter } from '../middleware/rateLimiter.js';
 import {
   toUserResponse,
   AuthResponse,
   TokenRefreshResponse,
 } from '../types/auth.js';
+import { logger, LoggerHelper } from '../services/logger.js';
 
 const router = Router();
+
+// =============================================================================
+// SECURITY CONSTANTS
+// =============================================================================
+
+/**
+ * Dummy bcrypt hash used for timing attack protection.
+ *
+ * When a user is not found during login, we still need to run bcrypt.compare()
+ * to ensure consistent response times. Without this, an attacker could enumerate
+ * valid email addresses by measuring response times:
+ * - Fast response = user not found (no bcrypt)
+ * - Slow response = user found (bcrypt runs)
+ *
+ * This hash was generated with cost factor 12 (same as production hashes)
+ * using: await bcrypt.hash('dummy_password_for_timing_protection', 12)
+ */
+const DUMMY_PASSWORD_HASH = '$2a$12$K8HpHMKlWMBIJqRHkTz3/.wTBqPTnWL6P8KjHsXJd.HJvMdXKfGJu';
 
 // =============================================================================
 // VALIDATION SCHEMAS
@@ -74,6 +98,21 @@ const loginSchema = z.object({
  */
 const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
+});
+
+/**
+ * Forgot password request schema
+ */
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+/**
+ * Reset password request schema
+ */
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  password: passwordSchema,
 });
 
 // =============================================================================
@@ -162,11 +201,11 @@ router.post('/register', async (req: Request, res: Response) => {
       refreshToken,
     };
 
-    console.log(`[Auth] User registered: ${user.email}`);
+    LoggerHelper.logAuth('user_registered', user.id, { email: user.email });
 
     return res.status(201).json(response);
   } catch (error) {
-    console.error('[Auth] Registration error:', error);
+    logger.error({ error }, 'Registration error');
     return res.status(500).json({
       error: 'Registration failed',
       code: 'REGISTRATION_ERROR',
@@ -205,27 +244,35 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // Find user by email
     const user = await findUserByEmail(email);
-    if (!user) {
-      // Use generic message to prevent email enumeration
-      return res.status(401).json({
-        error: 'Invalid credentials',
-        code: 'INVALID_CREDENTIALS',
-        message: 'The email or password you entered is incorrect',
-      });
-    }
 
-    // Check if user has a password (might be OAuth-only user)
-    if (!user.passwordHash) {
-      return res.status(401).json({
-        error: 'Invalid login method',
-        code: 'OAUTH_ONLY',
-        message: 'This account uses social login. Please sign in with Google.',
-      });
-    }
+    // SECURITY: Timing attack protection for email enumeration
+    // Always run bcrypt.compare() regardless of whether the user exists.
+    // This ensures consistent response times whether the email is valid or not,
+    // preventing attackers from enumerating valid email addresses via timing analysis.
+    //
+    // We use DUMMY_PASSWORD_HASH when:
+    // 1. User does not exist
+    // 2. User exists but has no password (OAuth-only account)
+    const hashToCompare = user?.passwordHash || DUMMY_PASSWORD_HASH;
+    const isValidPassword = await verifyPassword(password, hashToCompare);
 
-    // Verify password
-    const isValid = await verifyPassword(password, user.passwordHash);
-    if (!isValid) {
+    // Determine if this is an OAuth-only user (exists but has no password)
+    const isOAuthOnlyUser = user && !user.passwordHash;
+
+    // Check if user exists and has valid credentials
+    // Note: We perform all checks after bcrypt to maintain constant time
+    if (!user || !isValidPassword) {
+      // For OAuth-only users, provide a more helpful error message
+      // This is safe to disclose since the user already knows their email exists
+      // (they created the account via OAuth)
+      if (isOAuthOnlyUser) {
+        return res.status(401).json({
+          error: 'Invalid login method',
+          code: 'OAUTH_ONLY',
+          message: 'This account uses social login. Please sign in with Google.',
+        });
+      }
+
       return res.status(401).json({
         error: 'Invalid credentials',
         code: 'INVALID_CREDENTIALS',
@@ -250,11 +297,11 @@ router.post('/login', async (req: Request, res: Response) => {
       refreshToken,
     };
 
-    console.log(`[Auth] User logged in: ${user.email}`);
+    LoggerHelper.logAuth('user_login', user.id, { email: user.email });
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('[Auth] Login error:', error);
+    logger.error({ error }, 'Login error');
     return res.status(500).json({
       error: 'Login failed',
       code: 'LOGIN_ERROR',
@@ -334,7 +381,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('[Auth] Token refresh error:', error);
+    logger.error({ error }, 'Token refresh error');
     return res.status(500).json({
       error: 'Token refresh failed',
       code: 'REFRESH_ERROR',
@@ -375,7 +422,7 @@ router.post('/logout', requireAuth, async (req: Request, res: Response) => {
     const revoked = await revokeRefreshToken(refreshToken);
 
     if (revoked) {
-      console.log(`[Auth] User logged out: ${req.user?.email}`);
+      LoggerHelper.logAuth('user_logout', req.user?.id, { email: req.user?.email });
     }
 
     return res.status(200).json({
@@ -383,7 +430,7 @@ router.post('/logout', requireAuth, async (req: Request, res: Response) => {
       message: 'Logged out successfully',
     });
   } catch (error) {
-    console.error('[Auth] Logout error:', error);
+    logger.error({ error }, 'Logout error');
     return res.status(500).json({
       error: 'Logout failed',
       code: 'LOGOUT_ERROR',
@@ -421,11 +468,159 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
       user: toUserResponse(user),
     });
   } catch (error) {
-    console.error('[Auth] Get current user error:', error);
+    logger.error({ error }, 'Get current user error');
     return res.status(500).json({
       error: 'Failed to get user',
       code: 'GET_USER_ERROR',
       message: 'An unexpected error occurred while fetching user information',
+    });
+  }
+});
+
+// =============================================================================
+// PASSWORD RESET ROUTES
+// =============================================================================
+
+/**
+ * POST /api/auth/forgot-password
+ *
+ * Request a password reset link. Sends an email with a reset token.
+ * Rate limited to prevent abuse.
+ *
+ * Request body:
+ * - email: Email address of the account
+ *
+ * Response:
+ * - 200: Always returns success (to prevent email enumeration)
+ * - 400: Validation error
+ * - 429: Rate limited
+ */
+router.post('/forgot-password', passwordResetLimiter, async (req: Request, res: Response) => {
+  try {
+    // Validate request body
+    const validation = validateBody(forgotPasswordSchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        code: 'VALIDATION_ERROR',
+        details: formatValidationErrors(validation.errors),
+      });
+    }
+
+    const { email } = validation.data;
+
+    // Find user by email
+    const user = await findUserByEmail(email);
+
+    // SECURITY: Always return success even if user doesn't exist
+    // This prevents email enumeration attacks
+    if (!user) {
+      logger.info({ email }, 'Password reset requested for non-existent email');
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, we have sent a password reset link.',
+      });
+    }
+
+    // Check if user is OAuth-only (no password to reset)
+    if (!user.passwordHash) {
+      logger.info({ email, userId: user.id }, 'Password reset requested for OAuth-only user');
+      // Still return success to prevent email enumeration
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, we have sent a password reset link.',
+      });
+    }
+
+    // Generate reset token
+    const { token, tokenHash } = generatePasswordResetToken();
+
+    // Store the hashed token in the database (expires in 1 hour)
+    await storePasswordResetToken(user.id, tokenHash, 60);
+
+    // Build reset URL
+    const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${token}`;
+
+    // TODO: Send email with reset link
+    // For now, log the reset URL for development purposes
+    logger.info({
+      email,
+      resetUrl,
+      expiresIn: '1 hour',
+    }, 'Password reset link generated (email not yet implemented)');
+
+    LoggerHelper.logAuth('password_reset_requested', user.id, { email });
+
+    return res.status(200).json({
+      success: true,
+      message: 'If an account with that email exists, we have sent a password reset link.',
+    });
+  } catch (error) {
+    logger.error({ error }, 'Forgot password error');
+    return res.status(500).json({
+      error: 'Password reset request failed',
+      code: 'FORGOT_PASSWORD_ERROR',
+      message: 'An unexpected error occurred. Please try again later.',
+    });
+  }
+});
+
+/**
+ * POST /api/auth/reset-password
+ *
+ * Reset password using a valid reset token.
+ *
+ * Request body:
+ * - token: Password reset token from email
+ * - password: New password (min 8 chars, 1 uppercase, 1 number)
+ *
+ * Response:
+ * - 200: Password reset successful
+ * - 400: Validation error or invalid/expired token
+ */
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    // Validate request body
+    const validation = validateBody(resetPasswordSchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        code: 'VALIDATION_ERROR',
+        details: formatValidationErrors(validation.errors),
+      });
+    }
+
+    const { token, password } = validation.data;
+
+    // Verify the reset token and get the user
+    const user = await verifyPasswordResetToken(token);
+
+    if (!user) {
+      return res.status(400).json({
+        error: 'Invalid or expired token',
+        code: 'INVALID_RESET_TOKEN',
+        message: 'This password reset link is invalid or has expired. Please request a new one.',
+      });
+    }
+
+    // Hash the new password
+    const newPasswordHash = await hashPassword(password);
+
+    // Update password and clear reset token
+    await updatePassword(user.id, newPasswordHash);
+
+    LoggerHelper.logAuth('password_reset_completed', user.id, { email: user.email });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Your password has been reset successfully. You can now login with your new password.',
+    });
+  } catch (error) {
+    logger.error({ error }, 'Reset password error');
+    return res.status(500).json({
+      error: 'Password reset failed',
+      code: 'RESET_PASSWORD_ERROR',
+      message: 'An unexpected error occurred. Please try again later.',
     });
   }
 });
@@ -472,7 +667,7 @@ router.get('/google', (req: Request, res: Response) => {
 
     // Build the Google OAuth URL
     const redirectUri = env.GOOGLE_CALLBACK_URL || `${env.FRONTEND_URL}/auth/google/callback`;
-    console.log('[Auth] Google OAuth redirect_uri:', redirectUri);
+    logger.debug({ redirectUri }, 'Google OAuth redirect_uri');
 
     const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     googleAuthUrl.searchParams.set('client_id', env.GOOGLE_CLIENT_ID);
@@ -483,12 +678,12 @@ router.get('/google', (req: Request, res: Response) => {
     googleAuthUrl.searchParams.set('prompt', 'consent');
 
     const finalUrl = googleAuthUrl.toString();
-    console.log('[Auth] Redirecting to Google OAuth:', finalUrl.substring(0, 100) + '...');
+    logger.debug('Redirecting to Google OAuth');
 
     // Redirect to Google
     return res.redirect(finalUrl);
   } catch (error) {
-    console.error('[Auth] Error in /google route:', error);
+    logger.error({ error }, 'Error in /google route');
     return res.status(500).json({
       error: 'OAuth redirect failed',
       code: 'OAUTH_REDIRECT_ERROR',
@@ -514,7 +709,7 @@ router.get('/google', (req: Request, res: Response) => {
 router.post('/google/callback', async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
-    console.log('[Auth] Google callback received, code present:', !!code);
+    logger.debug({ codePresent: !!code }, 'Google callback received');
 
     if (!code || typeof code !== 'string') {
       return res.status(400).json({
@@ -535,7 +730,7 @@ router.post('/google/callback', async (req: Request, res: Response) => {
 
     // Exchange code for tokens
     const redirectUri = env.GOOGLE_CALLBACK_URL || `${env.FRONTEND_URL}/auth/google/callback`;
-    console.log('[Auth] Token exchange redirect_uri:', redirectUri);
+    logger.debug({ redirectUri }, 'Token exchange redirect_uri');
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -551,7 +746,7 @@ router.post('/google/callback', async (req: Request, res: Response) => {
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json().catch(() => ({}));
-      console.error('[Auth] Google token exchange failed:', JSON.stringify(errorData));
+      logger.error({ errorData }, 'Google token exchange failed');
       return res.status(400).json({
         error: 'OAuth failed',
         code: 'TOKEN_EXCHANGE_FAILED',
@@ -568,7 +763,7 @@ router.post('/google/callback', async (req: Request, res: Response) => {
     });
 
     if (!userInfoResponse.ok) {
-      console.error('[Auth] Failed to get Google user info');
+      logger.error('Failed to get Google user info');
       return res.status(500).json({
         error: 'OAuth failed',
         code: 'USER_INFO_FAILED',
@@ -593,14 +788,14 @@ router.post('/google/callback', async (req: Request, res: Response) => {
     }
 
     // Find or create user in database
-    console.log('[Auth] Looking up/creating user for:', googleUser.email);
+    logger.debug({ email: googleUser.email }, 'Looking up/creating user');
     const user = await findOrCreateGoogleUser({
       email: googleUser.email,
       name: googleUser.name || googleUser.email.split('@')[0],
       picture: googleUser.picture,
       sub: googleUser.id,
     });
-    console.log('[Auth] User found/created:', user.id);
+    logger.debug({ userId: user.id }, 'User found/created');
 
     // Generate tokens
     const accessToken = generateAccessToken(user);
@@ -608,7 +803,7 @@ router.post('/google/callback', async (req: Request, res: Response) => {
 
     // Store refresh token in database
     await storeRefreshToken(user.id, refreshToken);
-    console.log('[Auth] Tokens generated and stored');
+    logger.debug('Tokens generated and stored');
 
     // Prepare response
     const response: AuthResponse = {
@@ -617,12 +812,11 @@ router.post('/google/callback', async (req: Request, res: Response) => {
       refreshToken,
     };
 
-    console.log(`[Auth] User logged in via Google: ${user.email}`);
+    LoggerHelper.logAuth('google_login', user.id, { email: user.email });
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('[Auth] Google OAuth error:', error instanceof Error ? error.message : error);
-    console.error('[Auth] Stack trace:', error instanceof Error ? error.stack : 'No stack');
+    logger.error({ error }, 'Google OAuth error');
     return res.status(500).json({
       error: 'OAuth failed',
       code: 'OAUTH_ERROR',

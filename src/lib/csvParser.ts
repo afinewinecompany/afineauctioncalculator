@@ -131,12 +131,14 @@ export function parseCSV(text: string): CustomDynastyRanking[] {
   // Find ID column (optional)
   const idIndex = findIdColumn(headers);
 
-  // Log what we found for debugging
-  console.log('[CSV Parser] Found columns:', {
-    name: hasFullName ? headers[nameIndex] : `${headers[firstNameIndex]} + ${headers[lastNameIndex]}`,
-    rank: headers[rankIndex],
-    id: idIndex !== -1 ? headers[idIndex] : 'none',
-  });
+  // Log what we found for debugging (dev only)
+  if (import.meta.env.DEV) {
+    console.log('[CSV Parser] Found columns:', {
+      name: hasFullName ? headers[nameIndex] : `${headers[firstNameIndex]} + ${headers[lastNameIndex]}`,
+      rank: headers[rankIndex],
+      id: idIndex !== -1 ? headers[idIndex] : 'none',
+    });
+  }
 
   // Parse data rows
   const rankings: CustomDynastyRanking[] = [];

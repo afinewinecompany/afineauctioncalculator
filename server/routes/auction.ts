@@ -16,6 +16,7 @@ import {
   AUCTION_CACHE_DEFAULTS,
 } from '../services/auctionCacheService.js';
 import { getRedisClient, isRedisHealthy } from '../services/redisClient.js';
+import { logger } from '../services/logger.js';
 import type { AuctionSyncResult, ScrapedAuctionData } from '../types/auction.js';
 import type { LeagueSettings } from '../../src/lib/types.js';
 
@@ -146,7 +147,7 @@ async function acquireDistributedLock(lockKey: string): Promise<boolean> {
     );
     return result === 'OK';
   } catch (error) {
-    console.error(`[Auction] Redis lock acquisition failed:`, error);
+    logger.error({ error }, 'Redis lock acquisition failed');
     return true; // Fall back to in-memory only on error
   }
 }
@@ -169,7 +170,7 @@ async function releaseDistributedLock(lockKey: string): Promise<void> {
   try {
     await redis.del(`${REDIS_LOCK_PREFIX}${lockKey}`);
   } catch (error) {
-    console.error(`[Auction] Redis lock release failed:`, error);
+    logger.error({ error, lockKey }, 'Redis lock release failed');
     // Lock will auto-expire via TTL if release fails
   }
 }
@@ -194,7 +195,7 @@ async function isDistributedLocked(lockKey: string): Promise<boolean> {
     const exists = await redis.exists(`${REDIS_LOCK_PREFIX}${lockKey}`);
     return exists === 1;
   } catch (error) {
-    console.error(`[Auction] Redis lock check failed:`, error);
+    logger.error({ error, lockKey }, 'Redis lock check failed');
     return false; // On error, assume not locked
   }
 }
@@ -215,7 +216,7 @@ export function cleanupAuctionRoutes(): void {
   if (cacheCleanupIntervalId) {
     clearInterval(cacheCleanupIntervalId);
     cacheCleanupIntervalId = null;
-    console.log('[Auction] Cache cleanup interval cleared');
+    logger.info('Cache cleanup interval cleared');
   }
 }
 
@@ -241,7 +242,7 @@ async function getAuctionDataWithCache(
   // Check in-memory lock first (handles requests within same instance)
   let scrapePromise = scrapingLocks.get(lockKey);
   if (scrapePromise) {
-    console.log(`[Auction] Waiting for existing local scrape for room ${roomId}...`);
+    logger.debug({ roomId }, 'Waiting for existing local scrape');
     return scrapePromise;
   }
 
@@ -249,18 +250,18 @@ async function getAuctionDataWithCache(
   const isLockedRemotely = await isDistributedLocked(lockKey);
   if (isLockedRemotely) {
     // Another instance is scraping - wait briefly and check cache
-    console.log(`[Auction] Room ${roomId} is being scraped by another instance, waiting...`);
+    logger.debug({ roomId }, 'Room is being scraped by another instance, waiting');
     // Wait up to 30 seconds, polling cache every 2 seconds
     for (let i = 0; i < 15; i++) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       const cached = await getCachedAuctionData(roomId);
       if (cached && !cached.isStale) {
-        console.log(`[Auction] Found cached data for room ${roomId} after waiting`);
+        logger.debug({ roomId }, 'Found cached data after waiting');
         return cached.data;
       }
       // Check if still locked
       if (!(await isDistributedLocked(lockKey))) {
-        console.log(`[Auction] Remote lock released for room ${roomId}, checking cache...`);
+        logger.debug({ roomId }, 'Remote lock released, checking cache');
         const freshCached = await getCachedAuctionData(roomId);
         if (freshCached && !freshCached.isStale) {
           return freshCached.data;
@@ -268,7 +269,7 @@ async function getAuctionDataWithCache(
         break; // Lock released but no cache - we should scrape
       }
     }
-    console.log(`[Auction] Timeout waiting for remote scrape, attempting own scrape...`);
+    logger.debug({ roomId }, 'Timeout waiting for remote scrape, attempting own scrape');
   }
 
   // Try to acquire distributed lock
@@ -276,7 +277,7 @@ async function getAuctionDataWithCache(
   if (!acquiredDistributedLock) {
     // Race condition - another instance just acquired the lock
     // Wait briefly and check cache again
-    console.log(`[Auction] Lost race for distributed lock on room ${roomId}, waiting...`);
+    logger.debug({ roomId }, 'Lost race for distributed lock, waiting');
     await new Promise(resolve => setTimeout(resolve, 5000));
     const cached = await getCachedAuctionData(roomId);
     if (cached && !cached.isStale) {
@@ -286,12 +287,12 @@ async function getAuctionDataWithCache(
   }
 
   // No scrape in progress, start one
-  console.log(`[Auction] Scraping fresh data for room ${roomId}...`);
+  logger.info({ roomId }, 'Scraping fresh auction data');
   const startTime = Date.now();
 
   // Create the promise and immediately add it to the local lock map
   scrapePromise = scrapeAuction(roomId).then(async data => {
-    console.log(`[Auction] Scrape completed in ${Date.now() - startTime}ms`);
+    logger.info({ roomId, durationMs: Date.now() - startTime }, 'Scrape completed');
 
     // Cache the result if valid
     if (data.status !== 'not_found') {
@@ -323,9 +324,10 @@ router.get('/:roomId', async (req: Request, res: Response) => {
   const { roomId } = req.params;
   const forceRefresh = req.query.refresh === 'true';
 
-  if (!roomId || !/^\d+$/.test(roomId)) {
+  if (!roomId || !/^\d+$/.test(roomId) || roomId.length > 6) {
     return res.status(400).json({
-      error: 'Invalid room ID. Must be a numeric value.',
+      error: 'Invalid room ID',
+      message: 'Room ID must be a numeric value up to 6 digits',
     });
   }
 
@@ -352,7 +354,7 @@ router.get('/:roomId', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error(`Error fetching auction ${roomId}:`, error);
+    logger.error({ error, roomId }, 'Error fetching auction');
     res.status(503).json({
       error: 'Failed to scrape auction data. The website may be unavailable.',
     });
@@ -376,9 +378,10 @@ router.post('/:roomId/sync', async (req: Request, res: Response) => {
   const { projections, leagueConfig } = req.body;
   const forceRefresh = req.query.refresh === 'true';
 
-  if (!roomId || !/^\d+$/.test(roomId)) {
+  if (!roomId || !/^\d+$/.test(roomId) || roomId.length > 6) {
     return res.status(400).json({
-      error: 'Invalid room ID. Must be a numeric value.',
+      error: 'Invalid room ID',
+      message: 'Room ID must be a numeric value up to 6 digits',
     });
   }
 
@@ -424,7 +427,7 @@ router.post('/:roomId/sync', async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    console.error(`Error syncing auction ${roomId}:`, error);
+    logger.error({ error, roomId }, 'Error syncing auction');
     res.status(503).json({
       error: 'Failed to sync auction data.',
     });
@@ -449,9 +452,10 @@ router.post('/:roomId/sync-lite', async (req: Request, res: Response) => {
   const { projectionSystem = 'steamer', leagueConfig } = req.body;
   const forceRefresh = req.query.refresh === 'true';
 
-  if (!roomId || !/^\d+$/.test(roomId)) {
+  if (!roomId || !/^\d+$/.test(roomId) || roomId.length > 6) {
     return res.status(400).json({
-      error: 'Invalid room ID. Must be a numeric value.',
+      error: 'Invalid room ID',
+      message: 'Room ID must be a numeric value up to 6 digits',
     });
   }
 
@@ -469,7 +473,7 @@ router.post('/:roomId/sync-lite', async (req: Request, res: Response) => {
     // Get projections from server cache, or fetch fresh if cache is empty
     let cachedProjections = await getCachedProjections(projectionSystem);
     if (!cachedProjections) {
-      console.log(`[sync-lite] No cached projections for ${projectionSystem}, fetching fresh...`);
+      logger.info({ projectionSystem }, 'No cached projections, fetching fresh');
       try {
         // Import and fetch projections dynamically based on system
         const { fetchSteamerProjections } = await import('../services/projectionsService');
@@ -490,9 +494,9 @@ router.post('/:roomId/sync-lite', async (req: Request, res: Response) => {
 
         await setCachedProjections(projectionSystem, projections);
         cachedProjections = await getCachedProjections(projectionSystem);
-        console.log(`[sync-lite] Successfully fetched and cached ${projections.length} projections`);
+        logger.info({ projectionSystem, count: projections.length }, 'Successfully fetched and cached projections');
       } catch (fetchError) {
-        console.error(`[sync-lite] Failed to fetch projections:`, fetchError);
+        logger.error({ error: fetchError, projectionSystem }, 'Failed to fetch projections');
         return res.status(503).json({
           error: `Failed to fetch projections for ${projectionSystem}. Please try again.`,
         });
@@ -540,12 +544,12 @@ router.post('/:roomId/sync-lite', async (req: Request, res: Response) => {
     // For dynasty leagues, fetch dynasty rankings
     let dynastyRankings;
     if (leagueSettings.leagueType === 'dynasty') {
-      console.log('[Auction] Dynasty mode - fetching dynasty rankings');
+      logger.info('Dynasty mode - fetching dynasty rankings');
       try {
         dynastyRankings = await getDynastyRankings();
-        console.log(`[Auction] Loaded ${dynastyRankings.length} dynasty rankings`);
+        logger.info({ count: dynastyRankings.length }, 'Loaded dynasty rankings');
       } catch (dynastyError) {
-        console.warn('[Auction] Failed to load dynasty rankings, using steamer-only:', dynastyError);
+        logger.warn({ error: dynastyError }, 'Failed to load dynasty rankings, using steamer-only');
       }
     }
 
@@ -599,7 +603,7 @@ router.post('/:roomId/sync-lite', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error(`Error syncing auction ${roomId}:`, error);
+    logger.error({ error, roomId }, 'Error syncing auction (lite)');
     res.status(503).json({
       error: 'Failed to sync auction data.',
     });
@@ -615,9 +619,10 @@ router.get('/:roomId/current', async (req: Request, res: Response) => {
   const { roomId } = req.params;
   const forceRefresh = req.query.refresh === 'true';
 
-  if (!roomId || !/^\d+$/.test(roomId)) {
+  if (!roomId || !/^\d+$/.test(roomId) || roomId.length > 6) {
     return res.status(400).json({
-      error: 'Invalid room ID. Must be a numeric value.',
+      error: 'Invalid room ID',
+      message: 'Room ID must be a numeric value up to 6 digits',
     });
   }
 
@@ -645,7 +650,7 @@ router.get('/:roomId/current', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error(`Error fetching current auction ${roomId}:`, error);
+    logger.error({ error, roomId }, 'Error fetching current auction');
     res.status(503).json({
       error: 'Failed to fetch current auction.',
     });
@@ -659,9 +664,10 @@ router.get('/:roomId/current', async (req: Request, res: Response) => {
 router.get('/:roomId/cache', async (req: Request, res: Response) => {
   const { roomId } = req.params;
 
-  if (!roomId || !/^\d+$/.test(roomId)) {
+  if (!roomId || !/^\d+$/.test(roomId) || roomId.length > 6) {
     return res.status(400).json({
-      error: 'Invalid room ID. Must be a numeric value.',
+      error: 'Invalid room ID',
+      message: 'Room ID must be a numeric value up to 6 digits',
     });
   }
 
@@ -681,9 +687,10 @@ router.get('/:roomId/cache', async (req: Request, res: Response) => {
 router.delete('/:roomId/cache', async (req: Request, res: Response) => {
   const { roomId } = req.params;
 
-  if (!roomId || !/^\d+$/.test(roomId)) {
+  if (!roomId || !/^\d+$/.test(roomId) || roomId.length > 6) {
     return res.status(400).json({
-      error: 'Invalid room ID. Must be a numeric value.',
+      error: 'Invalid room ID',
+      message: 'Room ID must be a numeric value up to 6 digits',
     });
   }
 
@@ -716,7 +723,7 @@ router.get('/cache/status', async (_req: Request, res: Response) => {
       })),
     });
   } catch (error) {
-    console.error('Error listing cached rooms:', error);
+    logger.error({ error }, 'Error listing cached rooms');
     res.status(500).json({ error: 'Failed to list cached rooms' });
   }
 });
@@ -734,7 +741,7 @@ router.post('/cache/cleanup', async (_req: Request, res: Response) => {
       message: `Cleaned ${cleaned} expired cache entries`,
     });
   } catch (error) {
-    console.error('Error cleaning up caches:', error);
+    logger.error({ error }, 'Error cleaning up caches');
     res.status(500).json({ error: 'Failed to cleanup caches' });
   }
 });

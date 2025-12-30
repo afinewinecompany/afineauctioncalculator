@@ -6,6 +6,8 @@ import { calculateLeagueAuctionValues, convertToPlayers } from './lib/auctionApi
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
+import { ForgotPasswordPage } from './components/ForgotPasswordPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { GoogleCallbackHandler } from './components/GoogleCallbackHandler';
 import { LeaguesList } from './components/LeaguesList';
 import { SetupScreen } from './components/SetupScreen';
@@ -16,7 +18,7 @@ import { ProjectionsLoadingScreen } from './components/ProjectionsLoadingScreen'
 import { AccountScreen } from './components/AccountScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-type AppScreen = 'landing' | 'login' | 'google-callback' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account';
+type AppScreen = 'landing' | 'login' | 'forgot-password' | 'reset-password' | 'google-callback' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account';
 
 // Inner app component that uses auth context
 function AppContent() {
@@ -33,11 +35,22 @@ function AppContent() {
   // Track if we've already shown the storage warning to prevent spamming
   const storageWarningShownRef = useRef(false);
 
-  // Check for Google OAuth callback on mount
+  // Track reset password token from URL
+  const [resetToken, setResetToken] = useState<string>('');
+
+  // Check for special routes on mount (OAuth callback, password reset)
   useEffect(() => {
     const path = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+
     if (path === '/auth/google/callback' || path.includes('/auth/google/callback')) {
       setCurrentScreen('google-callback');
+    } else if (path === '/reset-password' || path.includes('/reset-password')) {
+      const token = searchParams.get('token') || '';
+      setResetToken(token);
+      setCurrentScreen('reset-password');
+      // Clean up the URL without reloading the page
+      window.history.replaceState({}, '', '/reset-password');
     }
   }, []);
 
@@ -66,7 +79,9 @@ function AppContent() {
         setCurrentScreen('leagues');
       }
     } catch (error) {
-      console.error('Failed to load user data from localStorage:', error);
+      if (import.meta.env.DEV) {
+        console.error('Failed to load user data from localStorage:', error);
+      }
       // Clear corrupted data
       localStorage.removeItem('fantasyBaseballUser');
     }
@@ -98,7 +113,9 @@ function AppContent() {
         // Reset warning flag on successful save
         storageWarningShownRef.current = false;
       } catch (error) {
-        console.warn('Failed to save to localStorage, likely quota exceeded:', error);
+        if (import.meta.env.DEV) {
+          console.warn('Failed to save to localStorage, likely quota exceeded:', error);
+        }
 
         // Show toast notification to warn user (only once per session)
         if (!storageWarningShownRef.current) {
@@ -128,7 +145,9 @@ function AppContent() {
           };
           localStorage.setItem('fantasyBaseballUser', JSON.stringify(minimalData));
         } catch (e) {
-          console.error('Failed to save minimal data to localStorage:', e);
+          if (import.meta.env.DEV) {
+            console.error('Failed to save minimal data to localStorage:', e);
+          }
           // Show critical error toast if even minimal save fails
           if (!storageWarningShownRef.current) {
             storageWarningShownRef.current = true;
@@ -150,7 +169,9 @@ function AppContent() {
 
     if (isAuthenticated && user && !userData) {
       // User logged in via real auth - create userData from auth user
-      console.log('[App] Auth sync: Creating userData from auth user');
+      if (import.meta.env.DEV) {
+        console.log('[App] Auth sync: Creating userData from auth user');
+      }
       const newUserData: UserData = {
         username: user.name || user.email.split('@')[0],
         email: user.email,
@@ -190,8 +211,10 @@ function AppContent() {
   };
 
   const handleSetupComplete = async (settings: LeagueSettings) => {
-    console.log('[App] Starting handleSetupComplete, setting isLoadingProjections=true');
-    console.log('[App] Settings:', settings.leagueName, settings.projectionSystem);
+    if (import.meta.env.DEV) {
+      console.log('[App] Starting handleSetupComplete, setting isLoadingProjections=true');
+      console.log('[App] Settings:', settings.leagueName, settings.projectionSystem);
+    }
 
     // Set loading state synchronously
     setIsLoadingProjections(true);
@@ -203,14 +226,20 @@ function AppContent() {
     const MINIMUM_LOADING_TIME_MS = 3000; // Show loading screen for at least 3 seconds
 
     try {
-      console.log('[App] Starting API call...');
+      if (import.meta.env.DEV) {
+        console.log('[App] Starting API call...');
+      }
       // Fetch projections and calculate auction values based on league settings
       const calculatedValues = await calculateLeagueAuctionValues(settings);
-      console.log('[App] API call complete');
+      if (import.meta.env.DEV) {
+        console.log('[App] API call complete');
+      }
       const projectedPlayers = convertToPlayers(calculatedValues);
 
-      console.log(`Loaded ${projectedPlayers.length} players from ${settings.projectionSystem} projections`);
-      console.log(`League summary:`, calculatedValues.leagueSummary);
+      if (import.meta.env.DEV) {
+        console.log(`Loaded ${projectedPlayers.length} players from ${settings.projectionSystem} projections`);
+        console.log(`League summary:`, calculatedValues.leagueSummary);
+      }
 
       const newLeague: SavedLeague = {
         id: `league-${Date.now()}`,
@@ -237,7 +266,9 @@ function AppContent() {
       // Ensure minimum loading time for good UX
       const elapsedTime = Date.now() - loadingStartTime;
       const remainingTime = Math.max(0, MINIMUM_LOADING_TIME_MS - elapsedTime);
-      console.log(`[App] Elapsed: ${elapsedTime}ms, waiting additional ${remainingTime}ms`);
+      if (import.meta.env.DEV) {
+        console.log(`[App] Elapsed: ${elapsedTime}ms, waiting additional ${remainingTime}ms`);
+      }
 
       if (remainingTime > 0) {
         await new Promise(resolve => setTimeout(resolve, remainingTime));
@@ -245,7 +276,9 @@ function AppContent() {
 
       setCurrentScreen('draft');
     } catch (error) {
-      console.error('Failed to load projections:', error);
+      if (import.meta.env.DEV) {
+        console.error('Failed to load projections:', error);
+      }
       setProjectionError(error instanceof Error ? error.message : 'Failed to load projections');
 
       // Fallback to mock data if projections fail
@@ -272,7 +305,9 @@ function AppContent() {
       setPlayers(newLeague.players);
       setCurrentScreen('draft');
     } finally {
-      console.log('[App] Finally block - setting isLoadingProjections=false');
+      if (import.meta.env.DEV) {
+        console.log('[App] Finally block - setting isLoadingProjections=false');
+      }
       setIsLoadingProjections(false);
       setLoadingSettings(null);
     }
@@ -322,7 +357,9 @@ function AppContent() {
           setCurrentLeague(updatedLeague);
         }
       } catch (error) {
-        console.error('Failed to reload player data:', error);
+        if (import.meta.env.DEV) {
+          console.error('Failed to reload player data:', error);
+        }
         // Fall back to saved data even if incomplete
         setPlayers(league.players);
       } finally {
@@ -378,7 +415,9 @@ function AppContent() {
       const calculatedValues = await calculateLeagueAuctionValues(settingsToUse);
       const projectedPlayers = convertToPlayers(calculatedValues);
 
-      console.log(`Reloaded ${projectedPlayers.length} players from ${settingsToUse.projectionSystem} projections`);
+      if (import.meta.env.DEV) {
+        console.log(`Reloaded ${projectedPlayers.length} players from ${settingsToUse.projectionSystem} projections`);
+      }
 
       // Merge draft status from existing players
       const draftedMap = new Map(league.players.map(p => [p.id, p]));
@@ -420,7 +459,9 @@ function AppContent() {
         await new Promise(resolve => setTimeout(resolve, remainingTime));
       }
     } catch (error) {
-      console.error('Failed to reload projections:', error);
+      if (import.meta.env.DEV) {
+        console.error('Failed to reload projections:', error);
+      }
       setProjectionError(error instanceof Error ? error.message : 'Failed to reload projections');
       throw error; // Re-throw so the modal can show the error
     } finally {
@@ -503,6 +544,22 @@ function AppContent() {
         <LoginPage
           onBack={() => setCurrentScreen('landing')}
           onSuccess={handleLoginSuccess}
+          onForgotPassword={() => setCurrentScreen('forgot-password')}
+        />
+      )}
+
+      {currentScreen === 'forgot-password' && (
+        <ForgotPasswordPage
+          onBack={() => setCurrentScreen('landing')}
+          onBackToLogin={() => setCurrentScreen('login')}
+        />
+      )}
+
+      {currentScreen === 'reset-password' && (
+        <ResetPasswordPage
+          token={resetToken}
+          onBack={() => setCurrentScreen('landing')}
+          onBackToLogin={() => setCurrentScreen('login')}
         />
       )}
 
