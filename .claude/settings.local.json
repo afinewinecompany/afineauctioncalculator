@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(dir:*)",
+      "Bash(npm run build:server:*)",
+      "Bash(node:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite build)",
+      "Bash(git add:*)",
+      "Bash(npm run build:backend:*)",
+      "Bash(git push)",
+      "Bash(npm run build:frontend:*)",
+      "Bash(npx prisma generate)"
+    ]
+  }
+}

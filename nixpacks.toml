@@ -1,0 +1,8 @@
+# Nixpacks configuration for Railway deployment
+# Adds Chromium for Puppeteer-based web scraping
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "chromium"]
+
+[variables]
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
