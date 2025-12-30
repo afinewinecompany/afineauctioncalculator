@@ -160,21 +160,19 @@ function calculateMatchScore(
 
   // CRITICAL: Minor league player check
   // If the scraped player has 'MiLB' in their positions, they are a minor league prospect
-  // and should NOT match to MLB projections unless confirmed by other signals
+  // and should NEVER match to MLB projections. Period.
   const scrapedIsMiLB = isMinorLeaguePlayer(scraped.positions);
   if (scrapedIsMiLB) {
-    // Heavy penalty for MiLB players - they should NOT match to MLB projections
-    // This prevents "Jesus Rodriguez (MiLB)" from matching to "Julio Rodriguez (MLB)"
-    // or minor league "Jose Ramirez" matching to Cleveland's Jose Ramirez
-    score -= 200;
-
-    // Log the MiLB player to help with debugging
+    // MiLB players should NEVER match to MLB projections - return 0 immediately
+    // This prevents cases like "Jose Ramirez (CLE, MiLB)" matching to "Jose Ramirez (CLE, MLB)"
+    // Even with perfect name+team+position match, MiLB players don't have MLB projections
     logger.debug({
       player: scraped.fullName,
       team: scraped.mlbTeam,
       positions: scraped.positions,
       projectionCandidate: projection.name,
-    }, 'Penalizing MiLB player match attempt');
+    }, 'Rejecting MiLB player match - MiLB players cannot match to MLB projections');
+    return 0; // Hard rejection - no MiLB player should ever match
   }
 
   // Team matching (very important for disambiguation)

@@ -79,6 +79,19 @@ export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProp
     setLocalError(null);
     setIsGoogleLoading(true);
 
+    // DEV MODE: Bypass authentication and go straight to dashboard
+    if (import.meta.env.DEV) {
+      console.log('[DEV] Bypassing Google OAuth - auto-login as dev user');
+      // Store a mock token so isAuthenticated() returns true
+      localStorage.setItem('auth_token', 'dev-mock-token');
+      localStorage.setItem('refresh_token', 'dev-mock-refresh');
+      // Small delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setIsGoogleLoading(false);
+      onSuccess();
+      return;
+    }
+
     try {
       const apiUrl = getApiUrl();
 

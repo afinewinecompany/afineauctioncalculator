@@ -26,6 +26,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Mock user for dev mode
+const DEV_MOCK_USER: AuthUser = {
+  id: 'dev-user-123',
+  email: 'dev@localhost.test',
+  name: 'Dev User',
+  profilePictureUrl: null,
+  authProvider: 'google',
+  subscriptionTier: 'premium',
+  createdAt: new Date().toISOString(),
+  lastLoginAt: new Date().toISOString(),
+};
+
+// Check if this is a dev mock token
+function isDevMockToken(): boolean {
+  return import.meta.env.DEV && localStorage.getItem('auth_token') === 'dev-mock-token';
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check for existing session on mount
   useEffect(() => {
     async function initAuth() {
+      // DEV MODE: If dev mock token exists, use mock user
+      if (isDevMockToken()) {
+        console.log('[DEV] Using mock dev user');
+        setUser(DEV_MOCK_USER);
+        setIsLoading(false);
+        return;
+      }
+
       if (checkIsAuthenticated()) {
         try {
           const currentUser = await getCurrentUser();
@@ -100,6 +125,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh user from stored tokens (used after OAuth callback)
   const refreshUser = useCallback(async () => {
+    // DEV MODE: If dev mock token exists, use mock user
+    if (isDevMockToken()) {
+      console.log('[DEV] Refresh: Using mock dev user');
+      setUser(DEV_MOCK_USER);
+      return;
+    }
+
     if (checkIsAuthenticated()) {
       setIsLoading(true);
       try {
