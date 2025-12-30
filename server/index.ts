@@ -19,6 +19,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 import authRoutes from './routes/auth.js';
 import auctionRoutes from './routes/auction.js';
 import projectionsRoutes from './routes/projections.js';
@@ -158,7 +159,9 @@ export function createServer(): Express {
   app.use('/api/projections', projectionsRoutes);
 
   // ==========================================================================
-  // STATIC FILE SERVING (Production only - serves built frontend)
+  // STATIC FILE SERVING (Production only - serves built frontend if present)
+  // Note: When using split deployment (Vercel frontend + Railway backend),
+  // the frontend files won't exist here - that's expected.
   // ==========================================================================
 
   if (isProduction) {
@@ -170,19 +173,25 @@ export function createServer(): Express {
     // Server runs from dist/server/index.js, frontend is at dist/
     // So we go up one level from dist/server/ to dist/
     const distPath = path.join(__dirname, '..');
+    const indexPath = path.join(distPath, 'index.html');
 
-    logger.info({ distPath }, 'Serving static files from');
+    // Only serve static files if index.html exists (unified deployment)
+    // For split deployment (Vercel + Railway), this will be skipped
+    if (existsSync(indexPath)) {
+      logger.info({ distPath }, 'Serving static files from');
+      app.use(express.static(distPath));
 
-    app.use(express.static(distPath));
-
-    // SPA fallback - serve index.html for all non-API routes
-    app.get('*', (req: Request, res: Response, next: NextFunction) => {
-      // Skip if it's an API route (should have been handled above)
-      if (req.path.startsWith('/api/')) {
-        return next();
-      }
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+      // SPA fallback - serve index.html for all non-API routes
+      app.get('*', (req: Request, res: Response, next: NextFunction) => {
+        // Skip if it's an API route (should have been handled above)
+        if (req.path.startsWith('/api/')) {
+          return next();
+        }
+        res.sendFile(indexPath);
+      });
+    } else {
+      logger.info('No frontend build found - running as API-only (split deployment mode)');
+    }
   }
 
   // ==========================================================================

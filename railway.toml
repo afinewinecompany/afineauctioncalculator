@@ -1,17 +1,17 @@
-# Railway configuration for unified frontend + backend deployment
-# Single service serving both API and static frontend files
+# Railway configuration for backend API deployment
+# Frontend is deployed separately on Vercel
 
 [build]
 builder = "nixpacks"
-# Build both frontend and backend (npm ci is handled by Nixpacks install phase)
-buildCommand = "npx prisma generate && npm run build"
+# Build backend only (skip frontend build)
+buildCommand = "npx prisma generate && npm run build:backend"
 
 # Install Chromium for Puppeteer scraping
 [build.nixpacks]
 aptPkgs = ["chromium"]
 
 [deploy]
-# Run migrations then start the backend (which also serves frontend static files)
+# Run migrations then start the backend API
 startCommand = "npx prisma migrate deploy && npm run start:backend"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 60
@@ -30,5 +30,5 @@ CHROME_BIN = "/usr/bin/chromium"
 # - NODE_ENV=production
 # - JWT_SECRET=<64-char-hex-string>
 # - JWT_REFRESH_SECRET=<64-char-hex-string>
-# - FRONTEND_URL=https://your-app.railway.app (same as service URL)
-# - CORS_ORIGINS=https://your-app.railway.app
+# - FRONTEND_URL=https://your-vercel-app.vercel.app
+# - CORS_ORIGINS=https://your-vercel-app.vercel.app
