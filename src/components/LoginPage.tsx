@@ -52,7 +52,11 @@ export function LoginPage({ onBack, onSuccess }: LoginPageProps) {
 
   const handleGoogleLogin = () => {
     // Redirect to backend Google OAuth endpoint
-    const apiUrl = import.meta.env.VITE_API_URL || '';
+    let apiUrl = import.meta.env.VITE_API_URL || '';
+    // Ensure the URL has a protocol prefix
+    if (apiUrl && !apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+      apiUrl = `https://${apiUrl}`;
+    }
     window.location.href = `${apiUrl}/api/auth/google`;
   };
 

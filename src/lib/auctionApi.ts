@@ -8,7 +8,16 @@ import type {
 // Get API base URL from environment variables
 // In development: defaults to /api (proxied by Vite)
 // In production: uses VITE_API_URL (e.g., https://api.example.com)
-const API_URL = import.meta.env.VITE_API_URL || '';
+function getApiUrl(): string {
+  let url = import.meta.env.VITE_API_URL || '';
+  // Ensure the URL has a protocol prefix for production
+  if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+    url = `https://${url}`;
+  }
+  return url;
+}
+
+const API_URL = getApiUrl();
 const API_BASE = `${API_URL}/api/auction`;
 const PROJECTIONS_BASE = `${API_URL}/api/projections`;
 
