@@ -23,11 +23,11 @@ import {
   isAppError,
   isOperationalError,
   createValidationError,
-} from '../errors';
-import { ErrorCodes } from '../errors/errorCodes';
-import { logger } from '../services/logger';
-import { errorTracking } from '../services/errorTracking';
-import { isDevelopment } from '../config/env';
+} from '../errors/index.js';
+import { ErrorCodes } from '../errors/errorCodes.js';
+import { logger } from '../services/logger.js';
+import { errorTracking } from '../services/errorTracking.js';
+import { isDevelopment } from '../config/env.js';
 
 /**
  * Structured error response format

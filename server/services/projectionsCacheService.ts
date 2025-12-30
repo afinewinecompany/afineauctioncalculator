@@ -10,13 +10,13 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { cacheGetJSON, cacheSetJSON, cacheDelete, cacheExists } from './cacheService';
-import { env } from '../config/env';
+import { cacheGetJSON, cacheSetJSON, cacheDelete, cacheExists } from './cacheService.js';
+import { env } from '../config/env.js';
 import type {
   NormalizedProjection,
   ProjectionCacheEntry,
   ProjectionCacheMetadata,
-} from '../types/projections';
+} from '../types/projections.js';
 
 // Cache directory - use process.cwd() to find project root (fallback only)
 const CACHE_DIR = path.join(process.cwd(), 'cache');

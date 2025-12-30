@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { env, isDevelopment } from './config/env';
+import { env, isDevelopment } from './config/env.js';
 
 /**
  * Prisma Client singleton

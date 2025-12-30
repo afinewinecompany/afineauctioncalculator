@@ -3,7 +3,7 @@
  * Fetches player projections from JA Projections Google Sheet and normalizes them to internal format
  */
 
-import type { NormalizedProjection } from '../types/projections';
+import type { NormalizedProjection } from '../types/projections.js';
 
 // Google Sheets public URL for JA Projections
 const JA_SHEET_ID = '1c2aCJakeEMLXbxZ5MRPX3IfXFaIAOyntQHjSDzYRh3k';

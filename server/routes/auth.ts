@@ -20,13 +20,13 @@ import {
   findUserByEmail,
   findUserById,
   createUser,
-} from '../services/authService';
-import { requireAuth } from '../middleware/auth';
+} from '../services/authService.js';
+import { requireAuth } from '../middleware/auth.js';
 import {
   toUserResponse,
   AuthResponse,
   TokenRefreshResponse,
-} from '../types/auth';
+} from '../types/auth.js';
 
 const router = Router();
 

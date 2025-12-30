@@ -9,8 +9,8 @@
  * - Custom error tagging
  */
 
-import { isProduction, isDevelopment, env } from '../config/env';
-import { logger } from './logger';
+import { isProduction, isDevelopment, env } from '../config/env.js';
+import { logger } from './logger.js';
 
 /**
  * Sentry configuration interface

@@ -9,7 +9,7 @@
  */
 
 import Redis from 'ioredis';
-import { env, isDevelopment, isProduction } from '../config/env';
+import { env, isDevelopment, isProduction } from '../config/env.js';
 
 let redisClient: Redis | null = null;
 let isRedisAvailable = false;

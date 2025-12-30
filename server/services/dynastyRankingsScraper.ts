@@ -8,7 +8,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { DynastyRanking, DynastyRankingsCacheEntry } from '../types/projections';
+import type { DynastyRanking, DynastyRankingsCacheEntry } from '../types/projections.js';
 
 const DYNASTY_RANKINGS_URL = 'https://harryknowsball.com/rankings';
 const CACHE_DIR = path.join(process.cwd(), 'cache');

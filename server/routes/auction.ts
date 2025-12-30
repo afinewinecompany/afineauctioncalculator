@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { scrapeAuction, scrapeDraftedPlayers } from '../services/couchManagersScraper';
-import { matchAllPlayers } from '../services/playerMatcher';
-import { calculateInflationStats } from '../services/inflationCalculator';
-import { getCachedProjections } from '../services/projectionsCacheService';
-import { getDynastyRankings } from '../services/dynastyRankingsScraper';
-import { calculateAuctionValues } from '../services/valueCalculator';
+import { scrapeAuction, scrapeDraftedPlayers } from '../services/couchManagersScraper.js';
+import { matchAllPlayers } from '../services/playerMatcher.js';
+import { calculateInflationStats } from '../services/inflationCalculator.js';
+import { getCachedProjections } from '../services/projectionsCacheService.js';
+import { getDynastyRankings } from '../services/dynastyRankingsScraper.js';
+import { calculateAuctionValues } from '../services/valueCalculator.js';
 import {
   getCachedAuctionData,
   setCachedAuctionData,
@@ -14,9 +14,9 @@ import {
   listCachedAuctionRooms,
   cleanupExpiredCaches,
   AUCTION_CACHE_DEFAULTS,
-} from '../services/auctionCacheService';
-import type { AuctionSyncResult, ScrapedAuctionData } from '../types/auction';
-import type { LeagueSettings } from '../../src/lib/types';
+} from '../services/auctionCacheService.js';
+import type { AuctionSyncResult, ScrapedAuctionData } from '../types/auction.js';
+import type { LeagueSettings } from '../../src/lib/types.js';
 
 // Zod validation schemas for API input validation
 const RosterSlotsSchema = z.object({

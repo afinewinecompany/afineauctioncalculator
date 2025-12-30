@@ -12,8 +12,8 @@
 import { Request, Response, NextFunction } from 'express';
 import pinoHttp, { Options as PinoHttpOptions } from 'pino-http';
 import { randomUUID } from 'crypto';
-import { logger } from '../services/logger';
-import { isDevelopment } from '../config/env';
+import { logger } from '../services/logger.js';
+import { isDevelopment } from '../config/env.js';
 
 /**
  * Headers to mask in logs (sensitive data)

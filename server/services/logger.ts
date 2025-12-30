@@ -10,7 +10,7 @@
  */
 
 import pino, { Logger as PinoLogger, LoggerOptions } from 'pino';
-import { env, isDevelopment, isProduction } from '../config/env';
+import { env, isDevelopment, isProduction } from '../config/env.js';
 
 /**
  * Pino logger configuration

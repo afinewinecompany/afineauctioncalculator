@@ -1,0 +1,2774 @@
+{
+  "metadata": {
+    "analyzedAt": "2025-12-24T19:06:26.002Z",
+    "projectionSystem": "steamer",
+    "totalAuctions": 6
+  },
+  "auctions": [
+    {
+      "auctionId": "1358",
+      "scrapedAt": "2025-12-24T19:05:41.479Z",
+      "numTeams": 12,
+      "budgetPerTeam": 260,
+      "totalRosterSpots": 26,
+      "totalPlayersDrafted": 482,
+      "totalMoneySpent": 4643,
+      "matchedPlayersCount": 473,
+      "unmatchedPlayersCount": 9,
+      "overallInflationRate": -11.746601692741725,
+      "weightedInflationRate": -11.746601692741725,
+      "totalProjectedValue": 3092,
+      "totalActualSpent": 4056,
+      "tierInflation": [
+        {
+          "tier": 1,
+          "draftedCount": 29,
+          "totalProjectedValue": 2114,
+          "totalActualSpent": 1194,
+          "inflationRate": -43.519394512771996
+        },
+        {
+          "tier": 2,
+          "draftedCount": 29,
+          "totalProjectedValue": 557,
+          "totalActualSpent": 634,
+          "inflationRate": 13.824057450628366
+        },
+        {
+          "tier": 3,
+          "draftedCount": 29,
+          "totalProjectedValue": 224,
+          "totalActualSpent": 330,
+          "inflationRate": 47.32142857142857
+        },
+        {
+          "tier": 4,
+          "draftedCount": 29,
+          "totalProjectedValue": 30,
+          "totalActualSpent": 247,
+          "inflationRate": 723.3333333333334
+        },
+        {
+          "tier": 5,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 200,
+          "inflationRate": 589.655172413793
+        },
+        {
+          "tier": 6,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 163,
+          "inflationRate": 462.0689655172414
+        },
+        {
+          "tier": 7,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 525,
+          "inflationRate": 1710.3448275862067
+        },
+        {
+          "tier": 8,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 307,
+          "inflationRate": 958.6206896551724
+        },
+        {
+          "tier": 9,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 252,
+          "inflationRate": 768.9655172413793
+        },
+        {
+          "tier": 10,
+          "draftedCount": 22,
+          "totalProjectedValue": 22,
+          "totalActualSpent": 204,
+          "inflationRate": 827.2727272727274
+        }
+      ],
+      "positionInflation": [
+        {
+          "position": "MiLB",
+          "count": 57,
+          "avgProjectedValue": 0.22807017543859648,
+          "avgActualSpent": 4.9298245614035086,
+          "inflationRate": 2061.538461538462,
+          "totalProjectedValue": 13,
+          "totalActualSpent": 281
+        },
+        {
+          "position": "SP",
+          "count": 141,
+          "avgProjectedValue": 1.0921985815602837,
+          "avgActualSpent": 9.929078014184396,
+          "inflationRate": 809.0909090909091,
+          "totalProjectedValue": 154,
+          "totalActualSpent": 1400
+        },
+        {
+          "position": "C",
+          "count": 25,
+          "avgProjectedValue": 2.88,
+          "avgActualSpent": 8.04,
+          "inflationRate": 179.16666666666669,
+          "totalProjectedValue": 72,
+          "totalActualSpent": 201
+        },
+        {
+          "position": "2B",
+          "count": 58,
+          "avgProjectedValue": 3.5344827586206895,
+          "avgActualSpent": 6.862068965517241,
+          "inflationRate": 94.14634146341463,
+          "totalProjectedValue": 205,
+          "totalActualSpent": 398
+        },
+        {
+          "position": "3B",
+          "count": 55,
+          "avgProjectedValue": 5.0181818181818185,
+          "avgActualSpent": 8.763636363636364,
+          "inflationRate": 74.63768115942028,
+          "totalProjectedValue": 276,
+          "totalActualSpent": 482
+        },
+        {
+          "position": "OF",
+          "count": 130,
+          "avgProjectedValue": 7.2384615384615385,
+          "avgActualSpent": 10.784615384615385,
+          "inflationRate": 48.99043570669501,
+          "totalProjectedValue": 941,
+          "totalActualSpent": 1402
+        },
+        {
+          "position": "1B",
+          "count": 52,
+          "avgProjectedValue": 7.288461538461538,
+          "avgActualSpent": 10.76923076923077,
+          "inflationRate": 47.75725593667546,
+          "totalProjectedValue": 379,
+          "totalActualSpent": 560
+        },
+        {
+          "position": "DH",
+          "count": 94,
+          "avgProjectedValue": 10.074468085106384,
+          "avgActualSpent": 14.712765957446809,
+          "inflationRate": 46.04012671594509,
+          "totalProjectedValue": 947,
+          "totalActualSpent": 1383
+        },
+        {
+          "position": "SS",
+          "count": 70,
+          "avgProjectedValue": 6.8428571428571425,
+          "avgActualSpent": 9.614285714285714,
+          "inflationRate": 40.50104384133611,
+          "totalProjectedValue": 479,
+          "totalActualSpent": 673
+        },
+        {
+          "position": "RP",
+          "count": 96,
+          "avgProjectedValue": 9.520833333333334,
+          "avgActualSpent": 3.8854166666666665,
+          "inflationRate": -59.19037199124726,
+          "totalProjectedValue": 914,
+          "totalActualSpent": 373
+        }
+      ],
+      "priceRangeInflation": [
+        {
+          "range": "$1-$5",
+          "minPrice": 1,
+          "maxPrice": 5,
+          "count": 206,
+          "avgProjectedValue": 1.145631067961165,
+          "avgActualSpent": 9.689320388349515,
+          "inflationRate": 745.7627118644067,
+          "totalProjectedValue": 236,
+          "totalActualSpent": 1996
+        },
+        {
+          "range": "$6-$15",
+          "minPrice": 6,
+          "maxPrice": 15,
+          "count": 23,
+          "avgProjectedValue": 10.434782608695652,
+          "avgActualSpent": 13.956521739130435,
+          "inflationRate": 33.75,
+          "totalProjectedValue": 240,
+          "totalActualSpent": 321
+        },
+        {
+          "range": "$16-$30",
+          "minPrice": 16,
+          "maxPrice": 30,
+          "count": 27,
+          "avgProjectedValue": 20.77777777777778,
+          "avgActualSpent": 22.48148148148148,
+          "inflationRate": 8.19964349376114,
+          "totalProjectedValue": 561,
+          "totalActualSpent": 607
+        },
+        {
+          "range": "$31+",
+          "minPrice": 31,
+          "maxPrice": null,
+          "count": 27,
+          "avgProjectedValue": 76.11111111111111,
+          "avgActualSpent": 41.925925925925924,
+          "inflationRate": -44.91484184914842,
+          "totalProjectedValue": 2055,
+          "totalActualSpent": 1132
+        }
+      ],
+      "topOvervalued": [
+        {
+          "name": "Tarik Skubal",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 46,
+          "inflationAmount": 45,
+          "inflationPercent": 4500
+        },
+        {
+          "name": "Paul Skenes",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 43,
+          "inflationAmount": 42,
+          "inflationPercent": 4200
+        },
+        {
+          "name": "Yoshinobu Yamamoto",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 40,
+          "inflationAmount": 39,
+          "inflationPercent": 3900
+        },
+        {
+          "name": "Garrett Crochet",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 39,
+          "inflationAmount": 38,
+          "inflationPercent": 3800
+        },
+        {
+          "name": "Cristopher Sanchez",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 36,
+          "inflationAmount": 35,
+          "inflationPercent": 3500
+        },
+        {
+          "name": "Logan Webb",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 34,
+          "inflationAmount": 33,
+          "inflationPercent": 3300
+        },
+        {
+          "name": "Logan Gilbert",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 33,
+          "inflationAmount": 32,
+          "inflationPercent": 3200
+        },
+        {
+          "name": "Roman Anthony",
+          "positions": [
+            "OF",
+            "DH"
+          ],
+          "projectedValue": 1,
+          "actualBid": 32,
+          "inflationAmount": 31,
+          "inflationPercent": 3100
+        },
+        {
+          "name": "Hunter Brown",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 31,
+          "inflationAmount": 30,
+          "inflationPercent": 3000
+        },
+        {
+          "name": "Max Fried",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 30,
+          "inflationAmount": 29,
+          "inflationPercent": 2900
+        }
+      ],
+      "topUndervalued": [
+        {
+          "name": "Edwin Diaz",
+          "positions": [
+            "RP"
+          ],
+          "projectedValue": 537,
+          "actualBid": 13,
+          "inflationAmount": -524,
+          "inflationPercent": -97.57914338919925
+        },
+        {
+          "name": "Mason Miller",
+          "positions": [
+            "RP"
+          ],
+          "projectedValue": 343,
+          "actualBid": 16,
+          "inflationAmount": -327,
+          "inflationPercent": -95.33527696793003
+        },
+        {
+          "name": "Ronald Acuna Jr",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 67,
+          "actualBid": 49,
+          "inflationAmount": -18,
+          "inflationPercent": -26.865671641791046
+        },
+        {
+          "name": "George Springer",
+          "positions": [
+            "OF",
+            "DH"
+          ],
+          "projectedValue": 27,
+          "actualBid": 12,
+          "inflationAmount": -15,
+          "inflationPercent": -55.55555555555556
+        },
+        {
+          "name": "Julio Rodriguez",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 53,
+          "actualBid": 39,
+          "inflationAmount": -14,
+          "inflationPercent": -26.41509433962264
+        },
+        {
+          "name": "Bobby Witt Jr",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 65,
+          "actualBid": 51,
+          "inflationAmount": -14,
+          "inflationPercent": -21.53846153846154
+        },
+        {
+          "name": "Elly De La Cruz",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 49,
+          "actualBid": 37,
+          "inflationAmount": -12,
+          "inflationPercent": -24.489795918367346
+        },
+        {
+          "name": "Ezequiel Tovar",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 16,
+          "actualBid": 6,
+          "inflationAmount": -10,
+          "inflationPercent": -62.5
+        },
+        {
+          "name": "Zach Neto",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 33,
+          "actualBid": 24,
+          "inflationAmount": -9,
+          "inflationPercent": -27.27272727272727
+        },
+        {
+          "name": "Yandy Diaz",
+          "positions": [
+            "1B",
+            "DH"
+          ],
+          "projectedValue": 26,
+          "actualBid": 17,
+          "inflationAmount": -9,
+          "inflationPercent": -34.61538461538461
+        }
+      ]
+    },
+    {
+      "auctionId": "1351",
+      "scrapedAt": "2025-12-24T19:05:48.323Z",
+      "numTeams": 12,
+      "budgetPerTeam": 260,
+      "totalRosterSpots": 26,
+      "totalPlayersDrafted": 482,
+      "totalMoneySpent": 4671,
+      "matchedPlayersCount": 473,
+      "unmatchedPlayersCount": 9,
+      "overallInflationRate": -11.601265281696165,
+      "weightedInflationRate": -11.601265281696165,
+      "totalProjectedValue": 3092,
+      "totalActualSpent": 4077,
+      "tierInflation": [
+        {
+          "tier": 1,
+          "draftedCount": 29,
+          "totalProjectedValue": 2114,
+          "totalActualSpent": 1181,
+          "inflationRate": -44.13434247871334
+        },
+        {
+          "tier": 2,
+          "draftedCount": 29,
+          "totalProjectedValue": 557,
+          "totalActualSpent": 636,
+          "inflationRate": 14.183123877917414
+        },
+        {
+          "tier": 3,
+          "draftedCount": 29,
+          "totalProjectedValue": 224,
+          "totalActualSpent": 345,
+          "inflationRate": 54.01785714285714
+        },
+        {
+          "tier": 4,
+          "draftedCount": 29,
+          "totalProjectedValue": 30,
+          "totalActualSpent": 246,
+          "inflationRate": 720
+        },
+        {
+          "tier": 5,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 219,
+          "inflationRate": 655.1724137931035
+        },
+        {
+          "tier": 6,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 170,
+          "inflationRate": 486.2068965517241
+        },
+        {
+          "tier": 7,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 550,
+          "inflationRate": 1796.551724137931
+        },
+        {
+          "tier": 8,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 322,
+          "inflationRate": 1010.344827586207
+        },
+        {
+          "tier": 9,
+          "draftedCount": 29,
+          "totalProjectedValue": 29,
+          "totalActualSpent": 215,
+          "inflationRate": 641.3793103448276
+        },
+        {
+          "tier": 10,
+          "draftedCount": 22,
+          "totalProjectedValue": 22,
+          "totalActualSpent": 193,
+          "inflationRate": 777.2727272727273
+        }
+      ],
+      "positionInflation": [
+        {
+          "position": "MiLB",
+          "count": 58,
+          "avgProjectedValue": 0.20689655172413793,
+          "avgActualSpent": 4.379310344827586,
+          "inflationRate": 2016.6666666666667,
+          "totalProjectedValue": 12,
+          "totalActualSpent": 254
+        },
+        {
+          "position": "SP",
+          "count": 142,
+          "avgProjectedValue": 1.0704225352112675,
+          "avgActualSpent": 10.133802816901408,
+          "inflationRate": 846.7105263157896,
+          "totalProjectedValue": 152,
+          "totalActualSpent": 1439
+        },
+        {
+          "position": "C",
+          "count": 29,
+          "avgProjectedValue": 2.5172413793103448,
+          "avgActualSpent": 6.827586206896552,
+          "inflationRate": 171.23287671232876,
+          "totalProjectedValue": 73,
+          "totalActualSpent": 198
+        },
+        {
+          "position": "2B",
+          "count": 60,
+          "avgProjectedValue": 3.4166666666666665,
+          "avgActualSpent": 6.383333333333334,
+          "inflationRate": 86.82926829268293,
+          "totalProjectedValue": 205,
+          "totalActualSpent": 383
+        },
+        {
+          "position": "3B",
+          "count": 55,
+          "avgProjectedValue": 5.0181818181818185,
+          "avgActualSpent": 8.781818181818181,
+          "inflationRate": 75,
+          "totalProjectedValue": 276,
+          "totalActualSpent": 483
+        },
+        {
+          "position": "1B",
+          "count": 59,
+          "avgProjectedValue": 6.423728813559322,
+          "avgActualSpent": 10.067796610169491,
+          "inflationRate": 56.72823218997362,
+          "totalProjectedValue": 379,
+          "totalActualSpent": 594
+        },
+        {
+          "position": "DH",
+          "count": 94,
+          "avgProjectedValue": 10.063829787234043,
+          "avgActualSpent": 15.425531914893616,
+          "inflationRate": 53.276955602537,
+          "totalProjectedValue": 946,
+          "totalActualSpent": 1450
+        },
+        {
+          "position": "OF",
+          "count": 129,
+          "avgProjectedValue": 7.286821705426356,
+          "avgActualSpent": 11.162790697674419,
+          "inflationRate": 53.191489361702125,
+          "totalProjectedValue": 940,
+          "totalActualSpent": 1440
+        },
+        {
+          "position": "SS",
+          "count": 70,
+          "avgProjectedValue": 6.857142857142857,
+          "avgActualSpent": 9.285714285714286,
+          "inflationRate": 35.41666666666667,
+          "totalProjectedValue": 480,
+          "totalActualSpent": 650
+        },
+        {
+          "position": "RP",
+          "count": 98,
+          "avgProjectedValue": 9.33673469387755,
+          "avgActualSpent": 3.693877551020408,
+          "inflationRate": -60.43715846994535,
+          "totalProjectedValue": 915,
+          "totalActualSpent": 362
+        }
+      ],
+      "priceRangeInflation": [
+        {
+          "range": "$1-$5",
+          "minPrice": 1,
+          "maxPrice": 5,
+          "count": 206,
+          "avgProjectedValue": 1.145631067961165,
+          "avgActualSpent": 9.810679611650485,
+          "inflationRate": 756.3559322033898,
+          "totalProjectedValue": 236,
+          "totalActualSpent": 2021
+        },
+        {
+          "range": "$6-$15",
+          "minPrice": 6,
+          "maxPrice": 15,
+          "count": 23,
+          "avgProjectedValue": 10.434782608695652,
+          "avgActualSpent": 14.478260869565217,
+          "inflationRate": 38.75,
+          "totalProjectedValue": 240,
+          "totalActualSpent": 333
+        },
+        {
+          "range": "$16-$30",
+          "minPrice": 16,
+          "maxPrice": 30,
+          "count": 27,
+          "avgProjectedValue": 20.77777777777778,
+          "avgActualSpent": 22.074074074074073,
+          "inflationRate": 6.23885918003565,
+          "totalProjectedValue": 561,
+          "totalActualSpent": 596
+        },
+        {
+          "range": "$31+",
+          "minPrice": 31,
+          "maxPrice": null,
+          "count": 27,
+          "avgProjectedValue": 76.11111111111111,
+          "avgActualSpent": 41.74074074074074,
+          "inflationRate": -45.15815085158151,
+          "totalProjectedValue": 2055,
+          "totalActualSpent": 1127
+        }
+      ],
+      "topOvervalued": [
+        {
+          "name": "Tarik Skubal",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 48,
+          "inflationAmount": 47,
+          "inflationPercent": 4700
+        },
+        {
+          "name": "Yoshinobu Yamamoto",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 45,
+          "inflationAmount": 44,
+          "inflationPercent": 4400
+        },
+        {
+          "name": "Paul Skenes",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 41,
+          "inflationAmount": 40,
+          "inflationPercent": 4000
+        },
+        {
+          "name": "Cristopher Sanchez",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 39,
+          "inflationAmount": 38,
+          "inflationPercent": 3800
+        },
+        {
+          "name": "Garrett Crochet",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 38,
+          "inflationAmount": 37,
+          "inflationPercent": 3700
+        },
+        {
+          "name": "Logan Webb",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 35,
+          "inflationAmount": 34,
+          "inflationPercent": 3400
+        },
+        {
+          "name": "Hunter Brown",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 30,
+          "inflationAmount": 29,
+          "inflationPercent": 2900
+        },
+        {
+          "name": "Roman Anthony",
+          "positions": [
+            "OF",
+            "DH"
+          ],
+          "projectedValue": 1,
+          "actualBid": 29,
+          "inflationAmount": 28,
+          "inflationPercent": 2800
+        },
+        {
+          "name": "Logan Gilbert",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 28,
+          "inflationAmount": 27,
+          "inflationPercent": 2700
+        },
+        {
+          "name": "Max Fried",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 27,
+          "inflationAmount": 26,
+          "inflationPercent": 2600
+        }
+      ],
+      "topUndervalued": [
+        {
+          "name": "Edwin Diaz",
+          "positions": [
+            "RP"
+          ],
+          "projectedValue": 537,
+          "actualBid": 12,
+          "inflationAmount": -525,
+          "inflationPercent": -97.76536312849163
+        },
+        {
+          "name": "Mason Miller",
+          "positions": [
+            "RP"
+          ],
+          "projectedValue": 343,
+          "actualBid": 16,
+          "inflationAmount": -327,
+          "inflationPercent": -95.33527696793003
+        },
+        {
+          "name": "Ronald Acuna Jr",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 67,
+          "actualBid": 49,
+          "inflationAmount": -18,
+          "inflationPercent": -26.865671641791046
+        },
+        {
+          "name": "Elly De La Cruz",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 49,
+          "actualBid": 32,
+          "inflationAmount": -17,
+          "inflationPercent": -34.69387755102041
+        },
+        {
+          "name": "Julio Rodriguez",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 53,
+          "actualBid": 36,
+          "inflationAmount": -17,
+          "inflationPercent": -32.075471698113205
+        },
+        {
+          "name": "Bobby Witt Jr",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 65,
+          "actualBid": 48,
+          "inflationAmount": -17,
+          "inflationPercent": -26.153846153846157
+        },
+        {
+          "name": "Corbin Carroll",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 53,
+          "actualBid": 40,
+          "inflationAmount": -13,
+          "inflationPercent": -24.528301886792452
+        },
+        {
+          "name": "Pete Alonso",
+          "positions": [
+            "1B"
+          ],
+          "projectedValue": 37,
+          "actualBid": 25,
+          "inflationAmount": -12,
+          "inflationPercent": -32.432432432432435
+        },
+        {
+          "name": "Zach Neto",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 33,
+          "actualBid": 22,
+          "inflationAmount": -11,
+          "inflationPercent": -33.33333333333333
+        },
+        {
+          "name": "Yandy Diaz",
+          "positions": [
+            "1B",
+            "DH"
+          ],
+          "projectedValue": 26,
+          "actualBid": 16,
+          "inflationAmount": -10,
+          "inflationPercent": -38.46153846153847
+        }
+      ]
+    },
+    {
+      "auctionId": "1200",
+      "scrapedAt": "2025-12-24T19:05:53.387Z",
+      "numTeams": 12,
+      "budgetPerTeam": 260,
+      "totalRosterSpots": 26,
+      "totalPlayersDrafted": 1461,
+      "totalMoneySpent": 2585,
+      "matchedPlayersCount": 1414,
+      "unmatchedPlayersCount": 47,
+      "overallInflationRate": 17.504014682266575,
+      "weightedInflationRate": 17.504014682266575,
+      "totalProjectedValue": 1165,
+      "totalActualSpent": 2048,
+      "tierInflation": [
+        {
+          "tier": 1,
+          "draftedCount": 13,
+          "totalProjectedValue": 617,
+          "totalActualSpent": 492,
+          "inflationRate": -20.25931928687196
+        },
+        {
+          "tier": 2,
+          "draftedCount": 13,
+          "totalProjectedValue": 298,
+          "totalActualSpent": 295,
+          "inflationRate": -1.006711409395973
+        },
+        {
+          "tier": 3,
+          "draftedCount": 13,
+          "totalProjectedValue": 141,
+          "totalActualSpent": 202,
+          "inflationRate": 43.262411347517734
+        },
+        {
+          "tier": 4,
+          "draftedCount": 13,
+          "totalProjectedValue": 34,
+          "totalActualSpent": 174,
+          "inflationRate": 411.7647058823529
+        },
+        {
+          "tier": 5,
+          "draftedCount": 13,
+          "totalProjectedValue": 13,
+          "totalActualSpent": 130,
+          "inflationRate": 900
+        },
+        {
+          "tier": 6,
+          "draftedCount": 13,
+          "totalProjectedValue": 13,
+          "totalActualSpent": 118,
+          "inflationRate": 807.6923076923076
+        },
+        {
+          "tier": 7,
+          "draftedCount": 13,
+          "totalProjectedValue": 13,
+          "totalActualSpent": 159,
+          "inflationRate": 1123.076923076923
+        },
+        {
+          "tier": 8,
+          "draftedCount": 13,
+          "totalProjectedValue": 13,
+          "totalActualSpent": 125,
+          "inflationRate": 861.5384615384615
+        },
+        {
+          "tier": 9,
+          "draftedCount": 13,
+          "totalProjectedValue": 13,
+          "totalActualSpent": 216,
+          "inflationRate": 1561.5384615384614
+        },
+        {
+          "tier": 10,
+          "draftedCount": 10,
+          "totalProjectedValue": 10,
+          "totalActualSpent": 137,
+          "inflationRate": 1270
+        }
+      ],
+      "positionInflation": [
+        {
+          "position": "RP",
+          "count": 45,
+          "avgProjectedValue": 0.2,
+          "avgActualSpent": 4.911111111111111,
+          "inflationRate": 2355.5555555555557,
+          "totalProjectedValue": 9,
+          "totalActualSpent": 221
+        },
+        {
+          "position": "MiLB",
+          "count": 12,
+          "avgProjectedValue": 0.3333333333333333,
+          "avgActualSpent": 5.416666666666667,
+          "inflationRate": 1525,
+          "totalProjectedValue": 4,
+          "totalActualSpent": 65
+        },
+        {
+          "position": "SP",
+          "count": 78,
+          "avgProjectedValue": 1.4871794871794872,
+          "avgActualSpent": 9.294871794871796,
+          "inflationRate": 525,
+          "totalProjectedValue": 116,
+          "totalActualSpent": 725
+        },
+        {
+          "position": "C",
+          "count": 13,
+          "avgProjectedValue": 1.4615384615384615,
+          "avgActualSpent": 7.461538461538462,
+          "inflationRate": 410.5263157894737,
+          "totalProjectedValue": 19,
+          "totalActualSpent": 97
+        },
+        {
+          "position": "3B",
+          "count": 19,
+          "avgProjectedValue": 3.3684210526315788,
+          "avgActualSpent": 9.736842105263158,
+          "inflationRate": 189.0625,
+          "totalProjectedValue": 64,
+          "totalActualSpent": 185
+        },
+        {
+          "position": "2B",
+          "count": 28,
+          "avgProjectedValue": 3.857142857142857,
+          "avgActualSpent": 9.071428571428571,
+          "inflationRate": 135.1851851851852,
+          "totalProjectedValue": 108,
+          "totalActualSpent": 254
+        },
+        {
+          "position": "OF",
+          "count": 70,
+          "avgProjectedValue": 7.4,
+          "avgActualSpent": 11.742857142857142,
+          "inflationRate": 58.68725868725869,
+          "totalProjectedValue": 518,
+          "totalActualSpent": 822
+        },
+        {
+          "position": "SS",
+          "count": 25,
+          "avgProjectedValue": 8.84,
+          "avgActualSpent": 13.2,
+          "inflationRate": 49.321266968325794,
+          "totalProjectedValue": 221,
+          "totalActualSpent": 330
+        },
+        {
+          "position": "DH",
+          "count": 23,
+          "avgProjectedValue": 10.08695652173913,
+          "avgActualSpent": 14.391304347826088,
+          "inflationRate": 42.672413793103445,
+          "totalProjectedValue": 232,
+          "totalActualSpent": 331
+        },
+        {
+          "position": "1B",
+          "count": 24,
+          "avgProjectedValue": 7.875,
+          "avgActualSpent": 11,
+          "inflationRate": 39.682539682539684,
+          "totalProjectedValue": 189,
+          "totalActualSpent": 264
+        }
+      ],
+      "priceRangeInflation": [
+        {
+          "range": "$1-$5",
+          "minPrice": 1,
+          "maxPrice": 5,
+          "count": 88,
+          "avgProjectedValue": 1.2386363636363635,
+          "avgActualSpent": 12.034090909090908,
+          "inflationRate": 871.5596330275229,
+          "totalProjectedValue": 109,
+          "totalActualSpent": 1059
+        },
+        {
+          "range": "$6-$15",
+          "minPrice": 6,
+          "maxPrice": 15,
+          "count": 12,
+          "avgProjectedValue": 10.416666666666666,
+          "avgActualSpent": 16.5,
+          "inflationRate": 58.4,
+          "totalProjectedValue": 125,
+          "totalActualSpent": 198
+        },
+        {
+          "range": "$16-$30",
+          "minPrice": 16,
+          "maxPrice": 30,
+          "count": 11,
+          "avgProjectedValue": 19.90909090909091,
+          "avgActualSpent": 18.09090909090909,
+          "inflationRate": -9.1324200913242,
+          "totalProjectedValue": 219,
+          "totalActualSpent": 199
+        },
+        {
+          "range": "$31+",
+          "minPrice": 31,
+          "maxPrice": null,
+          "count": 16,
+          "avgProjectedValue": 44.5,
+          "avgActualSpent": 37,
+          "inflationRate": -16.853932584269664,
+          "totalProjectedValue": 712,
+          "totalActualSpent": 592
+        }
+      ],
+      "topOvervalued": [
+        {
+          "name": "Paul Skenes",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 45,
+          "inflationAmount": 44,
+          "inflationPercent": 4400
+        },
+        {
+          "name": "Zack Wheeler",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 33,
+          "inflationAmount": 32,
+          "inflationPercent": 3200
+        },
+        {
+          "name": "Chris Sale",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 31,
+          "inflationAmount": 30,
+          "inflationPercent": 3000
+        },
+        {
+          "name": "Yoshinobu Yamamoto",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 25,
+          "inflationAmount": 24,
+          "inflationPercent": 2400
+        },
+        {
+          "name": "Dylan Cease",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 24,
+          "inflationAmount": 23,
+          "inflationPercent": 2300
+        },
+        {
+          "name": "Oneil Cruz",
+          "positions": [
+            "SS",
+            "OF"
+          ],
+          "projectedValue": 4,
+          "actualBid": 26,
+          "inflationAmount": 22,
+          "inflationPercent": 550
+        },
+        {
+          "name": "Blake Snell",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 23,
+          "inflationAmount": 22,
+          "inflationPercent": 2200
+        },
+        {
+          "name": "Tyler Glasnow",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 22,
+          "inflationAmount": 21,
+          "inflationPercent": 2100
+        },
+        {
+          "name": "Spencer Strider",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 22,
+          "inflationAmount": 21,
+          "inflationPercent": 2100
+        },
+        {
+          "name": "Ozzie Albies",
+          "positions": [
+            "2B"
+          ],
+          "projectedValue": 1,
+          "actualBid": 21,
+          "inflationAmount": 20,
+          "inflationPercent": 2000
+        }
+      ],
+      "topUndervalued": [
+        {
+          "name": "Ronald Acuna",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 67,
+          "actualBid": 35,
+          "inflationAmount": -32,
+          "inflationPercent": -47.76119402985074
+        },
+        {
+          "name": "Shohei Ohtani",
+          "positions": [
+            "DH",
+            "SP"
+          ],
+          "projectedValue": 82,
+          "actualBid": 62,
+          "inflationAmount": -20,
+          "inflationPercent": -24.390243902439025
+        },
+        {
+          "name": "Fernando Tatis",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 53,
+          "actualBid": 36,
+          "inflationAmount": -17,
+          "inflationPercent": -32.075471698113205
+        },
+        {
+          "name": "Corbin Carroll",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 53,
+          "actualBid": 37,
+          "inflationAmount": -16,
+          "inflationPercent": -30.18867924528302
+        },
+        {
+          "name": "Juan Soto",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 63,
+          "actualBid": 50,
+          "inflationAmount": -13,
+          "inflationPercent": -20.634920634920633
+        },
+        {
+          "name": "Ezequiel Tovar",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 16,
+          "actualBid": 4,
+          "inflationAmount": -12,
+          "inflationPercent": -75
+        },
+        {
+          "name": "Nico Hoerner",
+          "positions": [
+            "2B"
+          ],
+          "projectedValue": 18,
+          "actualBid": 6,
+          "inflationAmount": -12,
+          "inflationPercent": -66.66666666666666
+        },
+        {
+          "name": "Josh Naylor",
+          "positions": [
+            "1B"
+          ],
+          "projectedValue": 24,
+          "actualBid": 14,
+          "inflationAmount": -10,
+          "inflationPercent": -41.66666666666667
+        },
+        {
+          "name": "Brice Turang",
+          "positions": [
+            "2B"
+          ],
+          "projectedValue": 17,
+          "actualBid": 9,
+          "inflationAmount": -8,
+          "inflationPercent": -47.05882352941176
+        },
+        {
+          "name": "Pete Alonso",
+          "positions": [
+            "1B"
+          ],
+          "projectedValue": 37,
+          "actualBid": 29,
+          "inflationAmount": -8,
+          "inflationPercent": -21.62162162162162
+        }
+      ]
+    },
+    {
+      "auctionId": "1201",
+      "scrapedAt": "2025-12-24T19:06:12.790Z",
+      "numTeams": 12,
+      "budgetPerTeam": 260,
+      "totalRosterSpots": 26,
+      "totalPlayersDrafted": 326,
+      "totalMoneySpent": 5834,
+      "matchedPlayersCount": 325,
+      "unmatchedPlayersCount": 1,
+      "overallInflationRate": 55.227369315767106,
+      "weightedInflationRate": 55.227369315767106,
+      "totalProjectedValue": 2475,
+      "totalActualSpent": 5203,
+      "tierInflation": [
+        {
+          "tier": 1,
+          "draftedCount": 22,
+          "totalProjectedValue": 1390,
+          "totalActualSpent": 1536,
+          "inflationRate": 10.503597122302159
+        },
+        {
+          "tier": 2,
+          "draftedCount": 22,
+          "totalProjectedValue": 538,
+          "totalActualSpent": 796,
+          "inflationRate": 47.95539033457249
+        },
+        {
+          "tier": 3,
+          "draftedCount": 22,
+          "totalProjectedValue": 315,
+          "totalActualSpent": 601,
+          "inflationRate": 90.7936507936508
+        },
+        {
+          "tier": 4,
+          "draftedCount": 22,
+          "totalProjectedValue": 100,
+          "totalActualSpent": 379,
+          "inflationRate": 279
+        },
+        {
+          "tier": 5,
+          "draftedCount": 22,
+          "totalProjectedValue": 22,
+          "totalActualSpent": 361,
+          "inflationRate": 1540.9090909090908
+        },
+        {
+          "tier": 6,
+          "draftedCount": 22,
+          "totalProjectedValue": 22,
+          "totalActualSpent": 288,
+          "inflationRate": 1209.0909090909092
+        },
+        {
+          "tier": 7,
+          "draftedCount": 22,
+          "totalProjectedValue": 22,
+          "totalActualSpent": 341,
+          "inflationRate": 1450
+        },
+        {
+          "tier": 8,
+          "draftedCount": 22,
+          "totalProjectedValue": 22,
+          "totalActualSpent": 239,
+          "inflationRate": 986.3636363636364
+        },
+        {
+          "tier": 9,
+          "draftedCount": 22,
+          "totalProjectedValue": 22,
+          "totalActualSpent": 332,
+          "inflationRate": 1409.0909090909092
+        },
+        {
+          "tier": 10,
+          "draftedCount": 22,
+          "totalProjectedValue": 22,
+          "totalActualSpent": 330,
+          "inflationRate": 1400
+        }
+      ],
+      "positionInflation": [
+        {
+          "position": "SP",
+          "count": 101,
+          "avgProjectedValue": 1.3762376237623761,
+          "avgActualSpent": 12.633663366336634,
+          "inflationRate": 817.9856115107914,
+          "totalProjectedValue": 139,
+          "totalActualSpent": 1276
+        },
+        {
+          "position": "MiLB",
+          "count": 17,
+          "avgProjectedValue": 1.3529411764705883,
+          "avgActualSpent": 7.764705882352941,
+          "inflationRate": 473.9130434782608,
+          "totalProjectedValue": 23,
+          "totalActualSpent": 132
+        },
+        {
+          "position": "C",
+          "count": 27,
+          "avgProjectedValue": 2.5925925925925926,
+          "avgActualSpent": 14.555555555555555,
+          "inflationRate": 461.4285714285714,
+          "totalProjectedValue": 70,
+          "totalActualSpent": 393
+        },
+        {
+          "position": "2B",
+          "count": 32,
+          "avgProjectedValue": 6.53125,
+          "avgActualSpent": 20.03125,
+          "inflationRate": 206.69856459330146,
+          "totalProjectedValue": 209,
+          "totalActualSpent": 641
+        },
+        {
+          "position": "3B",
+          "count": 33,
+          "avgProjectedValue": 9.515151515151516,
+          "avgActualSpent": 23.272727272727273,
+          "inflationRate": 144.5859872611465,
+          "totalProjectedValue": 314,
+          "totalActualSpent": 768
+        },
+        {
+          "position": "DH",
+          "count": 44,
+          "avgProjectedValue": 13.772727272727273,
+          "avgActualSpent": 30.363636363636363,
+          "inflationRate": 120.46204620462046,
+          "totalProjectedValue": 606,
+          "totalActualSpent": 1336
+        },
+        {
+          "position": "1B",
+          "count": 32,
+          "avgProjectedValue": 10.5,
+          "avgActualSpent": 22.96875,
+          "inflationRate": 118.75,
+          "totalProjectedValue": 336,
+          "totalActualSpent": 735
+        },
+        {
+          "position": "OF",
+          "count": 79,
+          "avgProjectedValue": 11.341772151898734,
+          "avgActualSpent": 24.468354430379748,
+          "inflationRate": 115.73660714285714,
+          "totalProjectedValue": 896,
+          "totalActualSpent": 1933
+        },
+        {
+          "position": "SS",
+          "count": 31,
+          "avgProjectedValue": 13.451612903225806,
+          "avgActualSpent": 24,
+          "inflationRate": 78.41726618705036,
+          "totalProjectedValue": 417,
+          "totalActualSpent": 744
+        },
+        {
+          "position": "RP",
+          "count": 41,
+          "avgProjectedValue": 8.78048780487805,
+          "avgActualSpent": 5.829268292682927,
+          "inflationRate": -33.611111111111114,
+          "totalProjectedValue": 360,
+          "totalActualSpent": 239
+        }
+      ],
+      "priceRangeInflation": [
+        {
+          "range": "$1-$5",
+          "minPrice": 1,
+          "maxPrice": 5,
+          "count": 146,
+          "avgProjectedValue": 1.1917808219178083,
+          "avgActualSpent": 14.45890410958904,
+          "inflationRate": 1113.2183908045977,
+          "totalProjectedValue": 174,
+          "totalActualSpent": 2111
+        },
+        {
+          "range": "$6-$15",
+          "minPrice": 6,
+          "maxPrice": 15,
+          "count": 21,
+          "avgProjectedValue": 10.571428571428571,
+          "avgActualSpent": 24.952380952380953,
+          "inflationRate": 136.03603603603605,
+          "totalProjectedValue": 222,
+          "totalActualSpent": 524
+        },
+        {
+          "range": "$16-$30",
+          "minPrice": 16,
+          "maxPrice": 30,
+          "count": 27,
+          "avgProjectedValue": 20.77777777777778,
+          "avgActualSpent": 32.629629629629626,
+          "inflationRate": 57.04099821746881,
+          "totalProjectedValue": 561,
+          "totalActualSpent": 881
+        },
+        {
+          "range": "$31+",
+          "minPrice": 31,
+          "maxPrice": null,
+          "count": 26,
+          "avgProjectedValue": 58.38461538461539,
+          "avgActualSpent": 64.88461538461539,
+          "inflationRate": 11.133069828722004,
+          "totalProjectedValue": 1518,
+          "totalActualSpent": 1687
+        }
+      ],
+      "topOvervalued": [
+        {
+          "name": "Will Smith",
+          "positions": [
+            "C"
+          ],
+          "projectedValue": 1,
+          "actualBid": 81,
+          "inflationAmount": 80,
+          "inflationPercent": 8000
+        },
+        {
+          "name": "Jose Ramirez",
+          "positions": [
+            "3B",
+            "DH"
+          ],
+          "projectedValue": 53,
+          "actualBid": 121,
+          "inflationAmount": 68,
+          "inflationPercent": 128.30188679245282
+        },
+        {
+          "name": "Mookie Betts",
+          "positions": [
+            "SS",
+            "OF",
+            "2B"
+          ],
+          "projectedValue": 21,
+          "actualBid": 86,
+          "inflationAmount": 65,
+          "inflationPercent": 309.5238095238095
+        },
+        {
+          "name": "Juan Soto",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 63,
+          "actualBid": 121,
+          "inflationAmount": 58,
+          "inflationPercent": 92.06349206349206
+        },
+        {
+          "name": "Paul Skenes",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 50,
+          "inflationAmount": 49,
+          "inflationPercent": 4900
+        },
+        {
+          "name": "Ozzie Albies",
+          "positions": [
+            "2B"
+          ],
+          "projectedValue": 1,
+          "actualBid": 48,
+          "inflationAmount": 47,
+          "inflationPercent": 4700
+        },
+        {
+          "name": "Corey Seager",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 16,
+          "actualBid": 63,
+          "inflationAmount": 47,
+          "inflationPercent": 293.75
+        },
+        {
+          "name": "Luis Arraez",
+          "positions": [
+            "1B",
+            "2B",
+            "DH"
+          ],
+          "projectedValue": 7,
+          "actualBid": 52,
+          "inflationAmount": 45,
+          "inflationPercent": 642.8571428571429
+        },
+        {
+          "name": "Jarren Duran",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 12,
+          "actualBid": 57,
+          "inflationAmount": 45,
+          "inflationPercent": 375
+        },
+        {
+          "name": "Spencer Strider",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 44,
+          "inflationAmount": 43,
+          "inflationPercent": 4300
+        }
+      ],
+      "topUndervalued": [
+        {
+          "name": "Mason Miller",
+          "positions": [
+            "RP"
+          ],
+          "projectedValue": 343,
+          "actualBid": 11,
+          "inflationAmount": -332,
+          "inflationPercent": -96.7930029154519
+        },
+        {
+          "name": "Zach Neto",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 33,
+          "actualBid": 9,
+          "inflationAmount": -24,
+          "inflationPercent": -72.72727272727273
+        },
+        {
+          "name": "Maikel Garcia",
+          "positions": [
+            "3B",
+            "2B"
+          ],
+          "projectedValue": 23,
+          "actualBid": 1,
+          "inflationAmount": -22,
+          "inflationPercent": -95.65217391304348
+        },
+        {
+          "name": "Nick Kurtz",
+          "positions": [
+            "1B",
+            "MiLB"
+          ],
+          "projectedValue": 18,
+          "actualBid": 1,
+          "inflationAmount": -17,
+          "inflationPercent": -94.44444444444444
+        },
+        {
+          "name": "Junior Caminero",
+          "positions": [
+            "3B"
+          ],
+          "projectedValue": 37,
+          "actualBid": 20,
+          "inflationAmount": -17,
+          "inflationPercent": -45.94594594594595
+        },
+        {
+          "name": "Pete Crow-Armstrong",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 17,
+          "actualBid": 3,
+          "inflationAmount": -14,
+          "inflationPercent": -82.35294117647058
+        },
+        {
+          "name": "Jackson Chourio",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 35,
+          "actualBid": 22,
+          "inflationAmount": -13,
+          "inflationPercent": -37.142857142857146
+        },
+        {
+          "name": "Ezequiel Tovar",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 16,
+          "actualBid": 4,
+          "inflationAmount": -12,
+          "inflationPercent": -75
+        },
+        {
+          "name": "George Springer",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 27,
+          "actualBid": 15,
+          "inflationAmount": -12,
+          "inflationPercent": -44.44444444444444
+        },
+        {
+          "name": "Jeremy Pena",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 19,
+          "actualBid": 9,
+          "inflationAmount": -10,
+          "inflationPercent": -52.63157894736842
+        }
+      ]
+    },
+    {
+      "auctionId": "34",
+      "scrapedAt": "2025-12-24T19:06:18.549Z",
+      "numTeams": 12,
+      "budgetPerTeam": 260,
+      "totalRosterSpots": 26,
+      "totalPlayersDrafted": 530,
+      "totalMoneySpent": 7962,
+      "matchedPlayersCount": 504,
+      "unmatchedPlayersCount": 26,
+      "overallInflationRate": 100.61605061605061,
+      "weightedInflationRate": 100.61605061605061,
+      "totalProjectedValue": 1591,
+      "totalActualSpent": 4760,
+      "tierInflation": [
+        {
+          "tier": 1,
+          "draftedCount": 16,
+          "totalProjectedValue": 845,
+          "totalActualSpent": 1150,
+          "inflationRate": 36.09467455621302
+        },
+        {
+          "tier": 2,
+          "draftedCount": 16,
+          "totalProjectedValue": 416,
+          "totalActualSpent": 781,
+          "inflationRate": 87.74038461538461
+        },
+        {
+          "tier": 3,
+          "draftedCount": 16,
+          "totalProjectedValue": 202,
+          "totalActualSpent": 435,
+          "inflationRate": 115.34653465346534
+        },
+        {
+          "tier": 4,
+          "draftedCount": 16,
+          "totalProjectedValue": 37,
+          "totalActualSpent": 401,
+          "inflationRate": 983.7837837837839
+        },
+        {
+          "tier": 5,
+          "draftedCount": 16,
+          "totalProjectedValue": 16,
+          "totalActualSpent": 290,
+          "inflationRate": 1712.5
+        },
+        {
+          "tier": 6,
+          "draftedCount": 16,
+          "totalProjectedValue": 16,
+          "totalActualSpent": 377,
+          "inflationRate": 2256.25
+        },
+        {
+          "tier": 7,
+          "draftedCount": 16,
+          "totalProjectedValue": 16,
+          "totalActualSpent": 440,
+          "inflationRate": 2650
+        },
+        {
+          "tier": 8,
+          "draftedCount": 16,
+          "totalProjectedValue": 16,
+          "totalActualSpent": 314,
+          "inflationRate": 1862.5
+        },
+        {
+          "tier": 9,
+          "draftedCount": 16,
+          "totalProjectedValue": 16,
+          "totalActualSpent": 415,
+          "inflationRate": 2493.75
+        },
+        {
+          "tier": 10,
+          "draftedCount": 11,
+          "totalProjectedValue": 11,
+          "totalActualSpent": 157,
+          "inflationRate": 1327.2727272727273
+        }
+      ],
+      "positionInflation": [
+        {
+          "position": "RP",
+          "count": 95,
+          "avgProjectedValue": 0.1368421052631579,
+          "avgActualSpent": 5.2105263157894735,
+          "inflationRate": 3707.692307692308,
+          "totalProjectedValue": 13,
+          "totalActualSpent": 495
+        },
+        {
+          "position": "SP",
+          "count": 150,
+          "avgProjectedValue": 0.84,
+          "avgActualSpent": 16.273333333333333,
+          "inflationRate": 1837.3015873015875,
+          "totalProjectedValue": 126,
+          "totalActualSpent": 2441
+        },
+        {
+          "position": "2B",
+          "count": 61,
+          "avgProjectedValue": 3.1475409836065573,
+          "avgActualSpent": 14.704918032786885,
+          "inflationRate": 367.1875,
+          "totalProjectedValue": 192,
+          "totalActualSpent": 897
+        },
+        {
+          "position": "3B",
+          "count": 55,
+          "avgProjectedValue": 4.545454545454546,
+          "avgActualSpent": 17.454545454545453,
+          "inflationRate": 284,
+          "totalProjectedValue": 250,
+          "totalActualSpent": 960
+        },
+        {
+          "position": "SS",
+          "count": 59,
+          "avgProjectedValue": 5.779661016949152,
+          "avgActualSpent": 20.76271186440678,
+          "inflationRate": 259.2375366568915,
+          "totalProjectedValue": 341,
+          "totalActualSpent": 1225
+        },
+        {
+          "position": "C",
+          "count": 25,
+          "avgProjectedValue": 1.76,
+          "avgActualSpent": 6.32,
+          "inflationRate": 259.09090909090907,
+          "totalProjectedValue": 44,
+          "totalActualSpent": 158
+        },
+        {
+          "position": "MiLB",
+          "count": 42,
+          "avgProjectedValue": 4.238095238095238,
+          "avgActualSpent": 15.142857142857142,
+          "inflationRate": 257.30337078651684,
+          "totalProjectedValue": 178,
+          "totalActualSpent": 636
+        },
+        {
+          "position": "1B",
+          "count": 61,
+          "avgProjectedValue": 4.590163934426229,
+          "avgActualSpent": 15.639344262295081,
+          "inflationRate": 240.7142857142857,
+          "totalProjectedValue": 280,
+          "totalActualSpent": 954
+        },
+        {
+          "position": "OF",
+          "count": 142,
+          "avgProjectedValue": 5.443661971830986,
+          "avgActualSpent": 17.823943661971832,
+          "inflationRate": 227.4256144890039,
+          "totalProjectedValue": 773,
+          "totalActualSpent": 2531
+        },
+        {
+          "position": "DH",
+          "count": 48,
+          "avgProjectedValue": 7.104166666666667,
+          "avgActualSpent": 18.75,
+          "inflationRate": 163.92961876832845,
+          "totalProjectedValue": 341,
+          "totalActualSpent": 900
+        }
+      ],
+      "priceRangeInflation": [
+        {
+          "range": "$1-$5",
+          "minPrice": 1,
+          "maxPrice": 5,
+          "count": 107,
+          "avgProjectedValue": 1.1962616822429906,
+          "avgActualSpent": 22.373831775700936,
+          "inflationRate": 1770.3125,
+          "totalProjectedValue": 128,
+          "totalActualSpent": 2394
+        },
+        {
+          "range": "$6-$15",
+          "minPrice": 6,
+          "maxPrice": 15,
+          "count": 10,
+          "avgProjectedValue": 10.1,
+          "avgActualSpent": 26.1,
+          "inflationRate": 158.41584158415841,
+          "totalProjectedValue": 101,
+          "totalActualSpent": 261
+        },
+        {
+          "range": "$16-$30",
+          "minPrice": 16,
+          "maxPrice": 30,
+          "count": 18,
+          "avgProjectedValue": 21.555555555555557,
+          "avgActualSpent": 37.888888888888886,
+          "inflationRate": 75.77319587628865,
+          "totalProjectedValue": 388,
+          "totalActualSpent": 682
+        },
+        {
+          "range": "$31+",
+          "minPrice": 31,
+          "maxPrice": null,
+          "count": 20,
+          "avgProjectedValue": 48.7,
+          "avgActualSpent": 71.15,
+          "inflationRate": 46.09856262833675,
+          "totalProjectedValue": 974,
+          "totalActualSpent": 1423
+        }
+      ],
+      "topOvervalued": [
+        {
+          "name": "Luis Robert",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 3,
+          "actualBid": 82,
+          "inflationAmount": 79,
+          "inflationPercent": 2633.333333333333
+        },
+        {
+          "name": "Bo Bichette",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 18,
+          "actualBid": 91,
+          "inflationAmount": 73,
+          "inflationPercent": 405.55555555555554
+        },
+        {
+          "name": "Mike Trout",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 1,
+          "actualBid": 71,
+          "inflationAmount": 70,
+          "inflationPercent": 7000
+        },
+        {
+          "name": "Freddy Peralta",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 65,
+          "inflationAmount": 64,
+          "inflationPercent": 6400
+        },
+        {
+          "name": "Ozzie Albies",
+          "positions": [
+            "2B"
+          ],
+          "projectedValue": 1,
+          "actualBid": 60,
+          "inflationAmount": 59,
+          "inflationPercent": 5900
+        },
+        {
+          "name": "Rafael Devers",
+          "positions": [
+            "3B"
+          ],
+          "projectedValue": 18,
+          "actualBid": 77,
+          "inflationAmount": 59,
+          "inflationPercent": 327.77777777777777
+        },
+        {
+          "name": "Jacob DeGrom",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 60,
+          "inflationAmount": 59,
+          "inflationPercent": 5900
+        },
+        {
+          "name": "Shane Bieber",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 59,
+          "inflationAmount": 58,
+          "inflationPercent": 5800
+        },
+        {
+          "name": "Bryce Harper",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 34,
+          "actualBid": 91,
+          "inflationAmount": 57,
+          "inflationPercent": 167.64705882352942
+        },
+        {
+          "name": "Kyle Tucker",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 31,
+          "actualBid": 87,
+          "inflationAmount": 56,
+          "inflationPercent": 180.64516129032256
+        }
+      ],
+      "topUndervalued": [
+        {
+          "name": "Corbin Carroll",
+          "positions": [
+            "OF",
+            "MiLB"
+          ],
+          "projectedValue": 53,
+          "actualBid": 16,
+          "inflationAmount": -37,
+          "inflationPercent": -69.81132075471697
+        },
+        {
+          "name": "Cal Raleigh",
+          "positions": [
+            "C"
+          ],
+          "projectedValue": 30,
+          "actualBid": 1,
+          "inflationAmount": -29,
+          "inflationPercent": -96.66666666666667
+        },
+        {
+          "name": "Brent Rooker",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 29,
+          "actualBid": 1,
+          "inflationAmount": -28,
+          "inflationPercent": -96.55172413793103
+        },
+        {
+          "name": "Yandy Diaz",
+          "positions": [
+            "1B",
+            "3B",
+            "DH"
+          ],
+          "projectedValue": 26,
+          "actualBid": 2,
+          "inflationAmount": -24,
+          "inflationPercent": -92.3076923076923
+        },
+        {
+          "name": "Aaron Judge",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 74,
+          "actualBid": 55,
+          "inflationAmount": -19,
+          "inflationPercent": -25.675675675675674
+        },
+        {
+          "name": "Nico Hoerner",
+          "positions": [
+            "2B",
+            "SS"
+          ],
+          "projectedValue": 18,
+          "actualBid": 2,
+          "inflationAmount": -16,
+          "inflationPercent": -88.88888888888889
+        },
+        {
+          "name": "Brandon Nimmo",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 18,
+          "actualBid": 4,
+          "inflationAmount": -14,
+          "inflationPercent": -77.77777777777779
+        },
+        {
+          "name": "Jarren Duran",
+          "positions": [
+            "OF",
+            "MiLB"
+          ],
+          "projectedValue": 12,
+          "actualBid": 3,
+          "inflationAmount": -9,
+          "inflationPercent": -75
+        },
+        {
+          "name": "Jurickson Profar",
+          "positions": [
+            "OF",
+            "1B",
+            "2B"
+          ],
+          "projectedValue": 7,
+          "actualBid": 1,
+          "inflationAmount": -6,
+          "inflationPercent": -85.71428571428571
+        },
+        {
+          "name": "Luis Arraez",
+          "positions": [
+            "3B",
+            "2B",
+            "OF"
+          ],
+          "projectedValue": 7,
+          "actualBid": 3,
+          "inflationAmount": -4,
+          "inflationPercent": -57.14285714285714
+        }
+      ]
+    },
+    {
+      "auctionId": "968",
+      "scrapedAt": "2025-12-24T19:06:24.160Z",
+      "numTeams": 12,
+      "budgetPerTeam": 260,
+      "totalRosterSpots": 26,
+      "totalPlayersDrafted": 332,
+      "totalMoneySpent": 3256,
+      "matchedPlayersCount": 332,
+      "unmatchedPlayersCount": 0,
+      "overallInflationRate": -28.04260159238962,
+      "weightedInflationRate": -28.04260159238962,
+      "totalProjectedValue": 2542,
+      "totalActualSpent": 2770,
+      "tierInflation": [
+        {
+          "tier": 1,
+          "draftedCount": 23,
+          "totalProjectedValue": 1472,
+          "totalActualSpent": 622,
+          "inflationRate": -57.74456521739131
+        },
+        {
+          "tier": 2,
+          "draftedCount": 23,
+          "totalProjectedValue": 556,
+          "totalActualSpent": 383,
+          "inflationRate": -31.115107913669064
+        },
+        {
+          "tier": 3,
+          "draftedCount": 23,
+          "totalProjectedValue": 303,
+          "totalActualSpent": 320,
+          "inflationRate": 5.6105610561056105
+        },
+        {
+          "tier": 4,
+          "draftedCount": 23,
+          "totalProjectedValue": 79,
+          "totalActualSpent": 215,
+          "inflationRate": 172.15189873417722
+        },
+        {
+          "tier": 5,
+          "draftedCount": 23,
+          "totalProjectedValue": 23,
+          "totalActualSpent": 162,
+          "inflationRate": 604.3478260869565
+        },
+        {
+          "tier": 6,
+          "draftedCount": 23,
+          "totalProjectedValue": 23,
+          "totalActualSpent": 137,
+          "inflationRate": 495.65217391304344
+        },
+        {
+          "tier": 7,
+          "draftedCount": 23,
+          "totalProjectedValue": 23,
+          "totalActualSpent": 196,
+          "inflationRate": 752.1739130434783
+        },
+        {
+          "tier": 8,
+          "draftedCount": 23,
+          "totalProjectedValue": 23,
+          "totalActualSpent": 222,
+          "inflationRate": 865.2173913043479
+        },
+        {
+          "tier": 9,
+          "draftedCount": 23,
+          "totalProjectedValue": 23,
+          "totalActualSpent": 326,
+          "inflationRate": 1317.3913043478262
+        },
+        {
+          "tier": 10,
+          "draftedCount": 17,
+          "totalProjectedValue": 17,
+          "totalActualSpent": 187,
+          "inflationRate": 1000
+        }
+      ],
+      "positionInflation": [
+        {
+          "position": "MiLB",
+          "count": 8,
+          "avgProjectedValue": 0.25,
+          "avgActualSpent": 4.625,
+          "inflationRate": 1750,
+          "totalProjectedValue": 2,
+          "totalActualSpent": 37
+        },
+        {
+          "position": "SP",
+          "count": 110,
+          "avgProjectedValue": 2.0090909090909093,
+          "avgActualSpent": 9.772727272727273,
+          "inflationRate": 386.42533936651586,
+          "totalProjectedValue": 221,
+          "totalActualSpent": 1075
+        },
+        {
+          "position": "C",
+          "count": 20,
+          "avgProjectedValue": 3.4,
+          "avgActualSpent": 7.8,
+          "inflationRate": 129.41176470588235,
+          "totalProjectedValue": 68,
+          "totalActualSpent": 156
+        },
+        {
+          "position": "2B",
+          "count": 32,
+          "avgProjectedValue": 6.53125,
+          "avgActualSpent": 8.65625,
+          "inflationRate": 32.535885167464116,
+          "totalProjectedValue": 209,
+          "totalActualSpent": 277
+        },
+        {
+          "position": "3B",
+          "count": 30,
+          "avgProjectedValue": 10.4,
+          "avgActualSpent": 10.633333333333333,
+          "inflationRate": 2.2435897435897436,
+          "totalProjectedValue": 312,
+          "totalActualSpent": 319
+        },
+        {
+          "position": "OF",
+          "count": 80,
+          "avgProjectedValue": 11.1875,
+          "avgActualSpent": 11.0875,
+          "inflationRate": -0.8938547486033519,
+          "totalProjectedValue": 895,
+          "totalActualSpent": 887
+        },
+        {
+          "position": "1B",
+          "count": 31,
+          "avgProjectedValue": 10.35483870967742,
+          "avgActualSpent": 10.225806451612904,
+          "inflationRate": -1.2461059190031152,
+          "totalProjectedValue": 321,
+          "totalActualSpent": 317
+        },
+        {
+          "position": "SS",
+          "count": 34,
+          "avgProjectedValue": 12.294117647058824,
+          "avgActualSpent": 11.705882352941176,
+          "inflationRate": -4.784688995215311,
+          "totalProjectedValue": 418,
+          "totalActualSpent": 398
+        },
+        {
+          "position": "DH",
+          "count": 41,
+          "avgProjectedValue": 14.804878048780488,
+          "avgActualSpent": 13.341463414634147,
+          "inflationRate": -9.884678747940692,
+          "totalProjectedValue": 607,
+          "totalActualSpent": 547
+        },
+        {
+          "position": "RP",
+          "count": 32,
+          "avgProjectedValue": 11.1875,
+          "avgActualSpent": 4.21875,
+          "inflationRate": -62.290502793296085,
+          "totalProjectedValue": 358,
+          "totalActualSpent": 135
+        }
+      ],
+      "priceRangeInflation": [
+        {
+          "range": "$1-$5",
+          "minPrice": 1,
+          "maxPrice": 5,
+          "count": 150,
+          "avgProjectedValue": 1.18,
+          "avgActualSpent": 9.353333333333333,
+          "inflationRate": 692.6553672316384,
+          "totalProjectedValue": 177,
+          "totalActualSpent": 1403
+        },
+        {
+          "range": "$6-$15",
+          "minPrice": 6,
+          "maxPrice": 15,
+          "count": 21,
+          "avgProjectedValue": 10.571428571428571,
+          "avgActualSpent": 12.80952380952381,
+          "inflationRate": 21.17117117117117,
+          "totalProjectedValue": 222,
+          "totalActualSpent": 269
+        },
+        {
+          "range": "$16-$30",
+          "minPrice": 16,
+          "maxPrice": 30,
+          "count": 26,
+          "avgProjectedValue": 20.884615384615383,
+          "avgActualSpent": 14.884615384615385,
+          "inflationRate": -28.7292817679558,
+          "totalProjectedValue": 543,
+          "totalActualSpent": 387
+        },
+        {
+          "range": "$31+",
+          "minPrice": 31,
+          "maxPrice": null,
+          "count": 27,
+          "avgProjectedValue": 59.25925925925926,
+          "avgActualSpent": 26.333333333333332,
+          "inflationRate": -55.5625,
+          "totalProjectedValue": 1600,
+          "totalActualSpent": 711
+        }
+      ],
+      "topOvervalued": [
+        {
+          "name": "Paul Skenes",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 29,
+          "inflationAmount": 28,
+          "inflationPercent": 2800
+        },
+        {
+          "name": "Tarik Skubal",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 29,
+          "inflationAmount": 28,
+          "inflationPercent": 2800
+        },
+        {
+          "name": "Logan Gilbert",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 26,
+          "inflationAmount": 25,
+          "inflationPercent": 2500
+        },
+        {
+          "name": "Garrett Crochet",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 25,
+          "inflationAmount": 24,
+          "inflationPercent": 2400
+        },
+        {
+          "name": "Zack Wheeler",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 25,
+          "inflationAmount": 24,
+          "inflationPercent": 2400
+        },
+        {
+          "name": "Cole Ragans",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 24,
+          "inflationAmount": 23,
+          "inflationPercent": 2300
+        },
+        {
+          "name": "Ozzie Albies",
+          "positions": [
+            "2B"
+          ],
+          "projectedValue": 1,
+          "actualBid": 22,
+          "inflationAmount": 21,
+          "inflationPercent": 2100
+        },
+        {
+          "name": "Aaron Nola",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 22,
+          "inflationAmount": 21,
+          "inflationPercent": 2100
+        },
+        {
+          "name": "Jacob DeGrom",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 21,
+          "inflationAmount": 20,
+          "inflationPercent": 2000
+        },
+        {
+          "name": "Yoshinobu Yamamoto",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 1,
+          "actualBid": 20,
+          "inflationAmount": 19,
+          "inflationPercent": 1900
+        }
+      ],
+      "topUndervalued": [
+        {
+          "name": "Mason Miller",
+          "positions": [
+            "RP"
+          ],
+          "projectedValue": 343,
+          "actualBid": 8,
+          "inflationAmount": -335,
+          "inflationPercent": -97.667638483965
+        },
+        {
+          "name": "Shohei Ohtani",
+          "positions": [
+            "SP"
+          ],
+          "projectedValue": 82,
+          "actualBid": 11,
+          "inflationAmount": -71,
+          "inflationPercent": -86.58536585365853
+        },
+        {
+          "name": "Ronald Acuna",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 67,
+          "actualBid": 20,
+          "inflationAmount": -47,
+          "inflationPercent": -70.1492537313433
+        },
+        {
+          "name": "Shohei Ohtani",
+          "positions": [
+            "DH",
+            "SP"
+          ],
+          "projectedValue": 82,
+          "actualBid": 40,
+          "inflationAmount": -42,
+          "inflationPercent": -51.21951219512195
+        },
+        {
+          "name": "Aaron Judge",
+          "positions": [
+            "OF",
+            "DH"
+          ],
+          "projectedValue": 74,
+          "actualBid": 33,
+          "inflationAmount": -41,
+          "inflationPercent": -55.4054054054054
+        },
+        {
+          "name": "Juan Soto",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 63,
+          "actualBid": 35,
+          "inflationAmount": -28,
+          "inflationPercent": -44.44444444444444
+        },
+        {
+          "name": "Bobby Witt Jr.",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 65,
+          "actualBid": 38,
+          "inflationAmount": -27,
+          "inflationPercent": -41.53846153846154
+        },
+        {
+          "name": "Julio Rodriguez",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 53,
+          "actualBid": 27,
+          "inflationAmount": -26,
+          "inflationPercent": -49.056603773584904
+        },
+        {
+          "name": "Fernando Tatis",
+          "positions": [
+            "OF"
+          ],
+          "projectedValue": 53,
+          "actualBid": 28,
+          "inflationAmount": -25,
+          "inflationPercent": -47.16981132075472
+        },
+        {
+          "name": "Zach Neto",
+          "positions": [
+            "SS"
+          ],
+          "projectedValue": 33,
+          "actualBid": 8,
+          "inflationAmount": -25,
+          "inflationPercent": -75.75757575757575
+        }
+      ]
+    }
+  ],
+  "aggregate": {
+    "totalAuctions": 6,
+    "successfulAuctions": 6,
+    "avgOverallInflationRate": 20.326161007876127,
+    "stdDevInflationRate": 44.83318167892667,
+    "minInflationRate": -28.04260159238962,
+    "maxInflationRate": 100.61605061605061,
+    "aggregateTierInflation": [
+      {
+        "tier": 1,
+        "avgInflationRate": -19.843224969538905,
+        "stdDevInflationRate": 33.25979137932117,
+        "totalCount": 6
+      },
+      {
+        "tier": 2,
+        "avgInflationRate": 21.930189492572975,
+        "stdDevInflationRate": 37.580855638635086,
+        "totalCount": 6
+      },
+      {
+        "tier": 3,
+        "avgInflationRate": 59.39207392750421,
+        "stdDevInflationRate": 35.22347827764601,
+        "totalCount": 6
+      },
+      {
+        "tier": 4,
+        "avgInflationRate": 548.3389536222745,
+        "stdDevInflationRate": 283.5534768016394,
+        "totalCount": 6
+      },
+      {
+        "tier": 5,
+        "avgInflationRate": 1000.4307505338242,
+        "stdDevInflationRate": 457.1774574878101,
+        "totalCount": 6
+      },
+      {
+        "tier": 6,
+        "avgInflationRate": 952.8268754608708,
+        "stdDevInflationRate": 639.4311766330302,
+        "totalCount": 6
+      },
+      {
+        "tier": 7,
+        "avgInflationRate": 1580.3578979740896,
+        "stdDevInflationRate": 594.3846093832999,
+        "totalCount": 6
+      },
+      {
+        "tier": 8,
+        "avgInflationRate": 1090.7641677413042,
+        "stdDevInflationRate": 349.71907953883425,
+        "totalCount": 6
+      },
+      {
+        "tier": 9,
+        "avgInflationRate": 1365.3525837605673,
+        "stdDevInflationRate": 604.9514838360435,
+        "totalCount": 6
+      },
+      {
+        "tier": 10,
+        "avgInflationRate": 1100.3030303030303,
+        "stdDevInflationRate": 244.63762297496126,
+        "totalCount": 6
+      }
+    ],
+    "aggregatePositionInflation": [
+      {
+        "position": "MiLB",
+        "avgInflationRate": 1347.403590411651,
+        "stdDevInflationRate": 719.1233386930802,
+        "totalCount": 6
+      },
+      {
+        "position": "RP",
+        "avgInflationRate": 974.6197864803775,
+        "stdDevInflationRate": 1506.0150407849942,
+        "totalCount": 6
+      },
+      {
+        "position": "SP",
+        "avgInflationRate": 870.4189955975988,
+        "stdDevInflationRate": 464.66808465987503,
+        "totalCount": 6
+      },
+      {
+        "position": "C",
+        "avgInflationRate": 268.4761840656386,
+        "stdDevInflationRate": 125.3450640918096,
+        "totalCount": 6
+      },
+      {
+        "position": "2B",
+        "avgInflationRate": 153.76379078367472,
+        "stdDevInflationRate": 109.10821095328471,
+        "totalCount": 6
+      },
+      {
+        "position": "3B",
+        "avgInflationRate": 128.2549596940261,
+        "stdDevInflationRate": 91.11398140573314,
+        "totalCount": 6
+      },
+      {
+        "position": "OF",
+        "avgInflationRate": 83.85625843981892,
+        "stdDevInflationRate": 72.57241271225999,
+        "totalCount": 6
+      },
+      {
+        "position": "1B",
+        "avgInflationRate": 83.73103460074522,
+        "stdDevInflationRate": 78.58617082825917,
+        "totalCount": 6
+      },
+      {
+        "position": "SS",
+        "avgInflationRate": 76.35151522084253,
+        "stdDevInflationRate": 85.3680270390404,
+        "totalCount": 6
+      },
+      {
+        "position": "DH",
+        "avgInflationRate": 69.41608038943228,
+        "stdDevInflationRate": 56.787968538995536,
+        "totalCount": 6
+      }
+    ],
+    "aggregatePriceRangeInflation": [
+      {
+        "range": "$1-$5",
+        "avgInflationRate": 991.6440891885926,
+        "stdDevInflationRate": 374.32995823877695,
+        "totalCount": 6
+      },
+      {
+        "range": "$6-$15",
+        "avgInflationRate": 74.42050813189428,
+        "stdDevInflationRate": 53.025643592381876,
+        "totalCount": 6
+      },
+      {
+        "range": "$16-$30",
+        "avgInflationRate": 18.231832484712374,
+        "stdDevInflationRate": 36.550842765860914,
+        "totalCount": 6
+      },
+      {
+        "range": "$31+",
+        "avgInflationRate": -17.542965471323473,
+        "stdDevInflationRate": 36.12556101413262,
+        "totalCount": 6
+      }
+    ],
+    "findings": [
+      "Average overall inflation across 6 auctions: 20.3%",
+      "Tier 7 players show highest inflation at 1580.4%",
+      "Tier 1 players show lowest inflation at -19.8%",
+      "MiLB position shows highest inflation at 1347.4%",
+      "$1-$5 price range shows highest inflation at 991.6%",
+      "High variability in inflation across auctions (σ = 44.8%) suggests league-specific factors are important"
+    ]
+  }
+}

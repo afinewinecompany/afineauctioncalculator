@@ -7,7 +7,7 @@ import type {
   FanGraphsHitter,
   FanGraphsPitcher,
   NormalizedProjection,
-} from '../types/projections';
+} from '../types/projections.js';
 
 const FANGRAPHS_BASE_URL = 'https://www.fangraphs.com/api/projections';
 

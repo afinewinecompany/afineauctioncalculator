@@ -9,8 +9,8 @@ import { Request, Response, NextFunction } from 'express';
 import {
   verifyAccessToken,
   findUserById,
-} from '../services/authService';
-import { toAuthUser, AuthUser } from '../types/auth';
+} from '../services/authService.js';
+import { toAuthUser, AuthUser } from '../types/auth.js';
 
 /**
  * Error codes for authentication failures

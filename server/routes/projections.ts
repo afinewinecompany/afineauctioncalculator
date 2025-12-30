@@ -4,22 +4,22 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { fetchSteamerProjections } from '../services/projectionsService';
-import { fetchJAProjections } from '../services/jaProjectionsService';
+import { fetchSteamerProjections } from '../services/projectionsService.js';
+import { fetchJAProjections } from '../services/jaProjectionsService.js';
 import {
   getCachedProjections,
   setCachedProjections,
   invalidateCache,
   getCacheStatus,
-} from '../services/projectionsCacheService';
+} from '../services/projectionsCacheService.js';
 import {
   getDynastyRankings,
   refreshDynastyRankings,
   getDynastyRankingsCacheStatus,
-} from '../services/dynastyRankingsScraper';
-import { calculateAuctionValues } from '../services/valueCalculator';
-import { refreshLimiter } from '../middleware/rateLimiter';
-import type { LeagueSettings } from '../../src/lib/types';
+} from '../services/dynastyRankingsScraper.js';
+import { calculateAuctionValues } from '../services/valueCalculator.js';
+import { refreshLimiter } from '../middleware/rateLimiter.js';
+import type { LeagueSettings } from '../../src/lib/types.js';
 
 const router = Router();
 

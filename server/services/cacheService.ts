@@ -9,7 +9,7 @@
  * making development easier while maintaining production performance.
  */
 
-import { getRedisClient, isRedisHealthy } from './redisClient';
+import { getRedisClient, isRedisHealthy } from './redisClient.js';
 
 // In-memory fallback cache (development only)
 const memoryCache = new Map<string, { value: string; expiresAt: number | null }>();

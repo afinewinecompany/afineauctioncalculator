@@ -1,0 +1,861 @@
+{
+  "metadata": {
+    "roomId": "1362",
+    "leagueName": "Duke Draft",
+    "leagueType": "15-team dynasty",
+    "projectionSystem": "Steamer",
+    "analysisDate": "2025-12-30T01:21:57.049Z"
+  },
+  "leagueOverview": {
+    "totalTeams": 15,
+    "totalPlayersDrafted": 234,
+    "totalMoneySpent": 2966,
+    "averageSpendPerTeam": 197.73333333333332,
+    "expectedBudgetPerTeam": 260,
+    "averageRosterSize": 15.6,
+    "budgetUtilization": 76.05128205128206
+  },
+  "dukeRoster": {
+    "summary": {
+      "playerCount": 14,
+      "totalSpent": 201,
+      "remainingBudget": 59,
+      "budgetUtilization": 77.3076923076923,
+      "averagePerPlayer": 14.357142857142858
+    },
+    "players": [
+      {
+        "name": "Vladimir Guerrero Jr",
+        "positions": [
+          "1B",
+          "DH"
+        ],
+        "winningBid": 26,
+        "mlbTeam": "TOR"
+      },
+      {
+        "name": "Kyle Schwarber",
+        "positions": [
+          "OF",
+          "DH"
+        ],
+        "winningBid": 24,
+        "mlbTeam": "PHI"
+      },
+      {
+        "name": "Austin Riley",
+        "positions": [
+          "3B"
+        ],
+        "winningBid": 19,
+        "mlbTeam": "ATL"
+      },
+      {
+        "name": "Jacob deGrom",
+        "positions": [
+          "SP"
+        ],
+        "winningBid": 18,
+        "mlbTeam": "TEX"
+      },
+      {
+        "name": "Blake Snell",
+        "positions": [
+          "SP"
+        ],
+        "winningBid": 18,
+        "mlbTeam": "LAD"
+      },
+      {
+        "name": "Bryan Woo",
+        "positions": [
+          "SP"
+        ],
+        "winningBid": 17,
+        "mlbTeam": "SEA"
+      },
+      {
+        "name": "George Springer",
+        "positions": [
+          "OF",
+          "DH"
+        ],
+        "winningBid": 15,
+        "mlbTeam": "TOR"
+      },
+      {
+        "name": "Maikel Garcia",
+        "positions": [
+          "2B",
+          "3B",
+          "SS",
+          "OF"
+        ],
+        "winningBid": 15,
+        "mlbTeam": "KC"
+      },
+      {
+        "name": "Lawrence Butler",
+        "positions": [
+          "OF"
+        ],
+        "winningBid": 11,
+        "mlbTeam": "ATH"
+      },
+      {
+        "name": "Corey Seager",
+        "positions": [
+          "SS",
+          "DH"
+        ],
+        "winningBid": 10,
+        "mlbTeam": "TEX"
+      },
+      {
+        "name": "Ozzie Albies",
+        "positions": [
+          "2B"
+        ],
+        "winningBid": 9,
+        "mlbTeam": "ATL"
+      },
+      {
+        "name": "Carlos Rodon",
+        "positions": [
+          "SP"
+        ],
+        "winningBid": 8,
+        "mlbTeam": "NYY"
+      },
+      {
+        "name": "Salvador Perez",
+        "positions": [
+          "C",
+          "1B",
+          "DH"
+        ],
+        "winningBid": 6,
+        "mlbTeam": "KC"
+      },
+      {
+        "name": "Brandon Pfaadt",
+        "positions": [
+          "SP"
+        ],
+        "winningBid": 5,
+        "mlbTeam": "AZ"
+      }
+    ],
+    "positionBreakdown": {
+      "OF": {
+        "count": 4,
+        "totalSpent": 65,
+        "avgBid": 16.25,
+        "players": [
+          {
+            "name": "Kyle Schwarber",
+            "bid": 24
+          },
+          {
+            "name": "George Springer",
+            "bid": 15
+          },
+          {
+            "name": "Maikel Garcia",
+            "bid": 15
+          },
+          {
+            "name": "Lawrence Butler",
+            "bid": 11
+          }
+        ]
+      },
+      "DH": {
+        "count": 5,
+        "totalSpent": 81,
+        "avgBid": 16.2,
+        "players": [
+          {
+            "name": "Kyle Schwarber",
+            "bid": 24
+          },
+          {
+            "name": "George Springer",
+            "bid": 15
+          },
+          {
+            "name": "Vladimir Guerrero Jr",
+            "bid": 26
+          },
+          {
+            "name": "Salvador Perez",
+            "bid": 6
+          },
+          {
+            "name": "Corey Seager",
+            "bid": 10
+          }
+        ]
+      },
+      "1B": {
+        "count": 2,
+        "totalSpent": 32,
+        "avgBid": 16,
+        "players": [
+          {
+            "name": "Vladimir Guerrero Jr",
+            "bid": 26
+          },
+          {
+            "name": "Salvador Perez",
+            "bid": 6
+          }
+        ]
+      },
+      "2B": {
+        "count": 2,
+        "totalSpent": 24,
+        "avgBid": 12,
+        "players": [
+          {
+            "name": "Maikel Garcia",
+            "bid": 15
+          },
+          {
+            "name": "Ozzie Albies",
+            "bid": 9
+          }
+        ]
+      },
+      "3B": {
+        "count": 2,
+        "totalSpent": 34,
+        "avgBid": 17,
+        "players": [
+          {
+            "name": "Maikel Garcia",
+            "bid": 15
+          },
+          {
+            "name": "Austin Riley",
+            "bid": 19
+          }
+        ]
+      },
+      "SS": {
+        "count": 2,
+        "totalSpent": 25,
+        "avgBid": 12.5,
+        "players": [
+          {
+            "name": "Maikel Garcia",
+            "bid": 15
+          },
+          {
+            "name": "Corey Seager",
+            "bid": 10
+          }
+        ]
+      },
+      "C": {
+        "count": 1,
+        "totalSpent": 6,
+        "avgBid": 6,
+        "players": [
+          {
+            "name": "Salvador Perez",
+            "bid": 6
+          }
+        ]
+      },
+      "SP": {
+        "count": 5,
+        "totalSpent": 66,
+        "avgBid": 13.2,
+        "players": [
+          {
+            "name": "Bryan Woo",
+            "bid": 17
+          },
+          {
+            "name": "Carlos Rodon",
+            "bid": 8
+          },
+          {
+            "name": "Jacob deGrom",
+            "bid": 18
+          },
+          {
+            "name": "Brandon Pfaadt",
+            "bid": 5
+          },
+          {
+            "name": "Blake Snell",
+            "bid": 18
+          }
+        ]
+      }
+    },
+    "priceTierBreakdown": {
+      "Filler ($1-$5)": {
+        "minPrice": 1,
+        "maxPrice": 5,
+        "count": 1,
+        "totalSpent": 5,
+        "percentOfTotal": 2.4875621890547266,
+        "avgBid": 5
+      },
+      "Value ($6-$10)": {
+        "minPrice": 6,
+        "maxPrice": 10,
+        "count": 4,
+        "totalSpent": 33,
+        "percentOfTotal": 16.417910447761194,
+        "avgBid": 8.25
+      },
+      "Mid-tier ($11-$15)": {
+        "minPrice": 11,
+        "maxPrice": 15,
+        "count": 3,
+        "totalSpent": 41,
+        "percentOfTotal": 20.398009950248756,
+        "avgBid": 13.666666666666666
+      },
+      "Quality ($16-$20)": {
+        "minPrice": 16,
+        "maxPrice": 20,
+        "count": 4,
+        "totalSpent": 72,
+        "percentOfTotal": 35.82089552238806,
+        "avgBid": 18
+      },
+      "Star ($21-$30)": {
+        "minPrice": 21,
+        "maxPrice": 30,
+        "count": 2,
+        "totalSpent": 50,
+        "percentOfTotal": 24.875621890547265,
+        "avgBid": 25
+      }
+    }
+  },
+  "leagueMarket": {
+    "positionStats": {
+      "OF": {
+        "count": 61,
+        "totalSpent": 822,
+        "avgBid": 13.475409836065573,
+        "medianBid": 12,
+        "maxBid": 39,
+        "minBid": 3,
+        "stdDev": 8.634439872543458
+      },
+      "DH": {
+        "count": 61,
+        "totalSpent": 820,
+        "avgBid": 13.442622950819672,
+        "medianBid": 11,
+        "maxBid": 39,
+        "minBid": 1,
+        "stdDev": 8.963861872660196
+      },
+      "SP": {
+        "count": 72,
+        "totalSpent": 998,
+        "avgBid": 13.86111111111111,
+        "medianBid": 11.0,
+        "maxBid": 39,
+        "minBid": 3,
+        "stdDev": 7.813505021427631
+      },
+      "3B": {
+        "count": 26,
+        "totalSpent": 289,
+        "avgBid": 11.115384615384615,
+        "medianBid": 8.5,
+        "maxBid": 33,
+        "minBid": 3,
+        "stdDev": 7.814483594336471
+      },
+      "C": {
+        "count": 18,
+        "totalSpent": 143,
+        "avgBid": 7.944444444444445,
+        "medianBid": 6.0,
+        "maxBid": 21,
+        "minBid": 1,
+        "stdDev": 5.0697745885872445
+      },
+      "SS": {
+        "count": 33,
+        "totalSpent": 394,
+        "avgBid": 11.93939393939394,
+        "medianBid": 10,
+        "maxBid": 38,
+        "minBid": 2,
+        "stdDev": 8.731907702284314
+      },
+      "1B": {
+        "count": 25,
+        "totalSpent": 320,
+        "avgBid": 12.8,
+        "medianBid": 11,
+        "maxBid": 26,
+        "minBid": 4,
+        "stdDev": 6.474308199851677
+      },
+      "2B": {
+        "count": 25,
+        "totalSpent": 231,
+        "avgBid": 9.24,
+        "medianBid": 8,
+        "maxBid": 22,
+        "minBid": 2,
+        "stdDev": 5.509688436442361
+      },
+      "MiLB": {
+        "count": 11,
+        "totalSpent": 81,
+        "avgBid": 7.363636363636363,
+        "medianBid": 5,
+        "maxBid": 19,
+        "minBid": 4,
+        "stdDev": 4.5447272145361435
+      },
+      "RP": {
+        "count": 22,
+        "totalSpent": 191,
+        "avgBid": 8.681818181818182,
+        "medianBid": 10.0,
+        "maxBid": 15,
+        "minBid": 3,
+        "stdDev": 3.72106441039662
+      }
+    },
+    "priceTierStats": {
+      "Filler ($1-$5)": {
+        "minPrice": 1,
+        "maxPrice": 5,
+        "count": 48,
+        "totalSpent": 193,
+        "percentOfTotal": 6.50708024275118,
+        "avgBid": 4.020833333333333
+      },
+      "Value ($6-$10)": {
+        "minPrice": 6,
+        "maxPrice": 10,
+        "count": 64,
+        "totalSpent": 523,
+        "percentOfTotal": 17.63317599460553,
+        "avgBid": 8.171875
+      },
+      "Mid-tier ($11-$15)": {
+        "minPrice": 11,
+        "maxPrice": 15,
+        "count": 57,
+        "totalSpent": 737,
+        "percentOfTotal": 24.848280512474712,
+        "avgBid": 12.929824561403509
+      },
+      "Quality ($16-$20)": {
+        "minPrice": 16,
+        "maxPrice": 20,
+        "count": 27,
+        "totalSpent": 501,
+        "percentOfTotal": 16.891436277815238,
+        "avgBid": 18.555555555555557
+      },
+      "Star ($21-$30)": {
+        "minPrice": 21,
+        "maxPrice": 30,
+        "count": 30,
+        "totalSpent": 724,
+        "percentOfTotal": 24.409979770734996,
+        "avgBid": 24.133333333333333
+      },
+      "Elite ($31+)": {
+        "minPrice": 31,
+        "maxPrice": null,
+        "count": 8,
+        "totalSpent": 288,
+        "percentOfTotal": 9.710047201618341,
+        "avgBid": 36
+      }
+    }
+  },
+  "dukeVsLeague": {
+    "positionComparison": {
+      "OF": {
+        "dukeAvg": 16.25,
+        "leagueAvg": 13.475409836065573,
+        "difference": 2.774590163934427,
+        "percentDiff": 20.59002433090025,
+        "interpretation": "overpaid"
+      },
+      "DH": {
+        "dukeAvg": 16.2,
+        "leagueAvg": 13.442622950819672,
+        "difference": 2.7573770491803273,
+        "percentDiff": 20.512195121951216,
+        "interpretation": "overpaid"
+      },
+      "1B": {
+        "dukeAvg": 16,
+        "leagueAvg": 12.8,
+        "difference": 3.1999999999999993,
+        "percentDiff": 24.999999999999993,
+        "interpretation": "overpaid"
+      },
+      "2B": {
+        "dukeAvg": 12,
+        "leagueAvg": 9.24,
+        "difference": 2.76,
+        "percentDiff": 29.87012987012987,
+        "interpretation": "overpaid"
+      },
+      "3B": {
+        "dukeAvg": 17,
+        "leagueAvg": 11.115384615384615,
+        "difference": 5.884615384615385,
+        "percentDiff": 52.94117647058824,
+        "interpretation": "overpaid"
+      },
+      "SS": {
+        "dukeAvg": 12.5,
+        "leagueAvg": 11.93939393939394,
+        "difference": 0.5606060606060606,
+        "percentDiff": 4.695431472081218,
+        "interpretation": "overpaid"
+      },
+      "C": {
+        "dukeAvg": 6,
+        "leagueAvg": 7.944444444444445,
+        "difference": -1.9444444444444446,
+        "percentDiff": -24.475524475524477,
+        "interpretation": "value"
+      },
+      "SP": {
+        "dukeAvg": 13.2,
+        "leagueAvg": 13.86111111111111,
+        "difference": -0.6611111111111114,
+        "percentDiff": -4.769539078156315,
+        "interpretation": "value"
+      }
+    },
+    "overallComparison": {
+      "dukeAvgBid": 14.357142857142858,
+      "leagueAvgBid": 12.675213675213675,
+      "difference": 1.681929181929183,
+      "percentDiff": 13.269434543878248
+    }
+  },
+  "teamComparison": {
+    "Hoyas": {
+      "playerCount": 14,
+      "totalSpent": 192,
+      "avgPerPlayer": 13.714285714285714,
+      "remainingBudget": 68,
+      "budgetUtilization": 73.84615384615385
+    },
+    "mookie666": {
+      "playerCount": 13,
+      "totalSpent": 188,
+      "avgPerPlayer": 14.461538461538462,
+      "remainingBudget": 72,
+      "budgetUtilization": 72.3076923076923
+    },
+    "maxdout": {
+      "playerCount": 14,
+      "totalSpent": 185,
+      "avgPerPlayer": 13.214285714285714,
+      "remainingBudget": 75,
+      "budgetUtilization": 71.15384615384616
+    },
+    "Rourke": {
+      "playerCount": 16,
+      "totalSpent": 211,
+      "avgPerPlayer": 13.1875,
+      "remainingBudget": 49,
+      "budgetUtilization": 81.15384615384616
+    },
+    "Duke": {
+      "playerCount": 14,
+      "totalSpent": 201,
+      "avgPerPlayer": 14.357142857142858,
+      "remainingBudget": 59,
+      "budgetUtilization": 77.3076923076923
+    },
+    "Waaboosh": {
+      "playerCount": 10,
+      "totalSpent": 183,
+      "avgPerPlayer": 18.3,
+      "remainingBudget": 77,
+      "budgetUtilization": 70.38461538461539
+    },
+    "Jthewolfe": {
+      "playerCount": 19,
+      "totalSpent": 206,
+      "avgPerPlayer": 10.842105263157896,
+      "remainingBudget": 54,
+      "budgetUtilization": 79.23076923076923
+    },
+    "Jeff - Bayside": {
+      "playerCount": 16,
+      "totalSpent": 210,
+      "avgPerPlayer": 13.125,
+      "remainingBudget": 50,
+      "budgetUtilization": 80.76923076923077
+    },
+    "Axl": {
+      "playerCount": 18,
+      "totalSpent": 207,
+      "avgPerPlayer": 11.5,
+      "remainingBudget": 53,
+      "budgetUtilization": 79.61538461538461
+    },
+    "Danny": {
+      "playerCount": 17,
+      "totalSpent": 187,
+      "avgPerPlayer": 11.0,
+      "remainingBudget": 73,
+      "budgetUtilization": 71.92307692307692
+    },
+    "Alex (Martians)": {
+      "playerCount": 20,
+      "totalSpent": 203,
+      "avgPerPlayer": 10.15,
+      "remainingBudget": 57,
+      "budgetUtilization": 78.07692307692308
+    },
+    "Gary head2head": {
+      "playerCount": 17,
+      "totalSpent": 206,
+      "avgPerPlayer": 12.117647058823529,
+      "remainingBudget": 54,
+      "budgetUtilization": 79.23076923076923
+    },
+    "Zack - Brewers": {
+      "playerCount": 14,
+      "totalSpent": 206,
+      "avgPerPlayer": 14.714285714285714,
+      "remainingBudget": 54,
+      "budgetUtilization": 79.23076923076923
+    },
+    "Carpy": {
+      "playerCount": 14,
+      "totalSpent": 186,
+      "avgPerPlayer": 13.285714285714286,
+      "remainingBudget": 74,
+      "budgetUtilization": 71.53846153846153
+    },
+    "John - TigsTigsTigs": {
+      "playerCount": 18,
+      "totalSpent": 195,
+      "avgPerPlayer": 10.833333333333334,
+      "remainingBudget": 65,
+      "budgetUtilization": 75.0
+    }
+  },
+  "historicalContext": {
+    "summary": {
+      "averageInflationRate": 20.326161007876127,
+      "inflationStdDev": 44.83318167892667,
+      "inflationRange": {
+        "min": -28.04260159238962,
+        "max": 100.61605061605061
+      }
+    },
+    "tierInflationPatterns": [
+      {
+        "tier": 1,
+        "avgInflationRate": -19.843224969538905,
+        "stdDevInflationRate": 33.25979137932117,
+        "totalCount": 6
+      },
+      {
+        "tier": 2,
+        "avgInflationRate": 21.930189492572975,
+        "stdDevInflationRate": 37.580855638635086,
+        "totalCount": 6
+      },
+      {
+        "tier": 3,
+        "avgInflationRate": 59.39207392750421,
+        "stdDevInflationRate": 35.22347827764601,
+        "totalCount": 6
+      },
+      {
+        "tier": 4,
+        "avgInflationRate": 548.3389536222745,
+        "stdDevInflationRate": 283.5534768016394,
+        "totalCount": 6
+      },
+      {
+        "tier": 5,
+        "avgInflationRate": 1000.4307505338242,
+        "stdDevInflationRate": 457.1774574878101,
+        "totalCount": 6
+      },
+      {
+        "tier": 6,
+        "avgInflationRate": 952.8268754608708,
+        "stdDevInflationRate": 639.4311766330302,
+        "totalCount": 6
+      },
+      {
+        "tier": 7,
+        "avgInflationRate": 1580.3578979740896,
+        "stdDevInflationRate": 594.3846093832999,
+        "totalCount": 6
+      },
+      {
+        "tier": 8,
+        "avgInflationRate": 1090.7641677413042,
+        "stdDevInflationRate": 349.71907953883425,
+        "totalCount": 6
+      },
+      {
+        "tier": 9,
+        "avgInflationRate": 1365.3525837605673,
+        "stdDevInflationRate": 604.9514838360435,
+        "totalCount": 6
+      },
+      {
+        "tier": 10,
+        "avgInflationRate": 1100.3030303030303,
+        "stdDevInflationRate": 244.63762297496126,
+        "totalCount": 6
+      }
+    ],
+    "priceRangeInflation": [
+      {
+        "range": "$1-$5",
+        "avgInflationRate": 991.6440891885926,
+        "stdDevInflationRate": 374.32995823877695,
+        "totalCount": 6
+      },
+      {
+        "range": "$6-$15",
+        "avgInflationRate": 74.42050813189428,
+        "stdDevInflationRate": 53.025643592381876,
+        "totalCount": 6
+      },
+      {
+        "range": "$16-$30",
+        "avgInflationRate": 18.231832484712374,
+        "stdDevInflationRate": 36.550842765860914,
+        "totalCount": 6
+      },
+      {
+        "range": "$31+",
+        "avgInflationRate": -17.542965471323473,
+        "stdDevInflationRate": 36.12556101413262,
+        "totalCount": 6
+      }
+    ],
+    "positionInflation": [
+      {
+        "position": "MiLB",
+        "avgInflationRate": 1347.403590411651,
+        "stdDevInflationRate": 719.1233386930802,
+        "totalCount": 6
+      },
+      {
+        "position": "RP",
+        "avgInflationRate": 974.6197864803775,
+        "stdDevInflationRate": 1506.0150407849942,
+        "totalCount": 6
+      },
+      {
+        "position": "SP",
+        "avgInflationRate": 870.4189955975988,
+        "stdDevInflationRate": 464.66808465987503,
+        "totalCount": 6
+      },
+      {
+        "position": "C",
+        "avgInflationRate": 268.4761840656386,
+        "stdDevInflationRate": 125.3450640918096,
+        "totalCount": 6
+      },
+      {
+        "position": "2B",
+        "avgInflationRate": 153.76379078367472,
+        "stdDevInflationRate": 109.10821095328471,
+        "totalCount": 6
+      },
+      {
+        "position": "3B",
+        "avgInflationRate": 128.2549596940261,
+        "stdDevInflationRate": 91.11398140573314,
+        "totalCount": 6
+      },
+      {
+        "position": "OF",
+        "avgInflationRate": 83.85625843981892,
+        "stdDevInflationRate": 72.57241271225999,
+        "totalCount": 6
+      },
+      {
+        "position": "1B",
+        "avgInflationRate": 83.73103460074522,
+        "stdDevInflationRate": 78.58617082825917,
+        "totalCount": 6
+      },
+      {
+        "position": "SS",
+        "avgInflationRate": 76.35151522084253,
+        "stdDevInflationRate": 85.3680270390404,
+        "totalCount": 6
+      },
+      {
+        "position": "DH",
+        "avgInflationRate": 69.41608038943228,
+        "stdDevInflationRate": 56.787968538995536,
+        "totalCount": 6
+      }
+    ]
+  },
+  "insights": [
+    {
+      "category": "Budget Status",
+      "finding": "Duke has spent $201 of $260 budget (77.3%), with $59 remaining",
+      "implication": "Moderate"
+    },
+    {
+      "category": "Roster Size",
+      "finding": "Duke has 14 players vs league average of 15.6",
+      "implication": "Below average"
+    },
+    {
+      "category": "Average Player Value",
+      "finding": "Duke's avg player cost: $14.4 vs league avg: $12.7",
+      "implication": "Targeting premium players"
+    },
+    {
+      "category": "Historical Context - Elite Players",
+      "finding": "Historically, Tier 1 elite players show -19.8% inflation (typically undervalued)",
+      "implication": "Elite players are historically the best value in auctions"
+    },
+    {
+      "category": "Historical Context - Budget Players",
+      "finding": "$1-$5 players show 991.6% avg inflation",
+      "implication": "Budget players are consistently overvalued - avoid overpaying for replacement level"
+    }
+  ],
+  "keyFindings": [
+    "Duke has drafted 14 players for $201, leaving $59 remaining (22.7% of budget)",
+    "Duke's average player cost: $14.4 vs league average: $12.7",
+    "League-wide budget utilization: 76.1% ($2,966 of $3,900 total)",
+    "Historical data shows elite players (Tier 1) average -19.8% inflation - typically undervalued",
+    "Premium price range ($31+) shows -17.5% historical inflation",
+    "Budget tier ($1-$5) shows 991.6% inflation - consistently overvalued"
+  ],
+  "recommendations": [
+    "Focus remaining budget on value opportunities in mid-tier players ($16-$30 range)",
+    "Historical data suggests elite players are typically undervalued - prioritize if available",
+    "Avoid overpaying for replacement-level players in the $1-$5 range",
+    "With $59 remaining and avg roster size of 15.6, Duke needs approximately 1 more players",
+    "Target positions where Duke has paid below league average for potential value adds"
+  ]
+}

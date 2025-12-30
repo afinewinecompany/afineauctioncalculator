@@ -1,0 +1,4664 @@
+{
+  "metadata": {
+    "totalDrafted": 234,
+    "matchedPlayers": 0,
+    "unmatchedPlayers": 234,
+    "totalActualSpent": 2966,
+    "totalProjectedValue": 0,
+    "overallInflation": 0
+  },
+  "matchedPlayers": [],
+  "unmatchedPlayers": [
+    {
+      "couchManagersId": 1,
+      "firstName": "Aaron",
+      "lastName": "Judge",
+      "fullName": "Aaron Judge",
+      "normalizedName": "aaron judge",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 38,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".331",
+        "hr": 53,
+        "rbi": 114,
+        "sb": 12,
+        "runs": 137
+      }
+    },
+    {
+      "couchManagersId": 2,
+      "firstName": "Shohei",
+      "lastName": "Ohtani",
+      "fullName": "Shohei Ohtani",
+      "normalizedName": "shohei ohtani",
+      "positions": [
+        "DH",
+        "SP"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 39,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".280",
+        "hr": 55,
+        "rbi": 102,
+        "sb": 20,
+        "runs": 146
+      }
+    },
+    {
+      "couchManagersId": 3,
+      "firstName": "Juan",
+      "lastName": "Soto",
+      "fullName": "Juan Soto",
+      "normalizedName": "juan soto",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "NYM",
+      "status": "drafted",
+      "winningBid": 39,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".263",
+        "hr": 43,
+        "rbi": 105,
+        "sb": 37,
+        "runs": 120
+      }
+    },
+    {
+      "couchManagersId": 4,
+      "firstName": "Jose",
+      "lastName": "Ramirez",
+      "fullName": "Jose Ramirez",
+      "normalizedName": "jose ramirez",
+      "positions": [
+        "3B",
+        "DH"
+      ],
+      "mlbTeam": "CLE",
+      "status": "drafted",
+      "winningBid": 33,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".282",
+        "hr": 30,
+        "rbi": 85,
+        "sb": 44,
+        "runs": 103
+      }
+    },
+    {
+      "couchManagersId": 5,
+      "firstName": "Cal",
+      "lastName": "Raleigh",
+      "fullName": "Cal Raleigh",
+      "normalizedName": "cal raleigh",
+      "positions": [
+        "C",
+        "DH"
+      ],
+      "mlbTeam": "SEA",
+      "status": "drafted",
+      "winningBid": 21,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".245",
+        "hr": 60,
+        "rbi": 124,
+        "sb": 14,
+        "runs": 110
+      }
+    },
+    {
+      "couchManagersId": 6,
+      "firstName": "Bobby",
+      "lastName": "Witt Jr",
+      "fullName": "Bobby Witt Jr",
+      "normalizedName": "bobby witt jr",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 38,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".297",
+        "hr": 23,
+        "rbi": 88,
+        "sb": 38,
+        "runs": 99
+      }
+    },
+    {
+      "couchManagersId": 7,
+      "firstName": "Kyle",
+      "lastName": "Schwarber",
+      "fullName": "Kyle Schwarber",
+      "normalizedName": "kyle schwarber",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 24,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".240",
+        "hr": 56,
+        "rbi": 132,
+        "sb": 10,
+        "runs": 111
+      }
+    },
+    {
+      "couchManagersId": 8,
+      "firstName": "Julio",
+      "lastName": "Rodriguez",
+      "fullName": "Julio Rodriguez",
+      "normalizedName": "julio rodriguez",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "SEA",
+      "status": "drafted",
+      "winningBid": 26,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".268",
+        "hr": 32,
+        "rbi": 98,
+        "sb": 30,
+        "runs": 106
+      }
+    },
+    {
+      "couchManagersId": 9,
+      "firstName": "Francisco",
+      "lastName": "Lindor",
+      "fullName": "Francisco Lindor",
+      "normalizedName": "francisco lindor",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "NYM",
+      "status": "drafted",
+      "winningBid": 24,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".266",
+        "hr": 31,
+        "rbi": 86,
+        "sb": 31,
+        "runs": 117
+      }
+    },
+    {
+      "couchManagersId": 10,
+      "firstName": "George",
+      "lastName": "Springer",
+      "fullName": "George Springer",
+      "normalizedName": "george springer",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".307",
+        "hr": 32,
+        "rbi": 84,
+        "sb": 18,
+        "runs": 106
+      }
+    },
+    {
+      "couchManagersId": 11,
+      "firstName": "Geraldo",
+      "lastName": "Perdomo",
+      "fullName": "Geraldo Perdomo",
+      "normalizedName": "geraldo perdomo",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "AZ",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".290",
+        "hr": 20,
+        "rbi": 100,
+        "sb": 27,
+        "runs": 98
+      }
+    },
+    {
+      "couchManagersId": 12,
+      "firstName": "Corbin",
+      "lastName": "Carroll",
+      "fullName": "Corbin Carroll",
+      "normalizedName": "corbin carroll",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "AZ",
+      "status": "drafted",
+      "winningBid": 30,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".259",
+        "hr": 31,
+        "rbi": 84,
+        "sb": 32,
+        "runs": 107
+      }
+    },
+    {
+      "couchManagersId": 13,
+      "firstName": "Trea",
+      "lastName": "Turner",
+      "fullName": "Trea Turner",
+      "normalizedName": "trea turner",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 20,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".302",
+        "hr": 15,
+        "rbi": 69,
+        "sb": 36,
+        "runs": 94
+      }
+    },
+    {
+      "couchManagersId": 14,
+      "firstName": "Elly",
+      "lastName": "De La Cruz",
+      "fullName": "Elly De La Cruz",
+      "normalizedName": "elly de la cruz",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "CIN",
+      "status": "drafted",
+      "winningBid": 27,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".264",
+        "hr": 22,
+        "rbi": 86,
+        "sb": 37,
+        "runs": 102
+      }
+    },
+    {
+      "couchManagersId": 15,
+      "firstName": "Josh",
+      "lastName": "Naylor",
+      "fullName": "Josh Naylor",
+      "normalizedName": "josh naylor",
+      "positions": [
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".295",
+        "hr": 20,
+        "rbi": 92,
+        "sb": 30,
+        "runs": 81
+      }
+    },
+    {
+      "couchManagersId": 16,
+      "firstName": "Junior",
+      "lastName": "Caminero",
+      "fullName": "Junior Caminero",
+      "normalizedName": "junior caminero",
+      "positions": [
+        "3B",
+        "DH"
+      ],
+      "mlbTeam": "TB",
+      "status": "drafted",
+      "winningBid": 26,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".264",
+        "hr": 45,
+        "rbi": 110,
+        "sb": 7,
+        "runs": 93
+      }
+    },
+    {
+      "couchManagersId": 17,
+      "firstName": "Fernando",
+      "lastName": "Tatis Jr",
+      "fullName": "Fernando Tatis Jr",
+      "normalizedName": "fernando tatis jr",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "SD",
+      "status": "drafted",
+      "winningBid": 28,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".268",
+        "hr": 25,
+        "rbi": 71,
+        "sb": 32,
+        "runs": 111
+      }
+    },
+    {
+      "couchManagersId": 18,
+      "firstName": "Pete",
+      "lastName": "Crow-Armstrong",
+      "fullName": "Pete Crow-Armstrong",
+      "normalizedName": "pete crowarmstrong",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 23,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".247",
+        "hr": 31,
+        "rbi": 95,
+        "sb": 35,
+        "runs": 91
+      }
+    },
+    {
+      "couchManagersId": 19,
+      "firstName": "Trevor",
+      "lastName": "Story",
+      "fullName": "Trevor Story",
+      "normalizedName": "trevor story",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".263",
+        "hr": 25,
+        "rbi": 96,
+        "sb": 31,
+        "runs": 91
+      }
+    },
+    {
+      "couchManagersId": 20,
+      "firstName": "Byron",
+      "lastName": "Buxton",
+      "fullName": "Byron Buxton",
+      "normalizedName": "byron buxton",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "MIN",
+      "status": "drafted",
+      "winningBid": 12,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".264",
+        "hr": 35,
+        "rbi": 83,
+        "sb": 24,
+        "runs": 97
+      }
+    },
+    {
+      "couchManagersId": 21,
+      "firstName": "Pete",
+      "lastName": "Alonso",
+      "fullName": "Pete Alonso",
+      "normalizedName": "pete alonso",
+      "positions": [
+        "1B"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 22,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".272",
+        "hr": 38,
+        "rbi": 126,
+        "sb": 1,
+        "runs": 87
+      }
+    },
+    {
+      "couchManagersId": 22,
+      "firstName": "Brice",
+      "lastName": "Turang",
+      "fullName": "Brice Turang",
+      "normalizedName": "brice turang",
+      "positions": [
+        "2B"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 22,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".288",
+        "hr": 18,
+        "rbi": 81,
+        "sb": 24,
+        "runs": 97
+      }
+    },
+    {
+      "couchManagersId": 23,
+      "firstName": "Manny",
+      "lastName": "Machado",
+      "fullName": "Manny Machado",
+      "normalizedName": "manny machado",
+      "positions": [
+        "3B",
+        "DH"
+      ],
+      "mlbTeam": "SD",
+      "status": "drafted",
+      "winningBid": 18,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".275",
+        "hr": 27,
+        "rbi": 95,
+        "sb": 14,
+        "runs": 91
+      }
+    },
+    {
+      "couchManagersId": 24,
+      "firstName": "Christian",
+      "lastName": "Yelich",
+      "fullName": "Christian Yelich",
+      "normalizedName": "christian yelich",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".264",
+        "hr": 29,
+        "rbi": 103,
+        "sb": 16,
+        "runs": 88
+      }
+    },
+    {
+      "couchManagersId": 25,
+      "firstName": "Cody",
+      "lastName": "Bellinger",
+      "fullName": "Cody Bellinger",
+      "normalizedName": "cody bellinger",
+      "positions": [
+        "OF",
+        "1B"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".272",
+        "hr": 29,
+        "rbi": 98,
+        "sb": 13,
+        "runs": 89
+      }
+    },
+    {
+      "couchManagersId": 26,
+      "firstName": "Eugenio",
+      "lastName": "Suarez",
+      "fullName": "Eugenio Suarez",
+      "normalizedName": "eugenio suarez",
+      "positions": [
+        "3B"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".228",
+        "hr": 49,
+        "rbi": 118,
+        "sb": 4,
+        "runs": 91
+      }
+    },
+    {
+      "couchManagersId": 27,
+      "firstName": "Nick",
+      "lastName": "Kurtz",
+      "fullName": "Nick Kurtz",
+      "normalizedName": "nick kurtz",
+      "positions": [
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "ATH",
+      "status": "drafted",
+      "winningBid": 23,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".291",
+        "hr": 36,
+        "rbi": 86,
+        "sb": 2,
+        "runs": 90
+      }
+    },
+    {
+      "couchManagersId": 28,
+      "firstName": "Vladimir",
+      "lastName": "Guerrero Jr",
+      "fullName": "Vladimir Guerrero Jr",
+      "normalizedName": "vladimir guerrero jr",
+      "positions": [
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 26,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".292",
+        "hr": 23,
+        "rbi": 84,
+        "sb": 6,
+        "runs": 96
+      }
+    },
+    {
+      "couchManagersId": 29,
+      "firstName": "Bo",
+      "lastName": "Bichette",
+      "fullName": "Bo Bichette",
+      "normalizedName": "bo bichette",
+      "positions": [
+        "SS",
+        "DH"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".313",
+        "hr": 18,
+        "rbi": 93,
+        "sb": 4,
+        "runs": 78
+      }
+    },
+    {
+      "couchManagersId": 30,
+      "firstName": "Freddie",
+      "lastName": "Freeman",
+      "fullName": "Freddie Freeman",
+      "normalizedName": "freddie freeman",
+      "positions": [
+        "1B"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 19,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".297",
+        "hr": 24,
+        "rbi": 90,
+        "sb": 6,
+        "runs": 81
+      }
+    },
+    {
+      "couchManagersId": 31,
+      "firstName": "James",
+      "lastName": "Wood",
+      "fullName": "James Wood",
+      "normalizedName": "james wood",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "WSH",
+      "status": "drafted",
+      "winningBid": 19,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".256",
+        "hr": 31,
+        "rbi": 94,
+        "sb": 15,
+        "runs": 87
+      }
+    },
+    {
+      "couchManagersId": 32,
+      "firstName": "Jazz",
+      "lastName": "Chisholm Jr",
+      "fullName": "Jazz Chisholm Jr",
+      "normalizedName": "jazz chisholm jr",
+      "positions": [
+        "2B",
+        "3B",
+        "OF"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 19,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".242",
+        "hr": 31,
+        "rbi": 80,
+        "sb": 31,
+        "runs": 75
+      }
+    },
+    {
+      "couchManagersId": 33,
+      "firstName": "Nico",
+      "lastName": "Hoerner",
+      "fullName": "Nico Hoerner",
+      "normalizedName": "nico hoerner",
+      "positions": [
+        "2B",
+        "SS"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 12,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".297",
+        "hr": 7,
+        "rbi": 61,
+        "sb": 29,
+        "runs": 89
+      }
+    },
+    {
+      "couchManagersId": 34,
+      "firstName": "Rafael",
+      "lastName": "Devers",
+      "fullName": "Rafael Devers",
+      "normalizedName": "rafael devers",
+      "positions": [
+        "1B",
+        "3B",
+        "DH"
+      ],
+      "mlbTeam": "SF",
+      "status": "drafted",
+      "winningBid": 20,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".252",
+        "hr": 35,
+        "rbi": 109,
+        "sb": 1,
+        "runs": 99
+      }
+    },
+    {
+      "couchManagersId": 35,
+      "firstName": "Riley",
+      "lastName": "Greene",
+      "fullName": "Riley Greene",
+      "normalizedName": "riley greene",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "DET",
+      "status": "drafted",
+      "winningBid": 16,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".258",
+        "hr": 36,
+        "rbi": 111,
+        "sb": 2,
+        "runs": 84
+      }
+    },
+    {
+      "couchManagersId": 36,
+      "firstName": "Maikel",
+      "lastName": "Garcia",
+      "fullName": "Maikel Garcia",
+      "normalizedName": "maikel garcia",
+      "positions": [
+        "2B",
+        "3B",
+        "SS",
+        "OF"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".287",
+        "hr": 16,
+        "rbi": 74,
+        "sb": 23,
+        "runs": 81
+      }
+    },
+    {
+      "couchManagersId": 37,
+      "firstName": "Gunnar",
+      "lastName": "Henderson",
+      "fullName": "Gunnar Henderson",
+      "normalizedName": "gunnar henderson",
+      "positions": [
+        "SS",
+        "DH"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 29,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".274",
+        "hr": 17,
+        "rbi": 68,
+        "sb": 30,
+        "runs": 85
+      }
+    },
+    {
+      "couchManagersId": 38,
+      "firstName": "Kyle",
+      "lastName": "Tucker",
+      "fullName": "Kyle Tucker",
+      "normalizedName": "kyle tucker",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 30,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".266",
+        "hr": 22,
+        "rbi": 73,
+        "sb": 25,
+        "runs": 91
+      }
+    },
+    {
+      "couchManagersId": 39,
+      "firstName": "Randy",
+      "lastName": "Arozarena",
+      "fullName": "Randy Arozarena",
+      "normalizedName": "randy arozarena",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "SEA",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".238",
+        "hr": 27,
+        "rbi": 76,
+        "sb": 31,
+        "runs": 95
+      }
+    },
+    {
+      "couchManagersId": 40,
+      "firstName": "Matt",
+      "lastName": "Olson",
+      "fullName": "Matt Olson",
+      "normalizedName": "matt olson",
+      "positions": [
+        "1B"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 20,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".272",
+        "hr": 29,
+        "rbi": 95,
+        "sb": 1,
+        "runs": 98
+      }
+    },
+    {
+      "couchManagersId": 41,
+      "firstName": "Yandy",
+      "lastName": "Diaz",
+      "fullName": "Yandy Diaz",
+      "normalizedName": "yandy diaz",
+      "positions": [
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "TB",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".300",
+        "hr": 25,
+        "rbi": 83,
+        "sb": 3,
+        "runs": 79
+      }
+    },
+    {
+      "couchManagersId": 42,
+      "firstName": "Jackson",
+      "lastName": "Chourio",
+      "fullName": "Jackson Chourio",
+      "normalizedName": "jackson chourio",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 21,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".268",
+        "hr": 21,
+        "rbi": 78,
+        "sb": 21,
+        "runs": 88
+      }
+    },
+    {
+      "couchManagersId": 43,
+      "firstName": "Andy",
+      "lastName": "Pages",
+      "fullName": "Andy Pages",
+      "normalizedName": "andy pages",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".272",
+        "hr": 27,
+        "rbi": 86,
+        "sb": 14,
+        "runs": 74
+      }
+    },
+    {
+      "couchManagersId": 44,
+      "firstName": "Brent",
+      "lastName": "Rooker",
+      "fullName": "Brent Rooker",
+      "normalizedName": "brent rooker",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "ATH",
+      "status": "drafted",
+      "winningBid": 16,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".262",
+        "hr": 30,
+        "rbi": 89,
+        "sb": 6,
+        "runs": 92
+      }
+    },
+    {
+      "couchManagersId": 45,
+      "firstName": "Vinnie",
+      "lastName": "Pasquantino",
+      "fullName": "Vinnie Pasquantino",
+      "normalizedName": "vinnie pasquantino",
+      "positions": [
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".263",
+        "hr": 32,
+        "rbi": 113,
+        "sb": 1,
+        "runs": 72
+      }
+    },
+    {
+      "couchManagersId": 46,
+      "firstName": "Brandon",
+      "lastName": "Nimmo",
+      "fullName": "Brandon Nimmo",
+      "normalizedName": "brandon nimmo",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "TEX",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".262",
+        "hr": 25,
+        "rbi": 92,
+        "sb": 13,
+        "runs": 81
+      }
+    },
+    {
+      "couchManagersId": 47,
+      "firstName": "CJ",
+      "lastName": "Abrams",
+      "fullName": "CJ Abrams",
+      "normalizedName": "cj abrams",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "WSH",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".255",
+        "hr": 19,
+        "rbi": 60,
+        "sb": 31,
+        "runs": 92
+      }
+    },
+    {
+      "couchManagersId": 48,
+      "firstName": "Tyler",
+      "lastName": "Soderstrom",
+      "fullName": "Tyler Soderstrom",
+      "normalizedName": "tyler soderstrom",
+      "positions": [
+        "OF",
+        "1B"
+      ],
+      "mlbTeam": "ATH",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".275",
+        "hr": 25,
+        "rbi": 93,
+        "sb": 8,
+        "runs": 75
+      }
+    },
+    {
+      "couchManagersId": 49,
+      "firstName": "Jeremy",
+      "lastName": "Pena",
+      "fullName": "Jeremy Pena",
+      "normalizedName": "jeremy pena",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "HOU",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".304",
+        "hr": 17,
+        "rbi": 62,
+        "sb": 20,
+        "runs": 68
+      }
+    },
+    {
+      "couchManagersId": 50,
+      "firstName": "Jarren",
+      "lastName": "Duran",
+      "fullName": "Jarren Duran",
+      "normalizedName": "jarren duran",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".257",
+        "hr": 16,
+        "rbi": 84,
+        "sb": 24,
+        "runs": 86
+      }
+    },
+    {
+      "couchManagersId": 51,
+      "firstName": "Zach",
+      "lastName": "Neto",
+      "fullName": "Zach Neto",
+      "normalizedName": "zach neto",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "LAA",
+      "status": "drafted",
+      "winningBid": 21,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".255",
+        "hr": 26,
+        "rbi": 62,
+        "sb": 26,
+        "runs": 82
+      }
+    },
+    {
+      "couchManagersId": 52,
+      "firstName": "Hunter",
+      "lastName": "Goodman",
+      "fullName": "Hunter Goodman",
+      "normalizedName": "hunter goodman",
+      "positions": [
+        "C",
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "COL",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".278",
+        "hr": 31,
+        "rbi": 91,
+        "sb": 1,
+        "runs": 73
+      }
+    },
+    {
+      "couchManagersId": 53,
+      "firstName": "Michael",
+      "lastName": "Busch",
+      "fullName": "Michael Busch",
+      "normalizedName": "michael busch",
+      "positions": [
+        "1B"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".262",
+        "hr": 34,
+        "rbi": 90,
+        "sb": 4,
+        "runs": 78
+      }
+    },
+    {
+      "couchManagersId": 54,
+      "firstName": "Ketel",
+      "lastName": "Marte",
+      "fullName": "Ketel Marte",
+      "normalizedName": "ketel marte",
+      "positions": [
+        "2B",
+        "DH"
+      ],
+      "mlbTeam": "AZ",
+      "status": "drafted",
+      "winningBid": 21,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".283",
+        "hr": 28,
+        "rbi": 72,
+        "sb": 4,
+        "runs": 87
+      }
+    },
+    {
+      "couchManagersId": 55,
+      "firstName": "Shea",
+      "lastName": "Langeliers",
+      "fullName": "Shea Langeliers",
+      "normalizedName": "shea langeliers",
+      "positions": [
+        "C",
+        "DH"
+      ],
+      "mlbTeam": "ATH",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".274",
+        "hr": 31,
+        "rbi": 72,
+        "sb": 7,
+        "runs": 73
+      }
+    },
+    {
+      "couchManagersId": 56,
+      "firstName": "Seiya",
+      "lastName": "Suzuki",
+      "fullName": "Seiya Suzuki",
+      "normalizedName": "seiya suzuki",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 17,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".245",
+        "hr": 32,
+        "rbi": 103,
+        "sb": 5,
+        "runs": 75
+      }
+    },
+    {
+      "couchManagersId": 57,
+      "firstName": "Jose",
+      "lastName": "Altuve",
+      "fullName": "Jose Altuve",
+      "normalizedName": "jose altuve",
+      "positions": [
+        "2B",
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "HOU",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".264",
+        "hr": 26,
+        "rbi": 77,
+        "sb": 10,
+        "runs": 80
+      }
+    },
+    {
+      "couchManagersId": 58,
+      "firstName": "Dansby",
+      "lastName": "Swanson",
+      "fullName": "Dansby Swanson",
+      "normalizedName": "dansby swanson",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 7,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".244",
+        "hr": 24,
+        "rbi": 77,
+        "sb": 20,
+        "runs": 84
+      }
+    },
+    {
+      "couchManagersId": 59,
+      "firstName": "Taylor",
+      "lastName": "Ward",
+      "fullName": "Taylor Ward",
+      "normalizedName": "taylor ward",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".228",
+        "hr": 36,
+        "rbi": 103,
+        "sb": 4,
+        "runs": 86
+      }
+    },
+    {
+      "couchManagersId": 60,
+      "firstName": "Sal",
+      "lastName": "Frelick",
+      "fullName": "Sal Frelick",
+      "normalizedName": "sal frelick",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".288",
+        "hr": 12,
+        "rbi": 63,
+        "sb": 19,
+        "runs": 76
+      }
+    },
+    {
+      "couchManagersId": 61,
+      "firstName": "Mookie",
+      "lastName": "Betts",
+      "fullName": "Mookie Betts",
+      "normalizedName": "mookie betts",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 22,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".258",
+        "hr": 20,
+        "rbi": 82,
+        "sb": 8,
+        "runs": 95
+      }
+    },
+    {
+      "couchManagersId": 62,
+      "firstName": "Bryce",
+      "lastName": "Harper",
+      "fullName": "Bryce Harper",
+      "normalizedName": "bryce harper",
+      "positions": [
+        "1B"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 20,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".262",
+        "hr": 27,
+        "rbi": 75,
+        "sb": 12,
+        "runs": 72
+      }
+    },
+    {
+      "couchManagersId": 63,
+      "firstName": "Ramon",
+      "lastName": "Laureano",
+      "fullName": "Ramon Laureano",
+      "normalizedName": "ramon laureano",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "SD",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".281",
+        "hr": 24,
+        "rbi": 76,
+        "sb": 7,
+        "runs": 72
+      }
+    },
+    {
+      "couchManagersId": 64,
+      "firstName": "Brandon",
+      "lastName": "Lowe",
+      "fullName": "Brandon Lowe",
+      "normalizedName": "brandon lowe",
+      "positions": [
+        "2B",
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "PIT",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".256",
+        "hr": 31,
+        "rbi": 83,
+        "sb": 3,
+        "runs": 79
+      }
+    },
+    {
+      "couchManagersId": 65,
+      "firstName": "Willy",
+      "lastName": "Adames",
+      "fullName": "Willy Adames",
+      "normalizedName": "willy adames",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "SF",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".225",
+        "hr": 30,
+        "rbi": 87,
+        "sb": 12,
+        "runs": 94
+      }
+    },
+    {
+      "couchManagersId": 66,
+      "firstName": "Jo",
+      "lastName": "Adell",
+      "fullName": "Jo Adell",
+      "normalizedName": "jo adell",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "LAA",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".236",
+        "hr": 37,
+        "rbi": 98,
+        "sb": 5,
+        "runs": 63
+      }
+    },
+    {
+      "couchManagersId": 67,
+      "firstName": "Steven",
+      "lastName": "Kwan",
+      "fullName": "Steven Kwan",
+      "normalizedName": "steven kwan",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "CLE",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".272",
+        "hr": 11,
+        "rbi": 56,
+        "sb": 21,
+        "runs": 81
+      }
+    },
+    {
+      "couchManagersId": 68,
+      "firstName": "Kyle",
+      "lastName": "Stowers",
+      "fullName": "Kyle Stowers",
+      "normalizedName": "kyle stowers",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "MIA",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".288",
+        "hr": 25,
+        "rbi": 73,
+        "sb": 5,
+        "runs": 61
+      }
+    },
+    {
+      "couchManagersId": 69,
+      "firstName": "Michael",
+      "lastName": "Harris II",
+      "fullName": "Michael Harris II",
+      "normalizedName": "michael harris ii",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".249",
+        "hr": 20,
+        "rbi": 86,
+        "sb": 20,
+        "runs": 55
+      }
+    },
+    {
+      "couchManagersId": 70,
+      "firstName": "Jorge",
+      "lastName": "Polanco",
+      "fullName": "Jorge Polanco",
+      "normalizedName": "jorge polanco",
+      "positions": [
+        "2B",
+        "3B",
+        "DH"
+      ],
+      "mlbTeam": "NYM",
+      "status": "drafted",
+      "winningBid": 7,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".265",
+        "hr": 26,
+        "rbi": 78,
+        "sb": 6,
+        "runs": 64
+      }
+    },
+    {
+      "couchManagersId": 71,
+      "firstName": "Trent",
+      "lastName": "Grisham",
+      "fullName": "Trent Grisham",
+      "normalizedName": "trent grisham",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".235",
+        "hr": 34,
+        "rbi": 74,
+        "sb": 3,
+        "runs": 87
+      }
+    },
+    {
+      "couchManagersId": 72,
+      "firstName": "Wyatt",
+      "lastName": "Langford",
+      "fullName": "Wyatt Langford",
+      "normalizedName": "wyatt langford",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "TEX",
+      "status": "drafted",
+      "winningBid": 20,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".243",
+        "hr": 22,
+        "rbi": 62,
+        "sb": 22,
+        "runs": 73
+      }
+    },
+    {
+      "couchManagersId": 73,
+      "firstName": "Jacob",
+      "lastName": "Wilson",
+      "fullName": "Jacob Wilson",
+      "normalizedName": "jacob wilson",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "ATH",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".313",
+        "hr": 13,
+        "rbi": 63,
+        "sb": 5,
+        "runs": 62
+      }
+    },
+    {
+      "couchManagersId": 74,
+      "firstName": "Ceddanne",
+      "lastName": "Rafaela",
+      "fullName": "Ceddanne Rafaela",
+      "normalizedName": "ceddanne rafaela",
+      "positions": [
+        "OF",
+        "SS",
+        "2B"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".249",
+        "hr": 16,
+        "rbi": 63,
+        "sb": 20,
+        "runs": 84
+      }
+    },
+    {
+      "couchManagersId": 76,
+      "firstName": "William",
+      "lastName": "Contreras",
+      "fullName": "William Contreras",
+      "normalizedName": "william contreras",
+      "positions": [
+        "C",
+        "DH"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".258",
+        "hr": 17,
+        "rbi": 76,
+        "sb": 6,
+        "runs": 89
+      }
+    },
+    {
+      "couchManagersId": 79,
+      "firstName": "Chandler",
+      "lastName": "Simpson",
+      "fullName": "Chandler Simpson",
+      "normalizedName": "chandler simpson",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "TB",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".297",
+        "rbi": 26,
+        "sb": 44,
+        "runs": 53
+      }
+    },
+    {
+      "couchManagersId": 81,
+      "firstName": "Lawrence",
+      "lastName": "Butler",
+      "fullName": "Lawrence Butler",
+      "normalizedName": "lawrence butler",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "ATH",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".232",
+        "hr": 21,
+        "rbi": 63,
+        "sb": 22,
+        "runs": 83
+      }
+    },
+    {
+      "couchManagersId": 83,
+      "firstName": "Ian",
+      "lastName": "Happ",
+      "fullName": "Ian Happ",
+      "normalizedName": "ian happ",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".243",
+        "hr": 23,
+        "rbi": 79,
+        "sb": 6,
+        "runs": 87
+      }
+    },
+    {
+      "couchManagersId": 84,
+      "firstName": "Spencer",
+      "lastName": "Torkelson",
+      "fullName": "Spencer Torkelson",
+      "normalizedName": "spencer torkelson",
+      "positions": [
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "DET",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".240",
+        "hr": 31,
+        "rbi": 78,
+        "sb": 2,
+        "runs": 82
+      }
+    },
+    {
+      "couchManagersId": 85,
+      "firstName": "Teoscar",
+      "lastName": "Hernandez",
+      "fullName": "Teoscar Hernandez",
+      "normalizedName": "teoscar hernandez",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".249",
+        "hr": 25,
+        "rbi": 89,
+        "sb": 5,
+        "runs": 65
+      }
+    },
+    {
+      "couchManagersId": 87,
+      "firstName": "Ronald",
+      "lastName": "Acuna Jr",
+      "fullName": "Ronald Acuna Jr",
+      "normalizedName": "ronald acuna jr",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 28,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".290",
+        "hr": 21,
+        "rbi": 42,
+        "sb": 9,
+        "runs": 74
+      }
+    },
+    {
+      "couchManagersId": 89,
+      "firstName": "Ivan",
+      "lastName": "Herrera",
+      "fullName": "Ivan Herrera",
+      "normalizedName": "ivan herrera",
+      "positions": [
+        "C",
+        "DH"
+      ],
+      "mlbTeam": "STL",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".284",
+        "hr": 19,
+        "rbi": 66,
+        "sb": 8,
+        "runs": 54
+      }
+    },
+    {
+      "couchManagersId": 90,
+      "firstName": "Ben",
+      "lastName": "Rice",
+      "fullName": "Ben Rice",
+      "normalizedName": "ben rice",
+      "positions": [
+        "C",
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 17,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".255",
+        "hr": 26,
+        "rbi": 65,
+        "sb": 3,
+        "runs": 74
+      }
+    },
+    {
+      "couchManagersId": 92,
+      "firstName": "Oneil",
+      "lastName": "Cruz",
+      "fullName": "Oneil Cruz",
+      "normalizedName": "oneil cruz",
+      "positions": [
+        "OF",
+        "SS"
+      ],
+      "mlbTeam": "PIT",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".200",
+        "hr": 20,
+        "rbi": 61,
+        "sb": 38,
+        "runs": 62
+      }
+    },
+    {
+      "couchManagersId": 93,
+      "firstName": "Christian",
+      "lastName": "Walker",
+      "fullName": "Christian Walker",
+      "normalizedName": "christian walker",
+      "positions": [
+        "1B"
+      ],
+      "mlbTeam": "HOU",
+      "status": "drafted",
+      "winningBid": 7,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".236",
+        "hr": 27,
+        "rbi": 88,
+        "sb": 2,
+        "runs": 72
+      }
+    },
+    {
+      "couchManagersId": 94,
+      "firstName": "Otto",
+      "lastName": "Lopez",
+      "fullName": "Otto Lopez",
+      "normalizedName": "otto lopez",
+      "positions": [
+        "2B",
+        "SS"
+      ],
+      "mlbTeam": "MIA",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".246",
+        "hr": 15,
+        "rbi": 77,
+        "sb": 15,
+        "runs": 66
+      }
+    },
+    {
+      "couchManagersId": 98,
+      "firstName": "Jordan",
+      "lastName": "Beck",
+      "fullName": "Jordan Beck",
+      "normalizedName": "jordan beck",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "COL",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".258",
+        "hr": 16,
+        "rbi": 53,
+        "sb": 19,
+        "runs": 62
+      }
+    },
+    {
+      "couchManagersId": 99,
+      "firstName": "Luis",
+      "lastName": "Garcia",
+      "fullName": "Luis Garcia",
+      "normalizedName": "luis garcia",
+      "positions": [
+        "2B"
+      ],
+      "mlbTeam": "WSH",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".252",
+        "hr": 16,
+        "rbi": 66,
+        "sb": 14,
+        "runs": 67
+      }
+    },
+    {
+      "couchManagersId": 100,
+      "firstName": "Gleyber",
+      "lastName": "Torres",
+      "fullName": "Gleyber Torres",
+      "normalizedName": "gleyber torres",
+      "positions": [
+        "2B",
+        "DH"
+      ],
+      "mlbTeam": "DET",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".256",
+        "hr": 16,
+        "rbi": 74,
+        "sb": 4,
+        "runs": 79
+      }
+    },
+    {
+      "couchManagersId": 101,
+      "firstName": "Salvador",
+      "lastName": "Perez",
+      "fullName": "Salvador Perez",
+      "normalizedName": "salvador perez",
+      "positions": [
+        "C",
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".236",
+        "hr": 30,
+        "rbi": 100,
+        "runs": 54
+      }
+    },
+    {
+      "couchManagersId": 102,
+      "firstName": "Ozzie",
+      "lastName": "Albies",
+      "fullName": "Ozzie Albies",
+      "normalizedName": "ozzie albies",
+      "positions": [
+        "2B"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".241",
+        "hr": 16,
+        "rbi": 74,
+        "sb": 14,
+        "runs": 74
+      }
+    },
+    {
+      "couchManagersId": 103,
+      "firstName": "Will",
+      "lastName": "Smith",
+      "fullName": "Will Smith",
+      "normalizedName": "will smith",
+      "positions": [
+        "C"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".296",
+        "hr": 17,
+        "rbi": 61,
+        "sb": 2,
+        "runs": 64
+      }
+    },
+    {
+      "couchManagersId": 104,
+      "firstName": "Agustin",
+      "lastName": "Ramirez",
+      "fullName": "Agustin Ramirez",
+      "normalizedName": "agustin ramirez",
+      "positions": [
+        "C",
+        "1B",
+        "DH"
+      ],
+      "mlbTeam": "MIA",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".231",
+        "hr": 21,
+        "rbi": 67,
+        "sb": 16,
+        "runs": 72
+      }
+    },
+    {
+      "couchManagersId": 108,
+      "firstName": "Xander",
+      "lastName": "Bogaerts",
+      "fullName": "Xander Bogaerts",
+      "normalizedName": "xander bogaerts",
+      "positions": [
+        "2B",
+        "SS",
+        "DH"
+      ],
+      "mlbTeam": "SD",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".261",
+        "hr": 11,
+        "rbi": 53,
+        "sb": 20,
+        "runs": 63
+      }
+    },
+    {
+      "couchManagersId": 109,
+      "firstName": "Drake",
+      "lastName": "Baldwin",
+      "fullName": "Drake Baldwin",
+      "normalizedName": "drake baldwin",
+      "positions": [
+        "C",
+        "DH"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 7,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".272",
+        "hr": 19,
+        "rbi": 80,
+        "runs": 56
+      }
+    },
+    {
+      "couchManagersId": 112,
+      "firstName": "Luis",
+      "lastName": "Robert Jr",
+      "fullName": "Luis Robert Jr",
+      "normalizedName": "luis robert jr",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "CHW",
+      "status": "drafted",
+      "winningBid": 7,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".223",
+        "hr": 14,
+        "rbi": 53,
+        "sb": 33,
+        "runs": 52
+      }
+    },
+    {
+      "couchManagersId": 113,
+      "firstName": "Jackson",
+      "lastName": "Holliday",
+      "fullName": "Jackson Holliday",
+      "normalizedName": "jackson holliday",
+      "positions": [
+        "2B",
+        "SS"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".242",
+        "hr": 17,
+        "rbi": 55,
+        "sb": 17,
+        "runs": 70
+      }
+    },
+    {
+      "couchManagersId": 117,
+      "firstName": "Alex",
+      "lastName": "Bregman",
+      "fullName": "Alex Bregman",
+      "normalizedName": "alex bregman",
+      "positions": [
+        "3B"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".273",
+        "hr": 18,
+        "rbi": 62,
+        "sb": 1,
+        "runs": 64
+      }
+    },
+    {
+      "couchManagersId": 118,
+      "firstName": "Jasson",
+      "lastName": "Dominguez",
+      "fullName": "Jasson Dominguez",
+      "normalizedName": "jasson dominguez",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".257",
+        "hr": 10,
+        "rbi": 47,
+        "sb": 23,
+        "runs": 58
+      }
+    },
+    {
+      "couchManagersId": 119,
+      "firstName": "Matt",
+      "lastName": "Chapman",
+      "fullName": "Matt Chapman",
+      "normalizedName": "matt chapman",
+      "positions": [
+        "3B"
+      ],
+      "mlbTeam": "SF",
+      "status": "drafted",
+      "winningBid": 12,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".231",
+        "hr": 21,
+        "rbi": 61,
+        "sb": 9,
+        "runs": 76
+      }
+    },
+    {
+      "couchManagersId": 121,
+      "firstName": "Addison",
+      "lastName": "Barger",
+      "fullName": "Addison Barger",
+      "normalizedName": "addison barger",
+      "positions": [
+        "3B",
+        "OF"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".244",
+        "hr": 21,
+        "rbi": 75,
+        "sb": 4,
+        "runs": 61
+      }
+    },
+    {
+      "couchManagersId": 123,
+      "firstName": "Jung-hoo",
+      "lastName": "Lee",
+      "fullName": "Jung-hoo Lee",
+      "normalizedName": "junghoo lee",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "SF",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".266",
+        "hr": 8,
+        "rbi": 55,
+        "sb": 10,
+        "runs": 73
+      }
+    },
+    {
+      "couchManagersId": 125,
+      "firstName": "Caleb",
+      "lastName": "Durbin",
+      "fullName": "Caleb Durbin",
+      "normalizedName": "caleb durbin",
+      "positions": [
+        "2B",
+        "3B",
+        "SS"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".256",
+        "hr": 11,
+        "rbi": 53,
+        "sb": 18,
+        "runs": 60
+      }
+    },
+    {
+      "couchManagersId": 126,
+      "firstName": "Alejandro",
+      "lastName": "Kirk",
+      "fullName": "Alejandro Kirk",
+      "normalizedName": "alejandro kirk",
+      "positions": [
+        "C",
+        "DH"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".279",
+        "hr": 15,
+        "rbi": 76,
+        "sb": 1,
+        "runs": 45
+      }
+    },
+    {
+      "couchManagersId": 128,
+      "firstName": "Mike",
+      "lastName": "Trout",
+      "fullName": "Mike Trout",
+      "normalizedName": "mike trout",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "LAA",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".233",
+        "hr": 26,
+        "rbi": 64,
+        "sb": 2,
+        "runs": 73
+      }
+    },
+    {
+      "couchManagersId": 130,
+      "firstName": "Corey",
+      "lastName": "Seager",
+      "fullName": "Corey Seager",
+      "normalizedName": "corey seager",
+      "positions": [
+        "SS",
+        "DH"
+      ],
+      "mlbTeam": "TEX",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".268",
+        "hr": 21,
+        "rbi": 50,
+        "sb": 3,
+        "runs": 61
+      }
+    },
+    {
+      "couchManagersId": 131,
+      "firstName": "Brendan",
+      "lastName": "Donovan",
+      "fullName": "Brendan Donovan",
+      "normalizedName": "brendan donovan",
+      "positions": [
+        "2B",
+        "3B",
+        "SS",
+        "OF"
+      ],
+      "mlbTeam": "STL",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".289",
+        "hr": 10,
+        "rbi": 50,
+        "sb": 3,
+        "runs": 64
+      }
+    },
+    {
+      "couchManagersId": 133,
+      "firstName": "Adolis",
+      "lastName": "Garcia",
+      "fullName": "Adolis Garcia",
+      "normalizedName": "adolis garcia",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".225",
+        "hr": 19,
+        "rbi": 75,
+        "sb": 13,
+        "runs": 58
+      }
+    },
+    {
+      "couchManagersId": 137,
+      "firstName": "Bryan",
+      "lastName": "Reynolds",
+      "fullName": "Bryan Reynolds",
+      "normalizedName": "bryan reynolds",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "PIT",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".245",
+        "hr": 16,
+        "rbi": 73,
+        "sb": 3,
+        "runs": 68
+      }
+    },
+    {
+      "couchManagersId": 138,
+      "firstName": "Cedric",
+      "lastName": "Mullins II",
+      "fullName": "Cedric Mullins II",
+      "normalizedName": "cedric mullins ii",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "TB",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".216",
+        "hr": 17,
+        "rbi": 59,
+        "sb": 22,
+        "runs": 58
+      }
+    },
+    {
+      "couchManagersId": 139,
+      "firstName": "Jackson",
+      "lastName": "Merrill",
+      "fullName": "Jackson Merrill",
+      "normalizedName": "jackson merrill",
+      "positions": [
+        "OF"
+      ],
+      "mlbTeam": "SD",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".262",
+        "hr": 16,
+        "rbi": 67,
+        "sb": 1,
+        "runs": 59
+      }
+    },
+    {
+      "couchManagersId": 140,
+      "firstName": "Alec",
+      "lastName": "Bohm",
+      "fullName": "Alec Bohm",
+      "normalizedName": "alec bohm",
+      "positions": [
+        "1B",
+        "3B"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".285",
+        "hr": 11,
+        "rbi": 59,
+        "sb": 2,
+        "runs": 53
+      }
+    },
+    {
+      "couchManagersId": 148,
+      "firstName": "Daylen",
+      "lastName": "Lile",
+      "fullName": "Daylen Lile",
+      "normalizedName": "daylen lile",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "WSH",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".305",
+        "hr": 9,
+        "rbi": 41,
+        "sb": 8,
+        "runs": 51
+      }
+    },
+    {
+      "couchManagersId": 151,
+      "firstName": "Masyn",
+      "lastName": "Winn",
+      "fullName": "Masyn Winn",
+      "normalizedName": "masyn winn",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "STL",
+      "status": "drafted",
+      "winningBid": 2,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".253",
+        "hr": 9,
+        "rbi": 51,
+        "sb": 9,
+        "runs": 72
+      }
+    },
+    {
+      "couchManagersId": 152,
+      "firstName": "Matt",
+      "lastName": "McLain",
+      "fullName": "Matt McLain",
+      "normalizedName": "matt mclain",
+      "positions": [
+        "2B",
+        "SS"
+      ],
+      "mlbTeam": "CIN",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".220",
+        "hr": 15,
+        "rbi": 50,
+        "sb": 18,
+        "runs": 73
+      }
+    },
+    {
+      "couchManagersId": 155,
+      "firstName": "Marcus",
+      "lastName": "Semien",
+      "fullName": "Marcus Semien",
+      "normalizedName": "marcus semien",
+      "positions": [
+        "2B"
+      ],
+      "mlbTeam": "NYM",
+      "status": "drafted",
+      "winningBid": 7,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".230",
+        "hr": 15,
+        "rbi": 63,
+        "sb": 11,
+        "runs": 62
+      }
+    },
+    {
+      "couchManagersId": 156,
+      "firstName": "Max",
+      "lastName": "Muncy",
+      "fullName": "Max Muncy",
+      "normalizedName": "max muncy",
+      "positions": [
+        "3B"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".243",
+        "hr": 19,
+        "rbi": 67,
+        "sb": 4,
+        "runs": 48
+      }
+    },
+    {
+      "couchManagersId": 159,
+      "firstName": "Noelvi",
+      "lastName": "Marte",
+      "fullName": "Noelvi Marte",
+      "normalizedName": "noelvi marte",
+      "positions": [
+        "OF",
+        "3B"
+      ],
+      "mlbTeam": "CIN",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".263",
+        "hr": 14,
+        "rbi": 50,
+        "sb": 10,
+        "runs": 45
+      }
+    },
+    {
+      "couchManagersId": 165,
+      "firstName": "Austin",
+      "lastName": "Riley",
+      "fullName": "Austin Riley",
+      "normalizedName": "austin riley",
+      "positions": [
+        "3B"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 19,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".260",
+        "hr": 16,
+        "rbi": 54,
+        "sb": 2,
+        "runs": 54
+      }
+    },
+    {
+      "couchManagersId": 171,
+      "firstName": "Jordan",
+      "lastName": "Westburg",
+      "fullName": "Jordan Westburg",
+      "normalizedName": "jordan westburg",
+      "positions": [
+        "2B",
+        "3B",
+        "DH"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".268",
+        "hr": 17,
+        "rbi": 41,
+        "sb": 1,
+        "runs": 59
+      }
+    },
+    {
+      "couchManagersId": 175,
+      "firstName": "Matt",
+      "lastName": "Shaw",
+      "fullName": "Matt Shaw",
+      "normalizedName": "matt shaw",
+      "positions": [
+        "2B",
+        "3B",
+        "SS"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".227",
+        "hr": 13,
+        "rbi": 44,
+        "sb": 17,
+        "runs": 57
+      }
+    },
+    {
+      "couchManagersId": 181,
+      "firstName": "Colt",
+      "lastName": "Keith",
+      "fullName": "Colt Keith",
+      "normalizedName": "colt keith",
+      "positions": [
+        "1B",
+        "2B",
+        "3B",
+        "DH"
+      ],
+      "mlbTeam": "DET",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".256",
+        "hr": 13,
+        "rbi": 45,
+        "sb": 1,
+        "runs": 65
+      }
+    },
+    {
+      "couchManagersId": 196,
+      "firstName": "Roman",
+      "lastName": "Anthony",
+      "fullName": "Roman Anthony",
+      "normalizedName": "roman anthony",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 20,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".292",
+        "hr": 8,
+        "rbi": 32,
+        "sb": 4,
+        "runs": 48
+      }
+    },
+    {
+      "couchManagersId": 197,
+      "firstName": "Mark",
+      "lastName": "Vientos",
+      "fullName": "Mark Vientos",
+      "normalizedName": "mark vientos",
+      "positions": [
+        "3B",
+        "DH"
+      ],
+      "mlbTeam": "NYM",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".234",
+        "hr": 17,
+        "rbi": 61,
+        "sb": 1,
+        "runs": 44
+      }
+    },
+    {
+      "couchManagersId": 198,
+      "firstName": "Gabriel",
+      "lastName": "Moreno",
+      "fullName": "Gabriel Moreno",
+      "normalizedName": "gabriel moreno",
+      "positions": [
+        "C",
+        "DH"
+      ],
+      "mlbTeam": "AZ",
+      "status": "drafted",
+      "winningBid": 1,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".285",
+        "hr": 9,
+        "rbi": 40,
+        "sb": 2,
+        "runs": 44
+      }
+    },
+    {
+      "couchManagersId": 200,
+      "firstName": "Royce",
+      "lastName": "Lewis",
+      "fullName": "Royce Lewis",
+      "normalizedName": "royce lewis",
+      "positions": [
+        "3B",
+        "DH"
+      ],
+      "mlbTeam": "MIN",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".231",
+        "hr": 13,
+        "rbi": 51,
+        "sb": 12,
+        "runs": 36
+      }
+    },
+    {
+      "couchManagersId": 202,
+      "firstName": "Carlos",
+      "lastName": "Narvaez",
+      "fullName": "Carlos Narvaez",
+      "normalizedName": "carlos narvaez",
+      "positions": [
+        "C"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".241",
+        "hr": 15,
+        "rbi": 50,
+        "sb": 1,
+        "runs": 51
+      }
+    },
+    {
+      "couchManagersId": 226,
+      "firstName": "Luke",
+      "lastName": "Keaschall",
+      "fullName": "Luke Keaschall",
+      "normalizedName": "luke keaschall",
+      "positions": [
+        "2B",
+        "1B",
+        "OF"
+      ],
+      "mlbTeam": "MIN",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".302",
+        "hr": 4,
+        "rbi": 28,
+        "sb": 14,
+        "runs": 25
+      }
+    },
+    {
+      "couchManagersId": 232,
+      "firstName": "Kyle",
+      "lastName": "Teel",
+      "fullName": "Kyle Teel",
+      "normalizedName": "kyle teel",
+      "positions": [
+        "C",
+        "DH"
+      ],
+      "mlbTeam": "CHW",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".273",
+        "hr": 8,
+        "rbi": 35,
+        "sb": 3,
+        "runs": 38
+      }
+    },
+    {
+      "couchManagersId": 233,
+      "firstName": "Ezequiel",
+      "lastName": "Tovar",
+      "fullName": "Ezequiel Tovar",
+      "normalizedName": "ezequiel tovar",
+      "positions": [
+        "SS"
+      ],
+      "mlbTeam": "COL",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".253",
+        "hr": 9,
+        "rbi": 33,
+        "sb": 5,
+        "runs": 44
+      }
+    },
+    {
+      "couchManagersId": 266,
+      "firstName": "Francisco",
+      "lastName": "Alvarez",
+      "fullName": "Francisco Alvarez",
+      "normalizedName": "francisco alvarez",
+      "positions": [
+        "C"
+      ],
+      "mlbTeam": "NYM",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".256",
+        "hr": 11,
+        "rbi": 32,
+        "runs": 32
+      }
+    },
+    {
+      "couchManagersId": 301,
+      "firstName": "Yordan",
+      "lastName": "Alvarez",
+      "fullName": "Yordan Alvarez",
+      "normalizedName": "yordan alvarez",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "HOU",
+      "status": "drafted",
+      "winningBid": 21,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".273",
+        "hr": 6,
+        "rbi": 27,
+        "sb": 1,
+        "runs": 17
+      }
+    },
+    {
+      "couchManagersId": 307,
+      "firstName": "Adley",
+      "lastName": "Rutschman",
+      "fullName": "Adley Rutschman",
+      "normalizedName": "adley rutschman",
+      "positions": [
+        "C",
+        "DH"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".221",
+        "hr": 9,
+        "rbi": 29,
+        "runs": 37
+      }
+    },
+    {
+      "couchManagersId": 328,
+      "firstName": "Ha-Seong",
+      "lastName": "Kim",
+      "fullName": "Ha-Seong Kim",
+      "normalizedName": "haseong kim",
+      "positions": [
+        "SS",
+        "2B"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 2,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".234",
+        "hr": 5,
+        "rbi": 17,
+        "sb": 6,
+        "runs": 19
+      }
+    },
+    {
+      "couchManagersId": 381,
+      "firstName": "Carter",
+      "lastName": "Jensen",
+      "fullName": "Carter Jensen",
+      "normalizedName": "carter jensen",
+      "positions": [
+        "C",
+        "MiLB"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".300",
+        "hr": 3,
+        "rbi": 13,
+        "runs": 12
+      }
+    },
+    {
+      "couchManagersId": 391,
+      "firstName": "Marcelo",
+      "lastName": "Mayer",
+      "fullName": "Marcelo Mayer",
+      "normalizedName": "marcelo mayer",
+      "positions": [
+        "2B",
+        "3B",
+        "SS"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".236",
+        "hr": 4,
+        "rbi": 10,
+        "runs": 20
+      }
+    },
+    {
+      "couchManagersId": 409,
+      "firstName": "Sal",
+      "lastName": "Stewart",
+      "fullName": "Sal Stewart",
+      "normalizedName": "sal stewart",
+      "positions": [
+        "1B",
+        "MiLB",
+        "3B"
+      ],
+      "mlbTeam": "CIN",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".255",
+        "hr": 5,
+        "rbi": 8,
+        "runs": 11
+      }
+    },
+    {
+      "couchManagersId": 468,
+      "firstName": "Anthony",
+      "lastName": "Santander",
+      "fullName": "Anthony Santander",
+      "normalizedName": "anthony santander",
+      "positions": [
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".175",
+        "hr": 6,
+        "rbi": 18,
+        "runs": 16
+      }
+    },
+    {
+      "couchManagersId": 480,
+      "firstName": "Samuel",
+      "lastName": "Basallo",
+      "fullName": "Samuel Basallo",
+      "normalizedName": "samuel basallo",
+      "positions": [
+        "C",
+        "MiLB",
+        "DH"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".165",
+        "hr": 4,
+        "rbi": 15,
+        "runs": 10
+      }
+    },
+    {
+      "couchManagersId": 488,
+      "firstName": "Jac",
+      "lastName": "Caglianone",
+      "fullName": "Jac Caglianone",
+      "normalizedName": "jac caglianone",
+      "positions": [
+        "1B",
+        "OF",
+        "DH"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".157",
+        "hr": 7,
+        "rbi": 18,
+        "sb": 1,
+        "runs": 19
+      }
+    },
+    {
+      "couchManagersId": 524,
+      "firstName": "Owen",
+      "lastName": "Caissie",
+      "fullName": "Owen Caissie",
+      "normalizedName": "owen caissie",
+      "positions": [
+        "OF",
+        "MiLB"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".192",
+        "hr": 1,
+        "rbi": 4,
+        "runs": 4
+      }
+    },
+    {
+      "couchManagersId": 670,
+      "firstName": "Tarik",
+      "lastName": "Skubal",
+      "fullName": "Tarik Skubal",
+      "normalizedName": "tarik skubal",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "DET",
+      "status": "drafted",
+      "winningBid": 34,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 671,
+      "firstName": "Garrett",
+      "lastName": "Crochet",
+      "fullName": "Garrett Crochet",
+      "normalizedName": "garrett crochet",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 33,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 672,
+      "firstName": "Paul",
+      "lastName": "Skenes",
+      "fullName": "Paul Skenes",
+      "normalizedName": "paul skenes",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "PIT",
+      "status": "drafted",
+      "winningBid": 34,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 673,
+      "firstName": "Bryan",
+      "lastName": "Woo",
+      "fullName": "Bryan Woo",
+      "normalizedName": "bryan woo",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "SEA",
+      "status": "drafted",
+      "winningBid": 17,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 674,
+      "firstName": "Cristopher",
+      "lastName": "Sanchez",
+      "fullName": "Cristopher Sanchez",
+      "normalizedName": "cristopher sanchez",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 22,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 675,
+      "firstName": "Carlos",
+      "lastName": "Rodon",
+      "fullName": "Carlos Rodon",
+      "normalizedName": "carlos rodon",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 676,
+      "firstName": "Max",
+      "lastName": "Fried",
+      "fullName": "Max Fried",
+      "normalizedName": "max fried",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 20,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 677,
+      "firstName": "Yoshinobu",
+      "lastName": "Yamamoto",
+      "fullName": "Yoshinobu Yamamoto",
+      "normalizedName": "yoshinobu yamamoto",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 24,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 678,
+      "firstName": "Hunter",
+      "lastName": "Brown",
+      "fullName": "Hunter Brown",
+      "normalizedName": "hunter brown",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "HOU",
+      "status": "drafted",
+      "winningBid": 24,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 679,
+      "firstName": "Freddy",
+      "lastName": "Peralta",
+      "fullName": "Freddy Peralta",
+      "normalizedName": "freddy peralta",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 20,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 680,
+      "firstName": "Nick",
+      "lastName": "Pivetta",
+      "fullName": "Nick Pivetta",
+      "normalizedName": "nick pivetta",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "SD",
+      "status": "drafted",
+      "winningBid": 18,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 681,
+      "firstName": "Jacob",
+      "lastName": "deGrom",
+      "fullName": "Jacob deGrom",
+      "normalizedName": "jacob degrom",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "TEX",
+      "status": "drafted",
+      "winningBid": 18,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 683,
+      "firstName": "Zack",
+      "lastName": "Wheeler",
+      "fullName": "Zack Wheeler",
+      "normalizedName": "zack wheeler",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 684,
+      "firstName": "Joe",
+      "lastName": "Ryan",
+      "fullName": "Joe Ryan",
+      "normalizedName": "joe ryan",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "MIN",
+      "status": "drafted",
+      "winningBid": 18,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 685,
+      "firstName": "Logan",
+      "lastName": "Webb",
+      "fullName": "Logan Webb",
+      "normalizedName": "logan webb",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "SF",
+      "status": "drafted",
+      "winningBid": 25,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 686,
+      "firstName": "Matthew",
+      "lastName": "Boyd",
+      "fullName": "Matthew Boyd",
+      "normalizedName": "matthew boyd",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 687,
+      "firstName": "Kevin",
+      "lastName": "Gausman",
+      "fullName": "Kevin Gausman",
+      "normalizedName": "kevin gausman",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 688,
+      "firstName": "Merrill",
+      "lastName": "Kelly",
+      "fullName": "Merrill Kelly",
+      "normalizedName": "merrill kelly",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "AZ",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 689,
+      "firstName": "Jesus",
+      "lastName": "Luzardo",
+      "fullName": "Jesus Luzardo",
+      "normalizedName": "jesus luzardo",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 18,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 690,
+      "firstName": "Aroldis",
+      "lastName": "Chapman",
+      "fullName": "Aroldis Chapman",
+      "normalizedName": "aroldis chapman",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 691,
+      "firstName": "Drew",
+      "lastName": "Rasmussen",
+      "fullName": "Drew Rasmussen",
+      "normalizedName": "drew rasmussen",
+      "positions": [
+        "SP",
+        "RP"
+      ],
+      "mlbTeam": "TB",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 693,
+      "firstName": "Edwin",
+      "lastName": "Diaz",
+      "fullName": "Edwin Diaz",
+      "normalizedName": "edwin diaz",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 694,
+      "firstName": "Trevor",
+      "lastName": "Rogers",
+      "fullName": "Trevor Rogers",
+      "normalizedName": "trevor rogers",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 695,
+      "firstName": "Framber",
+      "lastName": "Valdez",
+      "fullName": "Framber Valdez",
+      "normalizedName": "framber valdez",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 18,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 696,
+      "firstName": "Nick",
+      "lastName": "Lodolo",
+      "fullName": "Nick Lodolo",
+      "normalizedName": "nick lodolo",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "CIN",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 697,
+      "firstName": "Gavin",
+      "lastName": "Williams",
+      "fullName": "Gavin Williams",
+      "normalizedName": "gavin williams",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "CLE",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 698,
+      "firstName": "Ranger",
+      "lastName": "Suarez",
+      "fullName": "Ranger Suarez",
+      "normalizedName": "ranger suarez",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 700,
+      "firstName": "Luis",
+      "lastName": "Castillo",
+      "fullName": "Luis Castillo",
+      "normalizedName": "luis castillo",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "SEA",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 701,
+      "firstName": "Robbie",
+      "lastName": "Ray",
+      "fullName": "Robbie Ray",
+      "normalizedName": "robbie ray",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "SF",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 702,
+      "firstName": "Chris",
+      "lastName": "Sale",
+      "fullName": "Chris Sale",
+      "normalizedName": "chris sale",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 24,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 703,
+      "firstName": "Jhoan",
+      "lastName": "Duran",
+      "fullName": "Jhoan Duran",
+      "normalizedName": "jhoan duran",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 704,
+      "firstName": "Sonny",
+      "lastName": "Gray",
+      "fullName": "Sonny Gray",
+      "normalizedName": "sonny gray",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 705,
+      "firstName": "Andres",
+      "lastName": "Munoz",
+      "fullName": "Andres Munoz",
+      "normalizedName": "andres munoz",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "SEA",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 707,
+      "firstName": "Shota",
+      "lastName": "Imanaga",
+      "fullName": "Shota Imanaga",
+      "normalizedName": "shota imanaga",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 708,
+      "firstName": "Ryan",
+      "lastName": "Pepiot",
+      "fullName": "Ryan Pepiot",
+      "normalizedName": "ryan pepiot",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "TB",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 709,
+      "firstName": "Carlos",
+      "lastName": "Estevez",
+      "fullName": "Carlos Estevez",
+      "normalizedName": "carlos estevez",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 710,
+      "firstName": "Brady",
+      "lastName": "Singer",
+      "fullName": "Brady Singer",
+      "normalizedName": "brady singer",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "CIN",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 711,
+      "firstName": "Quinn",
+      "lastName": "Priester",
+      "fullName": "Quinn Priester",
+      "normalizedName": "quinn priester",
+      "positions": [
+        "SP",
+        "RP"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 712,
+      "firstName": "Hunter",
+      "lastName": "Greene",
+      "fullName": "Hunter Greene",
+      "normalizedName": "hunter greene",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "CIN",
+      "status": "drafted",
+      "winningBid": 21,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 713,
+      "firstName": "Josh",
+      "lastName": "Hader",
+      "fullName": "Josh Hader",
+      "normalizedName": "josh hader",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "HOU",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 715,
+      "firstName": "Logan",
+      "lastName": "Gilbert",
+      "fullName": "Logan Gilbert",
+      "normalizedName": "logan gilbert",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "SEA",
+      "status": "drafted",
+      "winningBid": 26,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 718,
+      "firstName": "David",
+      "lastName": "Bednar",
+      "fullName": "David Bednar",
+      "normalizedName": "david bednar",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 719,
+      "firstName": "Cade",
+      "lastName": "Horton",
+      "fullName": "Cade Horton",
+      "normalizedName": "cade horton",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "CHC",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 720,
+      "firstName": "Cade",
+      "lastName": "Smith",
+      "fullName": "Cade Smith",
+      "normalizedName": "cade smith",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "CLE",
+      "status": "drafted",
+      "winningBid": 12,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 721,
+      "firstName": "Tanner",
+      "lastName": "Bibee",
+      "fullName": "Tanner Bibee",
+      "normalizedName": "tanner bibee",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "CLE",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 722,
+      "firstName": "Brayan",
+      "lastName": "Bello",
+      "fullName": "Brayan Bello",
+      "normalizedName": "brayan bello",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "BOS",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 723,
+      "firstName": "Emilio",
+      "lastName": "Pagan",
+      "fullName": "Emilio Pagan",
+      "normalizedName": "emilio pagan",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "CIN",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 724,
+      "firstName": "Jeff",
+      "lastName": "Hoffman",
+      "fullName": "Jeff Hoffman",
+      "normalizedName": "jeff hoffman",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 726,
+      "firstName": "Casey",
+      "lastName": "Mize",
+      "fullName": "Casey Mize",
+      "normalizedName": "casey mize",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "DET",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 727,
+      "firstName": "Raisel",
+      "lastName": "Iglesias",
+      "fullName": "Raisel Iglesias",
+      "normalizedName": "raisel iglesias",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 728,
+      "firstName": "Kenley",
+      "lastName": "Jansen",
+      "fullName": "Kenley Jansen",
+      "normalizedName": "kenley jansen",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "DET",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 729,
+      "firstName": "Spencer",
+      "lastName": "Schwellenbach",
+      "fullName": "Spencer Schwellenbach",
+      "normalizedName": "spencer schwellenbach",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 733,
+      "firstName": "Michael",
+      "lastName": "Wacha",
+      "fullName": "Michael Wacha",
+      "normalizedName": "michael wacha",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "Jeff - Bayside",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 736,
+      "firstName": "Trevor",
+      "lastName": "Megill",
+      "fullName": "Trevor Megill",
+      "normalizedName": "trevor megill",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 740,
+      "firstName": "Zac",
+      "lastName": "Gallen",
+      "fullName": "Zac Gallen",
+      "normalizedName": "zac gallen",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 742,
+      "firstName": "Mason",
+      "lastName": "Miller",
+      "fullName": "Mason Miller",
+      "normalizedName": "mason miller",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "SD",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 746,
+      "firstName": "Pete",
+      "lastName": "Fairbanks",
+      "fullName": "Pete Fairbanks",
+      "normalizedName": "pete fairbanks",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "MIA",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 750,
+      "firstName": "George",
+      "lastName": "Kirby",
+      "fullName": "George Kirby",
+      "normalizedName": "george kirby",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "SEA",
+      "status": "drafted",
+      "winningBid": 18,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 751,
+      "firstName": "Abner",
+      "lastName": "Uribe",
+      "fullName": "Abner Uribe",
+      "normalizedName": "abner uribe",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 754,
+      "firstName": "Dylan",
+      "lastName": "Cease",
+      "fullName": "Dylan Cease",
+      "normalizedName": "dylan cease",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 21,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 756,
+      "firstName": "Jack",
+      "lastName": "Flaherty",
+      "fullName": "Jack Flaherty",
+      "normalizedName": "jack flaherty",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "DET",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "mookie666",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 758,
+      "firstName": "Emmet",
+      "lastName": "Sheehan",
+      "fullName": "Emmet Sheehan",
+      "normalizedName": "emmet sheehan",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 767,
+      "firstName": "Brandon",
+      "lastName": "Woodruff",
+      "fullName": "Brandon Woodruff",
+      "normalizedName": "brandon woodruff",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 771,
+      "firstName": "Eury",
+      "lastName": "Perez",
+      "fullName": "Eury Perez",
+      "normalizedName": "eury perez",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "MIA",
+      "status": "drafted",
+      "winningBid": 12,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 772,
+      "firstName": "Shane",
+      "lastName": "Baz",
+      "fullName": "Shane Baz",
+      "normalizedName": "shane baz",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 775,
+      "firstName": "Will",
+      "lastName": "Warren",
+      "fullName": "Will Warren",
+      "normalizedName": "will warren",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 3,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 777,
+      "firstName": "Seth",
+      "lastName": "Lugo",
+      "fullName": "Seth Lugo",
+      "normalizedName": "seth lugo",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 778,
+      "firstName": "Tyler",
+      "lastName": "Glasnow",
+      "fullName": "Tyler Glasnow",
+      "normalizedName": "tyler glasnow",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 782,
+      "firstName": "MacKenzie",
+      "lastName": "Gore",
+      "fullName": "MacKenzie Gore",
+      "normalizedName": "mackenzie gore",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "WSH",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 785,
+      "firstName": "Brandon",
+      "lastName": "Pfaadt",
+      "fullName": "Brandon Pfaadt",
+      "normalizedName": "brandon pfaadt",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "AZ",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 797,
+      "firstName": "Devin",
+      "lastName": "Williams",
+      "fullName": "Devin Williams",
+      "normalizedName": "devin williams",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "NYM",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 799,
+      "firstName": "Sandy",
+      "lastName": "Alcantara",
+      "fullName": "Sandy Alcantara",
+      "normalizedName": "sandy alcantara",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "MIA",
+      "status": "drafted",
+      "winningBid": 14,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 838,
+      "firstName": "Nolan",
+      "lastName": "McLean",
+      "fullName": "Nolan McLean",
+      "normalizedName": "nolan mclean",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "NYM",
+      "status": "drafted",
+      "winningBid": 15,
+      "winningTeam": "Carpy",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 842,
+      "firstName": "Cam",
+      "lastName": "Schlittler",
+      "fullName": "Cam Schlittler",
+      "normalizedName": "cam schlittler",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "NYY",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 845,
+      "firstName": "Blake",
+      "lastName": "Snell",
+      "fullName": "Blake Snell",
+      "normalizedName": "blake snell",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 18,
+      "winningTeam": "Duke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 855,
+      "firstName": "Michael",
+      "lastName": "King",
+      "fullName": "Michael King",
+      "normalizedName": "michael king",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "SD",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "Zack - Brewers",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 857,
+      "firstName": "Spencer",
+      "lastName": "Strider",
+      "fullName": "Spencer Strider",
+      "normalizedName": "spencer strider",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 13,
+      "winningTeam": "Gary head2head",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 865,
+      "firstName": "Hurston",
+      "lastName": "Waldrep",
+      "fullName": "Hurston Waldrep",
+      "normalizedName": "hurston waldrep",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "ATL",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 897,
+      "firstName": "Jacob",
+      "lastName": "Misiorowski",
+      "fullName": "Jacob Misiorowski",
+      "normalizedName": "jacob misiorowski",
+      "positions": [
+        "SP",
+        "RP"
+      ],
+      "mlbTeam": "MIL",
+      "status": "drafted",
+      "winningBid": 12,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 901,
+      "firstName": "Ryan",
+      "lastName": "Helsley",
+      "fullName": "Ryan Helsley",
+      "normalizedName": "ryan helsley",
+      "positions": [
+        "RP"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 8,
+      "winningTeam": "Alex (Martians)",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 910,
+      "firstName": "Cole",
+      "lastName": "Ragans",
+      "fullName": "Cole Ragans",
+      "normalizedName": "cole ragans",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "KC",
+      "status": "drafted",
+      "winningBid": 22,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 937,
+      "firstName": "Shane",
+      "lastName": "Bieber",
+      "fullName": "Shane Bieber",
+      "normalizedName": "shane bieber",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "Hoyas",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 952,
+      "firstName": "Bubba",
+      "lastName": "Chandler",
+      "fullName": "Bubba Chandler",
+      "normalizedName": "bubba chandler",
+      "positions": [
+        "SP",
+        "MiLB"
+      ],
+      "mlbTeam": "PIT",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "maxdout",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 980,
+      "firstName": "Kyle",
+      "lastName": "Bradish",
+      "fullName": "Kyle Bradish",
+      "normalizedName": "kyle bradish",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "BAL",
+      "status": "drafted",
+      "winningBid": 19,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 1013,
+      "firstName": "Aaron",
+      "lastName": "Nola",
+      "fullName": "Aaron Nola",
+      "normalizedName": "aaron nola",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "PHI",
+      "status": "drafted",
+      "winningBid": 9,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 1066,
+      "firstName": "Chase",
+      "lastName": "Burns",
+      "fullName": "Chase Burns",
+      "normalizedName": "chase burns",
+      "positions": [
+        "SP",
+        "RP"
+      ],
+      "mlbTeam": "CIN",
+      "status": "drafted",
+      "winningBid": 10,
+      "winningTeam": "John - TigsTigsTigs",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 1142,
+      "firstName": "Trey",
+      "lastName": "Yesavage",
+      "fullName": "Trey Yesavage",
+      "normalizedName": "trey yesavage",
+      "positions": [
+        "SP",
+        "MiLB"
+      ],
+      "mlbTeam": "TOR",
+      "status": "drafted",
+      "winningBid": 11,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 1144,
+      "firstName": "Roki",
+      "lastName": "Sasaki",
+      "fullName": "Roki Sasaki",
+      "normalizedName": "roki sasaki",
+      "positions": [
+        "SP"
+      ],
+      "mlbTeam": "LAD",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 1425,
+      "firstName": "Konnor",
+      "lastName": "Griffin",
+      "fullName": "Konnor Griffin",
+      "normalizedName": "konnor griffin",
+      "positions": [
+        "SS",
+        "MiLB"
+      ],
+      "mlbTeam": "PIT",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Danny",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 1879,
+      "firstName": "Kazuma",
+      "lastName": "Okamoto",
+      "fullName": "Kazuma Okamoto",
+      "normalizedName": "kazuma okamoto",
+      "positions": [
+        "3B",
+        "MiLB"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 4,
+      "winningTeam": "Rourke",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 1880,
+      "firstName": "Tatsuya",
+      "lastName": "Imai",
+      "fullName": "Tatsuya Imai",
+      "normalizedName": "tatsuya imai",
+      "positions": [
+        "SP",
+        "MiLB"
+      ],
+      "mlbTeam": "FA",
+      "status": "drafted",
+      "winningBid": 6,
+      "winningTeam": "Axl",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 1881,
+      "firstName": "Munetaka",
+      "lastName": "Murakami",
+      "fullName": "Munetaka Murakami",
+      "normalizedName": "munetaka murakami",
+      "positions": [
+        "1B",
+        "3B",
+        "MiLB"
+      ],
+      "mlbTeam": "CHW",
+      "status": "drafted",
+      "winningBid": 5,
+      "winningTeam": "Jthewolfe",
+      "stats": {
+        "avg": ".000"
+      }
+    },
+    {
+      "couchManagersId": 1966,
+      "firstName": "Shotaro",
+      "lastName": "Morii",
+      "fullName": "Shotaro Morii",
+      "normalizedName": "shotaro morii",
+      "positions": [
+        "SS",
+        "MiLB"
+      ],
+      "mlbTeam": "ATH",
+      "status": "drafted",
+      "winningBid": 19,
+      "winningTeam": "Waaboosh",
+      "stats": {
+        "avg": ".000"
+      }
+    }
+  ]
+}

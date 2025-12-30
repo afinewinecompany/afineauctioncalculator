@@ -1,4 +1,4 @@
-import type { ScrapedPlayer, MatchedPlayer } from '../types/auction';
+import type { ScrapedPlayer, MatchedPlayer } from '../types/auction.js';
 
 interface ProjectionPlayer {
   id: string;

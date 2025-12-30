@@ -14,9 +14,9 @@ import type {
   PitchingStats,
   DynastyRanking,
   PlayerWithDynastyValue,
-} from '../types/projections';
-import type { LeagueSettings } from '../../src/lib/types';
-import { matchDynastyRankingsToProjections } from './dynastyRankingsScraper';
+} from '../types/projections.js';
+import type { LeagueSettings } from '../../src/lib/types.js';
+import { matchDynastyRankingsToProjections } from './dynastyRankingsScraper.js';
 
 // Default hitter/pitcher budget split
 const DEFAULT_HITTER_SPLIT = 0.68;

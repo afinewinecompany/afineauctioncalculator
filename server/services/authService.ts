@@ -8,13 +8,13 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { prisma } from '../db';
-import { jwtConfig } from '../config/env';
+import { prisma } from '../db.js';
+import { jwtConfig } from '../config/env.js';
 import type {
   AccessTokenPayload,
   RefreshTokenPayload,
   AuthUser,
-} from '../types/auth';
+} from '../types/auth.js';
 
 // =============================================================================
 // PASSWORD HASHING

@@ -10,7 +10,7 @@ export {
   authLimiter,
   scrapingLimiter,
   refreshLimiter,
-} from './rateLimiter';
+} from './rateLimiter.js';
 
 // Input sanitization middleware
 export {
@@ -20,4 +20,4 @@ export {
   sanitizeString,
   sanitizeLeagueName,
   sanitizeTeamName,
-} from './sanitize';
+} from './sanitize.js';

@@ -1,6 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
-import type { ScrapedAuctionData, ScrapedPlayer, ScrapedTeam, CurrentAuction } from '../types/auction';
-import { normalizeName } from './playerMatcher';
+import type { ScrapedAuctionData, ScrapedPlayer, ScrapedTeam, CurrentAuction } from '../types/auction.js';
+import { normalizeName } from './playerMatcher.js';
 
 // Browser instance management constants
 const MAX_PAGES = 5; // Maximum concurrent pages before recycling browser

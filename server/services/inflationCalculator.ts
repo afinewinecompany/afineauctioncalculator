@@ -5,7 +5,7 @@ import type {
   PositionalScarcity,
   TeamBudgetConstraint,
   EnhancedInflationStats,
-} from '../types/auction';
+} from '../types/auction.js';
 
 interface LeagueConfig {
   numTeams: number;
