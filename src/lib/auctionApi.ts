@@ -5,8 +5,12 @@ import type {
   LeagueSettings,
 } from './types';
 
-const API_BASE = '/api/auction';
-const PROJECTIONS_BASE = '/api/projections';
+// Get API base URL from environment variables
+// In development: defaults to /api (proxied by Vite)
+// In production: uses VITE_API_URL (e.g., https://api.example.com)
+const API_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE = `${API_URL}/api/auction`;
+const PROJECTIONS_BASE = `${API_URL}/api/projections`;
 
 // Types for projection API responses
 export interface ProjectionMetadata {

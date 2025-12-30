@@ -1,29 +1,64 @@
 /**
  * Projections Cache Service
- * File-based caching for projection data with 24-hour TTL
+ * Redis-based caching with file-based fallback for projection data with 24-hour TTL
+ *
+ * Cache Strategy:
+ * - Primary: Redis with 24-hour TTL (production)
+ * - Fallback: File-based cache (development without Redis)
+ * - Key format: projections:{system}:{year}
  */
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { fileURLToPath } from 'url';
+import { cacheGetJSON, cacheSetJSON, cacheDelete, cacheExists } from './cacheService';
+import { env } from '../config/env';
 import type {
   NormalizedProjection,
   ProjectionCacheEntry,
   ProjectionCacheMetadata,
 } from '../types/projections';
 
-// Cache directory - use process.cwd() to find project root
+// Cache directory - use process.cwd() to find project root (fallback only)
 const CACHE_DIR = path.join(process.cwd(), 'cache');
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_TTL_SECONDS = env.PROJECTIONS_CACHE_TTL_HOURS * 60 * 60; // From env config (default: 24 hours)
+const CACHE_TTL_MS = CACHE_TTL_SECONDS * 1000;
+const CURRENT_YEAR = new Date().getFullYear();
+
+/**
+ * Gets the Redis cache key for a projection system
+ */
+function getCacheKey(system: string): string {
+  return `projections:${system}:${CURRENT_YEAR}`;
+}
 
 /**
  * Retrieves cached projections if available and not expired
+ * Tries Redis first, falls back to file-based cache
  */
 export async function getCachedProjections(
   system: string
 ): Promise<ProjectionCacheEntry | null> {
-  const cacheFile = getCacheFilePath(system);
+  const cacheKey = getCacheKey(system);
 
+  // Try Redis first
+  try {
+    const cached = await cacheGetJSON<ProjectionCacheEntry>(cacheKey);
+    if (cached) {
+      // Check if cache is still valid (Redis TTL handles this, but double-check)
+      const expiresAt = new Date(cached.metadata.expiresAt);
+      if (expiresAt > new Date()) {
+        console.log(`[ProjectionsCache] Redis cache hit for ${system} (expires ${expiresAt.toISOString()})`);
+        return cached;
+      }
+      // Expired - delete from Redis
+      await cacheDelete(cacheKey);
+    }
+  } catch (error) {
+    console.warn(`[ProjectionsCache] Redis error for ${system}, falling back to file cache:`, error);
+  }
+
+  // Fallback to file-based cache
+  const cacheFile = getCacheFilePath(system);
   try {
     const content = await fs.readFile(cacheFile, 'utf-8');
     const cache: ProjectionCacheEntry = JSON.parse(content);
@@ -31,30 +66,28 @@ export async function getCachedProjections(
     // Check if cache is still valid
     const expiresAt = new Date(cache.metadata.expiresAt);
     if (expiresAt > new Date()) {
-      console.log(`Cache hit for ${system} projections (expires ${expiresAt.toISOString()})`);
+      console.log(`[ProjectionsCache] File cache hit for ${system} (expires ${expiresAt.toISOString()})`);
       return cache;
     }
 
-    console.log(`Cache expired for ${system} projections`);
+    console.log(`[ProjectionsCache] File cache expired for ${system}`);
     return null;
   } catch (error) {
     // Cache doesn't exist or is invalid
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.warn(`Error reading cache for ${system}:`, error);
+      console.warn(`[ProjectionsCache] Error reading file cache for ${system}:`, error);
     }
     return null;
   }
 }
 
 /**
- * Stores projections in cache
+ * Stores projections in cache (both Redis and file-based for redundancy)
  */
 export async function setCachedProjections(
   system: string,
   projections: NormalizedProjection[]
 ): Promise<void> {
-  await ensureCacheDir();
-
   const now = new Date();
   const hitterCount = projections.filter(p => p.playerType === 'hitter').length;
   const pitcherCount = projections.filter(p => p.playerType === 'pitcher').length;
@@ -73,27 +106,52 @@ export async function setCachedProjections(
     projections,
   };
 
-  const cacheFile = getCacheFilePath(system);
-  await fs.writeFile(cacheFile, JSON.stringify(entry, null, 2));
+  const cacheKey = getCacheKey(system);
 
-  console.log(
-    `Cached ${projections.length} ${system} projections ` +
-    `(${hitterCount} hitters, ${pitcherCount} pitchers)`
-  );
+  // Store in Redis with TTL
+  try {
+    await cacheSetJSON(cacheKey, entry, CACHE_TTL_SECONDS);
+    console.log(
+      `[ProjectionsCache] Redis cached ${projections.length} ${system} projections ` +
+      `(${hitterCount} hitters, ${pitcherCount} pitchers, TTL: ${CACHE_TTL_SECONDS / 3600}h)`
+    );
+  } catch (error) {
+    console.warn(`[ProjectionsCache] Failed to cache to Redis for ${system}:`, error);
+  }
+
+  // Also store in file system as backup (survives Redis restarts in development)
+  try {
+    await ensureCacheDir();
+    const cacheFile = getCacheFilePath(system);
+    await fs.writeFile(cacheFile, JSON.stringify(entry, null, 2));
+    console.log(`[ProjectionsCache] File backup created for ${system}`);
+  } catch (error) {
+    console.warn(`[ProjectionsCache] Failed to create file backup for ${system}:`, error);
+  }
 }
 
 /**
- * Invalidates (deletes) cached projections for a system
+ * Invalidates (deletes) cached projections for a system (both Redis and file)
  */
 export async function invalidateCache(system: string): Promise<void> {
-  const cacheFile = getCacheFilePath(system);
+  const cacheKey = getCacheKey(system);
 
+  // Delete from Redis
+  try {
+    await cacheDelete(cacheKey);
+    console.log(`[ProjectionsCache] Invalidated Redis cache for ${system}`);
+  } catch (error) {
+    console.warn(`[ProjectionsCache] Error invalidating Redis cache for ${system}:`, error);
+  }
+
+  // Delete from file system
+  const cacheFile = getCacheFilePath(system);
   try {
     await fs.unlink(cacheFile);
-    console.log(`Invalidated cache for ${system} projections`);
+    console.log(`[ProjectionsCache] Invalidated file cache for ${system}`);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.warn(`Error invalidating cache for ${system}:`, error);
+      console.warn(`[ProjectionsCache] Error invalidating file cache for ${system}:`, error);
     }
   }
 }
@@ -105,42 +163,87 @@ export async function getCacheStatus(system: string): Promise<{
   exists: boolean;
   expired: boolean;
   metadata: ProjectionCacheMetadata | null;
+  backend?: 'redis' | 'file' | 'both' | 'none';
 }> {
-  const cached = await getCachedProjections(system);
+  const cacheKey = getCacheKey(system);
+  let redisExists = false;
+  let fileExists = false;
+  let cached: ProjectionCacheEntry | null = null;
+
+  // Check Redis
+  try {
+    redisExists = await cacheExists(cacheKey);
+    if (redisExists) {
+      cached = await cacheGetJSON<ProjectionCacheEntry>(cacheKey);
+    }
+  } catch (error) {
+    console.warn(`[ProjectionsCache] Error checking Redis for ${system}:`, error);
+  }
+
+  // Check file system
+  const cacheFile = getCacheFilePath(system);
+  try {
+    await fs.access(cacheFile);
+    fileExists = true;
+    if (!cached) {
+      const content = await fs.readFile(cacheFile, 'utf-8');
+      cached = JSON.parse(content);
+    }
+  } catch {
+    // File doesn't exist
+  }
 
   if (!cached) {
-    return { exists: false, expired: true, metadata: null };
+    return {
+      exists: false,
+      expired: true,
+      metadata: null,
+      backend: 'none',
+    };
   }
 
   const expiresAt = new Date(cached.metadata.expiresAt);
   const expired = expiresAt <= new Date();
 
+  let backend: 'redis' | 'file' | 'both' | 'none' = 'none';
+  if (redisExists && fileExists) backend = 'both';
+  else if (redisExists) backend = 'redis';
+  else if (fileExists) backend = 'file';
+
   return {
     exists: true,
     expired,
     metadata: cached.metadata,
+    backend,
   };
 }
 
 /**
- * Lists all cached projection systems
+ * Lists all cached projection systems (checks both Redis and files)
  */
 export async function listCachedSystems(): Promise<string[]> {
+  const systems = new Set<string>();
+
+  // Check file system
   try {
     await ensureCacheDir();
     const files = await fs.readdir(CACHE_DIR);
 
-    return files
+    files
       .filter(f => f.startsWith('projections-') && f.endsWith('.json'))
-      .map(f => {
+      .forEach(f => {
         // Extract system name from filename: projections-{system}.json
         const match = f.match(/^projections-(.+)\.json$/);
-        return match ? match[1] : null;
-      })
-      .filter((s): s is string => s !== null);
-  } catch {
-    return [];
+        if (match) systems.add(match[1]);
+      });
+  } catch (error) {
+    console.warn('[ProjectionsCache] Error listing file cache:', error);
   }
+
+  // Note: We don't check Redis keys here because KEYS command is expensive
+  // The file system should have all cached systems as we write to both
+
+  return Array.from(systems);
 }
 
 /**

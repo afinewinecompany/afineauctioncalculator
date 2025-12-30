@@ -1,0 +1,32 @@
+# Build outputs
+dist/
+build/
+*.js
+*.d.ts
+
+# Dependencies
+node_modules/
+
+# Config files
+.eslintrc.cjs
+vite.config.ts
+vitest.config.ts
+vitest.integration.config.ts
+
+# Generated files
+coverage/
+.vite/
+tsconfig.tsbuildinfo
+tsconfig.node.tsbuildinfo
+
+# Cache
+.cache/
+.turbo/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

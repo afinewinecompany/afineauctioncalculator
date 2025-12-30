@@ -1,0 +1,241 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// USERS & AUTHENTICATION
+// ==========================================
+
+model User {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  passwordHash     String?   // Null for OAuth-only users
+  name             String?
+  profilePictureUrl String?
+  authProvider     String    @default("email") // "email" | "google"
+  subscriptionTier String    @default("free") // "free" | "premium"
+
+  // Timestamps
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  lastLoginAt      DateTime?
+
+  // Relations
+  ownedLeagues     League[]       @relation("LeagueOwner")
+  userLeagues      UserLeague[]
+  refreshTokens    RefreshToken[]
+  draftPicks       DraftPick[]    @relation("DraftedBy")
+
+  @@index([email])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique // Hashed version of the refresh token
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ==========================================
+// LEAGUES
+// ==========================================
+
+model League {
+  id                  String   @id @default(uuid())
+  name                String
+  ownerId             String
+  couchManagerRoomId  String?  // Optional integration with Couch Managers
+
+  // League Settings
+  numTeams            Int
+  budgetPerTeam       Int
+  scoringType         String   // "rotisserie" | "h2h-categories" | "h2h-points"
+  projectionSystem    String   // "steamer" | "ja" | "batx"
+  leagueType          String   @default("redraft") // "redraft" | "dynasty"
+
+  // Roster configuration (stored as JSON)
+  rosterSpots         Json     // { C: 1, 1B: 1, 2B: 1, 3B: 1, SS: 1, OF: 3, CI: 1, MI: 1, UTIL: 1, SP: 5, RP: 2, P: 1, Bench: 3 }
+
+  // Scoring categories (stored as JSON)
+  hittingCategories   Json?    // { R: true, HR: true, RBI: true, SB: true, AVG: true, ... }
+  pitchingCategories  Json?    // { W: true, K: true, ERA: true, WHIP: true, SV: true, ... }
+
+  // Dynasty-specific settings (stored as JSON, nullable)
+  dynastySettings     Json?    // { dynastyWeight: 0.5, includeMinors: false, rankingsSource: "harryknowsball", customRankings: [...] }
+
+  // Draft status
+  status              String   @default("setup") // "setup" | "drafting" | "completed"
+  draftStartedAt      DateTime?
+  draftCompletedAt    DateTime?
+
+  // Timestamps
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  owner               User           @relation("LeagueOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  userLeagues         UserLeague[]
+  leaguePlayers       LeaguePlayer[]
+  draftPicks          DraftPick[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([couchManagerRoomId])
+  @@map("leagues")
+}
+
+model UserLeague {
+  userId    String
+  leagueId  String
+  role      String   @default("member") // "owner" | "member"
+  teamName  String?  // User's team name in this league
+  joinedAt  DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  league    League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@id([userId, leagueId])
+  @@index([userId])
+  @@index([leagueId])
+  @@map("user_leagues")
+}
+
+// ==========================================
+// PLAYERS & PROJECTIONS
+// ==========================================
+
+model Player {
+  id              String   @id @default(uuid())
+  externalId      String?  @unique // FanGraphs ID or other external ID
+  mlbamId         Int?     @unique // MLB Advanced Media ID (for photos)
+  name            String
+  team            String?  // Team abbreviation (NYY, LAD, etc.)
+  positions       String[] // Array of positions: ["OF"], ["1B", "3B"], etc.
+  playerType      String   // "hitter" | "pitcher"
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  projections     PlayerProjection[]
+  leaguePlayers   LeaguePlayer[]
+  draftPicks      DraftPick[]
+
+  @@index([externalId])
+  @@index([mlbamId])
+  @@index([name])
+  @@index([team])
+  @@map("players")
+}
+
+model PlayerProjection {
+  id               String   @id @default(uuid())
+  playerId         String
+  projectionSystem String   // "steamer" | "ja" | "batx"
+  season           Int      // Year (2025, 2026, etc.)
+
+  // All projection stats stored as JSON
+  // For hitters: { games, atBats, runs, homeRuns, rbi, stolenBases, battingAvg, obp, slg, ops, walks, strikeouts, ... }
+  // For pitchers: { games, gamesStarted, innings, wins, losses, saves, holds, strikeouts, era, whip, fip, ... }
+  stats            Json
+
+  // Timestamps
+  fetchedAt        DateTime @default(now())
+
+  // Relations
+  player           Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, projectionSystem, season])
+  @@index([playerId])
+  @@index([projectionSystem])
+  @@index([season])
+  @@map("player_projections")
+}
+
+// ==========================================
+// DRAFT STATE
+// ==========================================
+
+model LeaguePlayer {
+  id              String    @id @default(uuid())
+  leagueId        String
+  playerId        String
+
+  // Player status in this league
+  status          String    @default("available") // "available" | "drafted" | "on_block"
+
+  // Valuation
+  projectedValue  Float?    // Base SGP/Points calculation
+  adjustedValue   Float?    // Inflation-adjusted value
+  tier            Int?      // 1-10 tier ranking
+
+  // Draft information
+  draftedPrice    Int?
+  draftedBy       String?   // Team name or user ID
+  draftedAt       DateTime?
+
+  // Current auction state (for on_block status)
+  currentBid      Int?
+  currentBidder   String?
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  league          League    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  player          Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, playerId])
+  @@index([leagueId, status])
+  @@index([playerId])
+  @@index([tier])
+  @@map("league_players")
+}
+
+model DraftPick {
+  id                  String   @id @default(uuid())
+  leagueId            String
+  playerId            String
+  draftedByUserId     String
+
+  // Pick information
+  pickNumber          Int      // Sequential pick number (1, 2, 3, ...)
+  price               Int      // Auction price paid
+  inflationRateAtPick Float?   // Overall inflation rate when drafted
+
+  // Timestamps
+  draftedAt           DateTime @default(now())
+
+  // Relations
+  league              League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  player              Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  draftedBy           User     @relation("DraftedBy", fields: [draftedByUserId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, pickNumber])
+  @@index([leagueId])
+  @@index([playerId])
+  @@index([draftedByUserId])
+  @@index([draftedAt])
+  @@map("draft_picks")
+}

@@ -1,12 +1,13 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import type { ViteDevServer } from 'vite';
 
-// Plugin to integrate Express API with Vite dev server
+// Plugin to integrate Express API with Vite dev server (development only)
 function apiPlugin() {
   return {
     name: 'api-server',
+    apply: 'serve', // Only use in development
     configureServer(server: ViteDevServer) {
       // Synchronously add middleware BEFORE Vite's built-in middleware
       // We'll set up the handler and initialize the Express app async
@@ -52,8 +53,20 @@ function apiPlugin() {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), apiPlugin()],
+export default defineConfig(({ mode }) => {
+  // Load environment variables based on mode
+  const env = loadEnv(mode, process.cwd(), '');
+
+  return {
+    plugins: [react(), apiPlugin()],
+    // Environment variable prefix for frontend
+    envPrefix: 'VITE_',
+    // Define environment variables available to the frontend
+    define: {
+      'import.meta.env.VITE_API_URL': JSON.stringify(
+        env.VITE_API_URL || 'http://localhost:3001'
+      ),
+    },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
@@ -100,10 +113,38 @@ export default defineConfig({
     },
     build: {
       target: 'esnext',
-      outDir: 'build',
+      outDir: 'dist',
+      // Generate sourcemaps for production debugging
+      sourcemap: mode === 'production' ? false : true,
+      // Minify in production
+      minify: mode === 'production' ? 'esbuild' : false,
+      // Chunk splitting for better caching
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom'],
+            'ui-vendor': ['framer-motion', 'lucide-react'],
+            'radix-vendor': [
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-dropdown-menu',
+              '@radix-ui/react-select',
+              '@radix-ui/react-tabs',
+            ],
+          },
+        },
+      },
     },
     server: {
       port: 3000,
       open: true,
+      // Proxy API requests to backend in development (if not using apiPlugin)
+      // Uncomment if you want to run frontend and backend separately
+      // proxy: {
+      //   '/api': {
+      //     target: env.VITE_API_URL || 'http://localhost:3001',
+      //     changeOrigin: true,
+      //   },
+      // },
     },
-  });
+  };
+});

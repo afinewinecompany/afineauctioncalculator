@@ -18,6 +18,7 @@ import {
   getDynastyRankingsCacheStatus,
 } from '../services/dynastyRankingsScraper';
 import { calculateAuctionValues } from '../services/valueCalculator';
+import { refreshLimiter } from '../middleware/rateLimiter';
 import type { LeagueSettings } from '../../src/lib/types';
 
 const router = Router();
@@ -128,8 +129,9 @@ router.get('/:system/status', async (req: Request, res: Response) => {
 /**
  * POST /api/projections/:system/refresh
  * Forces a cache refresh for a projection system
+ * Rate limited to 5 requests per minute (hits external APIs)
  */
-router.post('/:system/refresh', async (req: Request, res: Response) => {
+router.post('/:system/refresh', refreshLimiter, async (req: Request, res: Response) => {
   const { system } = req.params;
 
   if (!isValidSystem(system)) {
@@ -349,8 +351,9 @@ router.get('/dynasty-rankings/status', async (req: Request, res: Response) => {
 /**
  * POST /api/projections/dynasty-rankings/refresh
  * Forces a cache refresh for dynasty rankings
+ * Rate limited to 5 requests per minute (hits external APIs)
  */
-router.post('/dynasty-rankings/refresh', async (req: Request, res: Response) => {
+router.post('/dynasty-rankings/refresh', refreshLimiter, async (req: Request, res: Response) => {
   try {
     const rankings = await refreshDynastyRankings();
 

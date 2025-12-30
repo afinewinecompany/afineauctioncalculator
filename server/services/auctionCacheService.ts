@@ -1,23 +1,27 @@
 /**
  * Auction Cache Service
- * File-based caching for Couch Managers auction data with configurable TTL.
+ * Redis-based caching with file fallback for Couch Managers auction data
  *
  * Purpose: Reduce live scraping frequency to avoid rate limiting from Couch Managers.
  *
  * Cache Strategy:
- * - Default 5-minute TTL for active drafts (configurable)
- * - File-based storage survives server restarts
- * - Per-room caching - each room ID has its own cache file
+ * - Primary: Redis with configurable TTL (default: 5 minutes)
+ * - Fallback: File-based cache (development without Redis)
+ * - Key format: auction:{roomId}:state
+ * - Per-room caching - each room ID has its own cache entry
  * - Stale-while-revalidate option for better UX
  */
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { cacheGetJSON, cacheSetJSON, cacheDelete, cacheExists } from './cacheService';
+import { env } from '../config/env';
 import type { ScrapedAuctionData } from '../types/auction';
 
 // Cache configuration
 const CACHE_DIR = path.join(process.cwd(), 'cache', 'auctions');
-const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes default
+const DEFAULT_CACHE_TTL_SECONDS = env.AUCTION_CACHE_TTL_MINUTES * 60; // From env (default: 5 minutes)
+const DEFAULT_CACHE_TTL_MS = DEFAULT_CACHE_TTL_SECONDS * 1000;
 
 export interface AuctionCacheEntry {
   metadata: AuctionCacheMetadata;
@@ -42,7 +46,15 @@ export interface CacheOptions {
 }
 
 /**
+ * Gets the Redis cache key for an auction room
+ */
+function getCacheKey(roomId: string): string {
+  return `auction:${roomId}:state`;
+}
+
+/**
  * Retrieves cached auction data if available and not expired.
+ * Tries Redis first, falls back to file-based cache.
  *
  * @param roomId - The Couch Managers room ID
  * @param options - Cache options (ttl override, stale-while-revalidate)
@@ -52,9 +64,45 @@ export async function getCachedAuctionData(
   roomId: string,
   options: CacheOptions = {}
 ): Promise<{ data: ScrapedAuctionData; isStale: boolean } | null> {
-  const cacheFile = getCacheFilePath(roomId);
+  const cacheKey = getCacheKey(roomId);
   const ttlMs = options.ttlMs ?? DEFAULT_CACHE_TTL_MS;
 
+  // Try Redis first
+  try {
+    const cache = await cacheGetJSON<AuctionCacheEntry>(cacheKey);
+    if (cache) {
+      const expiresAt = new Date(cache.metadata.expiresAt);
+      const now = new Date();
+
+      if (expiresAt > now) {
+        // Cache is fresh
+        const ageMs = now.getTime() - new Date(cache.metadata.fetchedAt).getTime();
+        console.log(
+          `[AuctionCache] Redis cache hit for room ${roomId} ` +
+          `(age: ${Math.round(ageMs / 1000)}s, expires in ${Math.round((expiresAt.getTime() - now.getTime()) / 1000)}s)`
+        );
+        return { data: cache.data, isStale: false };
+      }
+
+      // Cache is expired
+      if (options.staleWhileRevalidate) {
+        const staleAgeMs = now.getTime() - expiresAt.getTime();
+        console.log(
+          `[AuctionCache] Returning stale Redis data for room ${roomId} ` +
+          `(stale by ${Math.round(staleAgeMs / 1000)}s)`
+        );
+        return { data: cache.data, isStale: true };
+      }
+
+      // Delete expired cache
+      await cacheDelete(cacheKey);
+    }
+  } catch (error) {
+    console.warn(`[AuctionCache] Redis error for room ${roomId}, falling back to file cache:`, error);
+  }
+
+  // Fallback to file-based cache
+  const cacheFile = getCacheFilePath(roomId);
   try {
     const content = await fs.readFile(cacheFile, 'utf-8');
     const cache: AuctionCacheEntry = JSON.parse(content);
@@ -66,7 +114,7 @@ export async function getCachedAuctionData(
       // Cache is fresh
       const ageMs = now.getTime() - new Date(cache.metadata.fetchedAt).getTime();
       console.log(
-        `[AuctionCache] Cache hit for room ${roomId} ` +
+        `[AuctionCache] File cache hit for room ${roomId} ` +
         `(age: ${Math.round(ageMs / 1000)}s, expires in ${Math.round((expiresAt.getTime() - now.getTime()) / 1000)}s)`
       );
       return { data: cache.data, isStale: false };
@@ -74,27 +122,26 @@ export async function getCachedAuctionData(
 
     // Cache is expired
     if (options.staleWhileRevalidate) {
-      // Return stale data but flag it
       const staleAgeMs = now.getTime() - expiresAt.getTime();
       console.log(
-        `[AuctionCache] Returning stale data for room ${roomId} ` +
+        `[AuctionCache] Returning stale file data for room ${roomId} ` +
         `(stale by ${Math.round(staleAgeMs / 1000)}s)`
       );
       return { data: cache.data, isStale: true };
     }
 
-    console.log(`[AuctionCache] Cache expired for room ${roomId}`);
+    console.log(`[AuctionCache] File cache expired for room ${roomId}`);
     return null;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.warn(`[AuctionCache] Error reading cache for room ${roomId}:`, error);
+      console.warn(`[AuctionCache] Error reading file cache for room ${roomId}:`, error);
     }
     return null;
   }
 }
 
 /**
- * Stores auction data in the cache.
+ * Stores auction data in the cache (both Redis and file for redundancy).
  *
  * @param roomId - The Couch Managers room ID
  * @param data - The scraped auction data
@@ -105,9 +152,8 @@ export async function setCachedAuctionData(
   data: ScrapedAuctionData,
   options: CacheOptions = {}
 ): Promise<void> {
-  await ensureCacheDir();
-
   const ttlMs = options.ttlMs ?? DEFAULT_CACHE_TTL_MS;
+  const ttlSeconds = Math.floor(ttlMs / 1000);
   const now = new Date();
 
   const draftedCount = data.players.filter(p => p.status === 'drafted').length;
@@ -123,35 +169,59 @@ export async function setCachedAuctionData(
   };
 
   const entry: AuctionCacheEntry = { metadata, data };
-  const cacheFile = getCacheFilePath(roomId);
+  const cacheKey = getCacheKey(roomId);
 
-  await fs.writeFile(cacheFile, JSON.stringify(entry, null, 2));
+  // Store in Redis with TTL
+  try {
+    await cacheSetJSON(cacheKey, entry, ttlSeconds);
+    console.log(
+      `[AuctionCache] Redis cached room ${roomId}: ${data.players.length} players, ` +
+      `${draftedCount} drafted, ${data.teams.length} teams ` +
+      `(TTL: ${ttlSeconds}s)`
+    );
+  } catch (error) {
+    console.warn(`[AuctionCache] Failed to cache to Redis for room ${roomId}:`, error);
+  }
 
-  console.log(
-    `[AuctionCache] Cached room ${roomId}: ${data.players.length} players, ` +
-    `${draftedCount} drafted, ${data.teams.length} teams ` +
-    `(TTL: ${Math.round(ttlMs / 1000)}s)`
-  );
+  // Also store in file system as backup
+  try {
+    await ensureCacheDir();
+    const cacheFile = getCacheFilePath(roomId);
+    await fs.writeFile(cacheFile, JSON.stringify(entry, null, 2));
+    console.log(`[AuctionCache] File backup created for room ${roomId}`);
+  } catch (error) {
+    console.warn(`[AuctionCache] Failed to create file backup for room ${roomId}:`, error);
+  }
 }
 
 /**
- * Invalidates (deletes) cached auction data for a room.
+ * Invalidates (deletes) cached auction data for a room (both Redis and file).
  */
 export async function invalidateAuctionCache(roomId: string): Promise<void> {
-  const cacheFile = getCacheFilePath(roomId);
+  const cacheKey = getCacheKey(roomId);
 
+  // Delete from Redis
+  try {
+    await cacheDelete(cacheKey);
+    console.log(`[AuctionCache] Invalidated Redis cache for room ${roomId}`);
+  } catch (error) {
+    console.warn(`[AuctionCache] Error invalidating Redis cache for room ${roomId}:`, error);
+  }
+
+  // Delete from file system
+  const cacheFile = getCacheFilePath(roomId);
   try {
     await fs.unlink(cacheFile);
-    console.log(`[AuctionCache] Invalidated cache for room ${roomId}`);
+    console.log(`[AuctionCache] Invalidated file cache for room ${roomId}`);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.warn(`[AuctionCache] Error invalidating cache for room ${roomId}:`, error);
+      console.warn(`[AuctionCache] Error invalidating file cache for room ${roomId}:`, error);
     }
   }
 }
 
 /**
- * Gets cache status for a specific room.
+ * Gets cache status for a specific room (checks both Redis and file).
  */
 export async function getAuctionCacheStatus(roomId: string): Promise<{
   exists: boolean;
@@ -159,34 +229,65 @@ export async function getAuctionCacheStatus(roomId: string): Promise<{
   metadata: AuctionCacheMetadata | null;
   ageSeconds: number | null;
   expiresInSeconds: number | null;
+  backend?: 'redis' | 'file' | 'both' | 'none';
 }> {
-  const cacheFile = getCacheFilePath(roomId);
+  const cacheKey = getCacheKey(roomId);
+  let redisExists = false;
+  let fileExists = false;
+  let cache: AuctionCacheEntry | null = null;
 
+  // Check Redis
   try {
-    const content = await fs.readFile(cacheFile, 'utf-8');
-    const cache: AuctionCacheEntry = JSON.parse(content);
+    redisExists = await cacheExists(cacheKey);
+    if (redisExists) {
+      cache = await cacheGetJSON<AuctionCacheEntry>(cacheKey);
+    }
+  } catch (error) {
+    console.warn(`[AuctionCache] Error checking Redis for room ${roomId}:`, error);
+  }
 
-    const now = new Date();
-    const fetchedAt = new Date(cache.metadata.fetchedAt);
-    const expiresAt = new Date(cache.metadata.expiresAt);
-    const expired = expiresAt <= now;
-
-    return {
-      exists: true,
-      expired,
-      metadata: cache.metadata,
-      ageSeconds: Math.round((now.getTime() - fetchedAt.getTime()) / 1000),
-      expiresInSeconds: expired ? 0 : Math.round((expiresAt.getTime() - now.getTime()) / 1000),
-    };
+  // Check file system
+  const cacheFile = getCacheFilePath(roomId);
+  try {
+    await fs.access(cacheFile);
+    fileExists = true;
+    if (!cache) {
+      const content = await fs.readFile(cacheFile, 'utf-8');
+      cache = JSON.parse(content);
+    }
   } catch {
+    // File doesn't exist
+  }
+
+  if (!cache) {
     return {
       exists: false,
       expired: true,
       metadata: null,
       ageSeconds: null,
       expiresInSeconds: null,
+      backend: 'none',
     };
   }
+
+  const now = new Date();
+  const fetchedAt = new Date(cache.metadata.fetchedAt);
+  const expiresAt = new Date(cache.metadata.expiresAt);
+  const expired = expiresAt <= now;
+
+  let backend: 'redis' | 'file' | 'both' | 'none' = 'none';
+  if (redisExists && fileExists) backend = 'both';
+  else if (redisExists) backend = 'redis';
+  else if (fileExists) backend = 'file';
+
+  return {
+    exists: true,
+    expired,
+    metadata: cache.metadata,
+    ageSeconds: Math.round((now.getTime() - fetchedAt.getTime()) / 1000),
+    expiresInSeconds: expired ? 0 : Math.round((expiresAt.getTime() - now.getTime()) / 1000),
+    backend,
+  };
 }
 
 /**

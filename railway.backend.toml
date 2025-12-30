@@ -1,0 +1,16 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm ci && npx prisma generate && npm run build:backend"
+
+[deploy]
+startCommand = "npx prisma migrate deploy && npm run start:backend"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 60
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+
+[env]
+# Railway will auto-inject these from plugins:
+# - DATABASE_URL (PostgreSQL plugin)
+# - REDIS_URL (Redis plugin)
+# Set other required env vars in Railway dashboard

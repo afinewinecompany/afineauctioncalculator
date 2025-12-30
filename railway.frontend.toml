@@ -1,0 +1,16 @@
+# Railway configuration for FRONTEND service
+# Use this config by setting RAILWAY_CONFIG_FILE=railway.frontend.toml in Railway service settings
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm ci && npm run build:frontend"
+
+[deploy]
+# Serve static files using a simple Node.js server
+startCommand = "npx serve dist -l ${PORT:-3000}"
+healthcheckPath = "/"
+healthcheckTimeout = 30
+
+[env]
+# Set VITE_API_URL to your backend Railway URL in the Railway dashboard
+# Example: VITE_API_URL=https://your-backend-service.railway.app

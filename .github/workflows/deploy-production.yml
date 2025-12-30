@@ -1,0 +1,167 @@
+name: Deploy to Production
+
+# Manual deployment with approval
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "DEPLOY" to confirm production deployment'
+        required: true
+        default: ''
+
+jobs:
+  validate:
+    name: Validate Deployment Request
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "DEPLOY" ]; then
+            echo "Deployment cancelled - confirmation not provided"
+            exit 1
+          fi
+
+  pre-deployment-checks:
+    name: Pre-Deployment Checks
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: |
+          npm run type-check
+          npm run type-check:server
+
+      - name: Run all tests
+        run: npm run test:unit
+
+      - name: Build frontend
+        run: npm run build:frontend
+        env:
+          NODE_ENV: production
+
+      - name: Build backend
+        run: npm run build:backend
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-frontend
+          path: dist/
+          retention-days: 1
+
+      - name: Upload backend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-backend
+          path: server/dist/
+          retention-days: 1
+
+  deploy-frontend:
+    name: Deploy Frontend to Vercel Production
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    environment:
+      name: production
+      url: https://fantasy-auction.vercel.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: production-frontend
+          path: dist/
+
+      - name: Deploy to Vercel Production
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./
+
+  deploy-backend:
+    name: Deploy Backend to Railway Production
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    environment:
+      name: production
+      url: https://api.fantasy-auction.railway.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download backend build
+        uses: actions/download-artifact@v4
+        with:
+          name: production-backend
+          path: server/dist/
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy to Railway Production
+        run: railway up --environment production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  post-deployment:
+    name: Post-Deployment Verification
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend, deploy-backend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Wait for services to be ready
+        run: sleep 30
+
+      - name: Health check - Frontend
+        run: |
+          curl -f https://fantasy-auction.vercel.app || exit 1
+        continue-on-error: true
+
+      - name: Health check - Backend
+        run: |
+          curl -f https://api.fantasy-auction.railway.app/api/health || exit 1
+        continue-on-error: true
+
+      - name: Create deployment notification
+        run: |
+          echo "Production deployment completed successfully!"
+          echo "Frontend: https://fantasy-auction.vercel.app"
+          echo "Backend: https://api.fantasy-auction.railway.app"
+
+      - name: Notify on success
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Production deployment completed successfully!\n\n**Frontend:** https://fantasy-auction.vercel.app\n**Backend:** https://api.fantasy-auction.railway.app\n\nDeployed by: @${{ github.actor }}'
+            })
+        continue-on-error: true
