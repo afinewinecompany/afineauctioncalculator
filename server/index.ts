@@ -17,6 +17,8 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth';
 import auctionRoutes from './routes/auction';
 import projectionsRoutes from './routes/projections';
@@ -154,6 +156,29 @@ export function createServer(): Express {
 
   // Projections routes
   app.use('/api/projections', projectionsRoutes);
+
+  // ==========================================================================
+  // STATIC FILE SERVING (Production only - serves built frontend)
+  // ==========================================================================
+
+  if (isProduction) {
+    // Get directory path for ES modules
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+    // Serve static files from the dist folder (built frontend)
+    const distPath = path.join(__dirname, '..', 'dist');
+    app.use(express.static(distPath));
+
+    // SPA fallback - serve index.html for all non-API routes
+    app.get('*', (req: Request, res: Response, next: NextFunction) => {
+      // Skip if it's an API route (should have been handled above)
+      if (req.path.startsWith('/api/')) {
+        return next();
+      }
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
 
   // ==========================================================================
   // ERROR HANDLING (must be last)
