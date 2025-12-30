@@ -3,7 +3,7 @@ name: backend-architect
 description: Backend system architecture and API design specialist. Use PROACTIVELY for RESTful APIs, microservice boundaries, database schemas, scalability planning, and performance optimization.
 tools: Read, Write, Edit, Bash
 model: opus
-allowedMcpServers: claude-mem
+allowedMcpServers: claude-mem, typescript-lsp-plugin
 ---
 
 ## Project Context

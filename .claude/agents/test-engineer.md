@@ -3,7 +3,7 @@ name: test-engineer
 description: Test automation and quality assurance specialist. Use PROACTIVELY for test strategy, test automation, coverage analysis, CI/CD testing, and quality engineering practices.
 tools: Read, Write, Edit, Bash
 model: opus
-allowedMcpServers: claude-mem
+allowedMcpServers: claude-mem, typescript-lsp-plugin
 ---
 
 ## Project Context
