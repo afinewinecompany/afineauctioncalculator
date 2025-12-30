@@ -11,6 +11,29 @@ interface ProjectionPlayer {
 }
 
 /**
+ * Build a set of valid MLB player keys from projections.
+ * This helps validate that a scraped player is actually an MLB player
+ * by checking if their name+team combination exists in projections.
+ * Returns a Map of normalized "name|team" -> projection player for quick lookup.
+ */
+function buildProjectionLookup(projections: ProjectionPlayer[]): Map<string, ProjectionPlayer[]> {
+  const lookup = new Map<string, ProjectionPlayer[]>();
+
+  for (const proj of projections) {
+    const normalizedName = normalizeName(proj.name);
+    const normalizedTeam = normalizeTeam(proj.team);
+    const key = `${normalizedName}|${normalizedTeam}`;
+
+    if (!lookup.has(key)) {
+      lookup.set(key, []);
+    }
+    lookup.get(key)!.push(proj);
+  }
+
+  return lookup;
+}
+
+/**
  * Normalizes a player name by removing diacritics, punctuation, and converting to lowercase.
  * Examples:
  * - "Félix Bautista" → "felix bautista"
@@ -138,23 +161,38 @@ export function getPlayingPositions(positions: string[]): string[] {
 /**
  * Calculate a match score based on multiple factors
  * Higher score = better match
+ *
+ * IMPORTANT: This function is STRICT about matching to prevent MiLB/prospect players
+ * from being confused with MLB players who share the same name.
+ *
+ * MATCHING PHILOSOPHY:
+ * - Name alone is NOT sufficient for a match
+ * - Must have EITHER: same team OR overlapping positions (same type: hitter/pitcher)
+ * - Team + position type match is ideal
+ * - Team mismatch with position mismatch = NO MATCH
  */
 function calculateMatchScore(
   scraped: ScrapedPlayer,
   projection: ProjectionPlayer,
   normalizedScrapedName: string,
-  normalizedScrapedNameWithoutSuffix: string
+  normalizedScrapedNameWithoutSuffix: string,
+  allProjections: ProjectionPlayer[] // Used for MLB player validation
 ): number {
-  let score = 0;
   const normalizedProjName = normalizeName(projection.name);
   const normalizedProjNameWithoutSuffix = normalizedProjName.replace(/\s+(jr|sr|ii|iii|iv)$/, '').trim();
 
-  // Name matching (most important)
+  // Name matching - REQUIRED but not sufficient
+  let nameMatches = false;
+  let nameScore = 0;
   if (normalizedProjName === normalizedScrapedName) {
-    score += 100; // Exact name match
+    nameMatches = true;
+    nameScore = 100; // Exact name match
   } else if (normalizedProjNameWithoutSuffix === normalizedScrapedNameWithoutSuffix) {
-    score += 80; // Match without suffix
-  } else {
+    nameMatches = true;
+    nameScore = 80; // Match without suffix
+  }
+
+  if (!nameMatches) {
     return 0; // Names don't match at all - no match
   }
 
@@ -163,9 +201,6 @@ function calculateMatchScore(
   // and should NEVER match to MLB projections. Period.
   const scrapedIsMiLB = isMinorLeaguePlayer(scraped.positions);
   if (scrapedIsMiLB) {
-    // MiLB players should NEVER match to MLB projections - return 0 immediately
-    // This prevents cases like "Jose Ramirez (CLE, MiLB)" matching to "Jose Ramirez (CLE, MLB)"
-    // Even with perfect name+team+position match, MiLB players don't have MLB projections
     logger.debug({
       player: scraped.fullName,
       team: scraped.mlbTeam,
@@ -175,44 +210,87 @@ function calculateMatchScore(
     return 0; // Hard rejection - no MiLB player should ever match
   }
 
-  // Team matching (very important for disambiguation)
+  // Team matching
   const scrapedTeam = normalizeTeam(scraped.mlbTeam);
   const projTeam = normalizeTeam(projection.team);
-  if (scrapedTeam === projTeam) {
-    score += 50; // Same team
-  } else if (projTeam === 'FA') {
-    score += 10; // Free agent in projections (might have been traded)
-  }
+  const teamMatches = scrapedTeam === projTeam;
+  const projIsFreeAgent = projTeam === 'FA';
 
-  // Position matching (crucial for same-name players like "Juan Soto" OF vs RP)
-  // Use playing positions (excluding MiLB marker) for comparison
+  // Position matching
   const scrapedPlayingPositions = getPlayingPositions(scraped.positions);
   const scrapedIsPitcher = isPitcher(scrapedPlayingPositions);
   const projIsPitcher = isPitcher(projection.positions);
   const scrapedIsHitter = isHitter(scrapedPlayingPositions);
   const projIsHitter = isHitter(projection.positions);
 
-  if (scrapedIsPitcher && projIsPitcher) {
-    score += 40; // Both pitchers
-    if (positionsOverlap(scrapedPlayingPositions, projection.positions)) {
-      score += 20; // Specific position match (SP vs RP)
-    }
-  } else if (scrapedIsHitter && projIsHitter) {
-    score += 40; // Both hitters
-    if (positionsOverlap(scrapedPlayingPositions, projection.positions)) {
-      score += 20; // Specific position match
-    }
-  } else if ((scrapedIsPitcher && projIsHitter) || (scrapedIsHitter && projIsPitcher)) {
-    // Position type mismatch - strong negative signal
-    score -= 100; // This is likely a different player entirely
+  // Check position type match (both pitchers OR both hitters)
+  const positionTypeMatches = (scrapedIsPitcher && projIsPitcher) || (scrapedIsHitter && projIsHitter);
+  const positionTypeMismatch = (scrapedIsPitcher && projIsHitter) || (scrapedIsHitter && projIsPitcher);
+
+  // CRITICAL: Require at least team match OR position type match
+  // Name alone is NOT enough - too many prospects share names with MLB players
+  if (!teamMatches && !projIsFreeAgent && !positionTypeMatches) {
+    logger.debug({
+      player: scraped.fullName,
+      scrapedTeam,
+      projTeam,
+      scrapedPositions: scrapedPlayingPositions,
+      projPositions: projection.positions,
+    }, 'Rejecting match: name matches but neither team nor position type matches');
+    return 0; // HARD REJECTION: No match without team or position confirmation
   }
 
-  // Value sanity check - if projected value is very low ($1-2), likely a minor leaguer/replacement
-  // This helps avoid matching star "Juan Soto" to minor league "Juan Soto"
+  // Position type mismatch is a hard rejection (pitcher vs hitter)
+  if (positionTypeMismatch) {
+    logger.debug({
+      player: scraped.fullName,
+      scrapedIsPitcher,
+      projIsPitcher,
+    }, 'Rejecting match: position type mismatch (pitcher vs hitter)');
+    return 0; // HARD REJECTION: Different player types
+  }
+
+  // Now calculate the actual score
+  let score = nameScore;
+
+  // Team score
+  if (teamMatches) {
+    score += 50; // Same team
+  } else if (projIsFreeAgent) {
+    score += 10; // Free agent (might have been traded)
+  }
+  // If we got here without team match, positionTypeMatches must be true
+
+  // Position type score
+  if (positionTypeMatches) {
+    score += 40;
+    // Bonus for specific position overlap
+    if (positionsOverlap(scrapedPlayingPositions, projection.positions)) {
+      score += 20;
+    }
+  }
+
+  // Value sanity check
   if (projection.projectedValue <= 1) {
     score -= 30; // Penalize matching to $1 players
   } else if (projection.projectedValue >= 20) {
-    score += 10; // Slightly prefer matching to valuable players (more likely to be drafted)
+    score += 10; // Prefer valuable players
+  }
+
+  // High-value player validation
+  if (projection.projectedValue >= 15) {
+    if (scraped.status === 'available') {
+      // Star player available might be a prospect - small penalty
+      score -= 15;
+    } else if (scraped.status === 'drafted' && scraped.winningBid && scraped.winningBid < 5) {
+      // Star drafted for $1-4? Very suspicious
+      score -= 80;
+      logger.debug({
+        player: scraped.fullName,
+        winningBid: scraped.winningBid,
+        projectedValue: projection.projectedValue,
+      }, 'High-value player matched to low-bid draft - heavy penalty');
+    }
   }
 
   return score;
@@ -246,7 +324,8 @@ export function matchPlayer(
       scrapedPlayer,
       projection,
       normalizedScraped,
-      normalizedScrapedWithoutSuffix
+      normalizedScrapedWithoutSuffix,
+      projections // Pass all projections for name collision detection
     );
 
     if (score > 0) {
@@ -376,6 +455,14 @@ function deduplicateScrapedPlayers(players: ScrapedPlayer[]): ScrapedPlayer[] {
 
 /**
  * Matches all scraped players against projections and returns matched results.
+ *
+ * IMPORTANT: To prevent MiLB/prospect confusion, we process players in order:
+ * 1. Drafted players with high bids first (most likely to be real MLB players)
+ * 2. Drafted players with low bids
+ * 3. Available players last
+ *
+ * This ensures that the real MLB player gets matched to the projection,
+ * and any prospect with the same name ends up unmatched.
  */
 export function matchAllPlayers(
   scrapedPlayers: ScrapedPlayer[],
@@ -391,10 +478,28 @@ export function matchAllPlayers(
     logger.debug({ before: scrapedPlayers.length, after: dedupedPlayers.length }, 'Deduplicated scraped players');
   }
 
+  // CRITICAL: Sort players to prioritize drafted players with high bids
+  // This ensures real MLB players match first, leaving prospects unmatched
+  const sortedPlayers = [...dedupedPlayers].sort((a, b) => {
+    // Drafted players come first
+    if (a.status === 'drafted' && b.status !== 'drafted') return -1;
+    if (b.status === 'drafted' && a.status !== 'drafted') return 1;
+
+    // Among drafted players, higher bids come first
+    if (a.status === 'drafted' && b.status === 'drafted') {
+      const bidA = a.winningBid ?? 0;
+      const bidB = b.winningBid ?? 0;
+      return bidB - bidA; // Higher bid first
+    }
+
+    // Among available players, keep original order
+    return 0;
+  });
+
   // Track which projection players have been matched to prevent double-matching
   const usedProjectionIds = new Set<string>();
 
-  for (const scraped of dedupedPlayers) {
+  for (const scraped of sortedPlayers) {
     const { player, confidence } = matchPlayer(scraped, projections);
 
     if (player && confidence !== 'unmatched') {
