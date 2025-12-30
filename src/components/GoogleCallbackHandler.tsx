@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { handleGoogleCallback } from '../lib/authApi';
+import { useAuth } from '../contexts/AuthContext';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface GoogleCallbackHandlerProps {
@@ -8,6 +9,7 @@ interface GoogleCallbackHandlerProps {
 }
 
 export function GoogleCallbackHandler({ onSuccess, onError }: GoogleCallbackHandlerProps) {
+  const { refreshUser } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -29,6 +31,9 @@ export function GoogleCallbackHandler({ onSuccess, onError }: GoogleCallbackHand
 
         // Exchange code for tokens
         await handleGoogleCallback(code);
+
+        // Refresh auth context with new user
+        await refreshUser();
 
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname.replace('/auth/google/callback', '/'));
@@ -55,7 +60,7 @@ export function GoogleCallbackHandler({ onSuccess, onError }: GoogleCallbackHand
     }
 
     processCallback();
-  }, [onSuccess, onError]);
+  }, [onSuccess, onError, refreshUser]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4">
