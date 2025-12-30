@@ -18,6 +18,11 @@ figma-images.json
 dist/
 build/
 
+# Compiled TypeScript files in server/ (built to dist-server/)
+server/**/*.js
+server/**/*.d.ts
+!server/**/*.config.js
+
 # Database
 *.db
 *.db-journal

@@ -1,4 +1,5 @@
 import puppeteer, { Browser, Page } from 'puppeteer-core';
+import { existsSync } from 'fs';
 import type { ScrapedAuctionData, ScrapedPlayer, ScrapedTeam, CurrentAuction } from '../types/auction.js';
 import { normalizeName } from './playerMatcher.js';
 
@@ -22,13 +23,8 @@ function getChromePath(): string {
 
   // In development, try to use local Chrome
   for (const chromePath of possiblePaths) {
-    try {
-      const fs = require('fs');
-      if (fs.existsSync(chromePath)) {
-        return chromePath;
-      }
-    } catch {
-      continue;
+    if (existsSync(chromePath)) {
+      return chromePath;
     }
   }
 
