@@ -6,7 +6,29 @@
 // Get API base URL from environment variables
 // Ensure the URL has a protocol prefix
 function getApiUrl(): string {
-  let url = import.meta.env.VITE_API_URL || '';
+  const rawUrl = import.meta.env.VITE_API_URL;
+  const isDev = import.meta.env.DEV;
+
+  // In production, VITE_API_URL must be configured
+  if (!rawUrl && !isDev) {
+    throw new Error(
+      'VITE_API_URL environment variable is not configured. ' +
+      'This is required in production. Please set VITE_API_URL to your API server URL ' +
+      '(e.g., https://api.example.com).'
+    );
+  }
+
+  // In development, warn if not set but allow empty string for Vite proxy
+  if (!rawUrl && isDev) {
+    console.warn(
+      '[authApi] VITE_API_URL is not set. Using relative URLs which will be proxied by Vite. ' +
+      'If you see API errors, ensure your Vite proxy is configured correctly in vite.config.ts.'
+    );
+    return '';
+  }
+
+  // Ensure the URL has a protocol prefix
+  let url = rawUrl || '';
   if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
     url = `https://${url}`;
   }

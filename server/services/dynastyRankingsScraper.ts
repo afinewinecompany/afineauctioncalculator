@@ -6,7 +6,7 @@
  * The data is embedded as JSON in the page's __NEXT_DATA__ script tag
  */
 
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { DynastyRanking, DynastyRankingsCacheEntry } from '../types/projections.js';
 
@@ -16,11 +16,23 @@ const CACHE_FILE = path.join(CACHE_DIR, 'dynasty-rankings.json');
 const CACHE_TTL_HOURS = 12; // Rankings update daily, 12-hour cache is reasonable
 
 /**
+ * Check if a file exists using async fs.access
+ */
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Fetch dynasty rankings with caching
  */
 export async function getDynastyRankings(): Promise<DynastyRanking[]> {
   // Check cache first
-  const cached = getCachedRankings();
+  const cached = await getCachedRankings();
   if (cached) {
     console.log('[Dynasty] Using cached rankings');
     return cached;
@@ -31,7 +43,7 @@ export async function getDynastyRankings(): Promise<DynastyRanking[]> {
   const rankings = await fetchDynastyRankings();
 
   // Cache the results
-  cacheRankings(rankings);
+  await cacheRankings(rankings);
 
   return rankings;
 }
@@ -39,13 +51,14 @@ export async function getDynastyRankings(): Promise<DynastyRanking[]> {
 /**
  * Check if we have valid cached rankings
  */
-function getCachedRankings(): DynastyRanking[] | null {
+async function getCachedRankings(): Promise<DynastyRanking[] | null> {
   try {
-    if (!fs.existsSync(CACHE_FILE)) {
+    const exists = await fileExists(CACHE_FILE);
+    if (!exists) {
       return null;
     }
 
-    const cacheContent = fs.readFileSync(CACHE_FILE, 'utf-8');
+    const cacheContent = await fs.readFile(CACHE_FILE, 'utf-8');
     const cache: DynastyRankingsCacheEntry = JSON.parse(cacheContent);
 
     // Check if cache is expired
@@ -66,11 +79,12 @@ function getCachedRankings(): DynastyRanking[] | null {
 /**
  * Save rankings to cache
  */
-function cacheRankings(rankings: DynastyRanking[]): void {
+async function cacheRankings(rankings: DynastyRanking[]): Promise<void> {
   try {
     // Ensure cache directory exists
-    if (!fs.existsSync(CACHE_DIR)) {
-      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    const dirExists = await fileExists(CACHE_DIR);
+    if (!dirExists) {
+      await fs.mkdir(CACHE_DIR, { recursive: true });
     }
 
     const now = new Date();
@@ -86,7 +100,7 @@ function cacheRankings(rankings: DynastyRanking[]): void {
       rankings,
     };
 
-    fs.writeFileSync(CACHE_FILE, JSON.stringify(cacheEntry, null, 2));
+    await fs.writeFile(CACHE_FILE, JSON.stringify(cacheEntry, null, 2));
     console.log(`[Dynasty] Cached ${rankings.length} rankings`);
   } catch (error) {
     console.error('[Dynasty] Error writing cache:', error);
@@ -347,8 +361,9 @@ function determineLevel(player: any): DynastyRanking['level'] {
 export async function refreshDynastyRankings(): Promise<DynastyRanking[]> {
   // Delete existing cache
   try {
-    if (fs.existsSync(CACHE_FILE)) {
-      fs.unlinkSync(CACHE_FILE);
+    const exists = await fileExists(CACHE_FILE);
+    if (exists) {
+      await fs.unlink(CACHE_FILE);
     }
   } catch (error) {
     console.error('[Dynasty] Error deleting cache:', error);
@@ -361,18 +376,19 @@ export async function refreshDynastyRankings(): Promise<DynastyRanking[]> {
 /**
  * Get cache status for dynasty rankings
  */
-export function getDynastyRankingsCacheStatus(): {
+export async function getDynastyRankingsCacheStatus(): Promise<{
   isCached: boolean;
   fetchedAt: string | null;
   expiresAt: string | null;
   playerCount: number;
-} {
+}> {
   try {
-    if (!fs.existsSync(CACHE_FILE)) {
+    const exists = await fileExists(CACHE_FILE);
+    if (!exists) {
       return { isCached: false, fetchedAt: null, expiresAt: null, playerCount: 0 };
     }
 
-    const cacheContent = fs.readFileSync(CACHE_FILE, 'utf-8');
+    const cacheContent = await fs.readFile(CACHE_FILE, 'utf-8');
     const cache: DynastyRankingsCacheEntry = JSON.parse(cacheContent);
 
     return {

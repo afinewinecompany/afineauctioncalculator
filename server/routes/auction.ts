@@ -15,6 +15,7 @@ import {
   cleanupExpiredCaches,
   AUCTION_CACHE_DEFAULTS,
 } from '../services/auctionCacheService.js';
+import { getRedisClient, isRedisHealthy } from '../services/redisClient.js';
 import type { AuctionSyncResult, ScrapedAuctionData } from '../types/auction.js';
 import type { LeagueSettings } from '../../src/lib/types.js';
 
@@ -107,17 +108,121 @@ function toInflationLeagueConfig(config: ValidatedLeagueConfig): InflationLeague
 
 const router = Router();
 
-// Lock map to prevent cache stampede (multiple concurrent scrapes for same room)
+// In-memory lock map for fallback when Redis is not available
+// Also used for local deduplication within a single instance
 const scrapingLocks = new Map<string, Promise<ScrapedAuctionData>>();
 
+// Redis distributed lock configuration
+const REDIS_LOCK_PREFIX = 'scrape-lock:';
+const REDIS_LOCK_TTL_SECONDS = 60; // Auto-expire lock after 60 seconds (safety net)
+
+/**
+ * Attempt to acquire a distributed lock using Redis.
+ * Uses SET with NX (only set if not exists) and EX (expiration) for atomic lock acquisition.
+ *
+ * @param lockKey - The key to lock on
+ * @returns true if lock was acquired, false if already locked by another instance
+ */
+async function acquireDistributedLock(lockKey: string): Promise<boolean> {
+  if (!isRedisHealthy()) {
+    return true; // Fall back to in-memory only
+  }
+
+  const redis = getRedisClient();
+  if (!redis) {
+    return true; // Fall back to in-memory only
+  }
+
+  try {
+    // SET key value NX EX seconds - atomic operation
+    // NX = only set if key doesn't exist
+    // EX = expire after TTL seconds (safety net if process crashes)
+    const result = await redis.set(
+      `${REDIS_LOCK_PREFIX}${lockKey}`,
+      Date.now().toString(), // Store timestamp as value for debugging
+      'EX',
+      REDIS_LOCK_TTL_SECONDS,
+      'NX'
+    );
+    return result === 'OK';
+  } catch (error) {
+    console.error(`[Auction] Redis lock acquisition failed:`, error);
+    return true; // Fall back to in-memory only on error
+  }
+}
+
+/**
+ * Release a distributed lock in Redis.
+ *
+ * @param lockKey - The key to unlock
+ */
+async function releaseDistributedLock(lockKey: string): Promise<void> {
+  if (!isRedisHealthy()) {
+    return;
+  }
+
+  const redis = getRedisClient();
+  if (!redis) {
+    return;
+  }
+
+  try {
+    await redis.del(`${REDIS_LOCK_PREFIX}${lockKey}`);
+  } catch (error) {
+    console.error(`[Auction] Redis lock release failed:`, error);
+    // Lock will auto-expire via TTL if release fails
+  }
+}
+
+/**
+ * Check if a distributed lock exists in Redis.
+ *
+ * @param lockKey - The key to check
+ * @returns true if locked by another instance, false if not locked
+ */
+async function isDistributedLocked(lockKey: string): Promise<boolean> {
+  if (!isRedisHealthy()) {
+    return false; // Can't check, assume not locked
+  }
+
+  const redis = getRedisClient();
+  if (!redis) {
+    return false;
+  }
+
+  try {
+    const exists = await redis.exists(`${REDIS_LOCK_PREFIX}${lockKey}`);
+    return exists === 1;
+  } catch (error) {
+    console.error(`[Auction] Redis lock check failed:`, error);
+    return false; // On error, assume not locked
+  }
+}
+
 // Periodic cleanup of expired file caches (runs every 30 minutes)
-setInterval(() => {
+// Store interval ID so it can be cleared on shutdown
+let cacheCleanupIntervalId: ReturnType<typeof setInterval> | null = null;
+
+cacheCleanupIntervalId = setInterval(() => {
   cleanupExpiredCaches(60 * 60 * 1000); // Clean entries expired > 1 hour ago
 }, 30 * 60 * 1000);
 
 /**
+ * Cleanup function to be called during graceful shutdown.
+ * Clears the cache cleanup interval to allow process to terminate promptly.
+ */
+export function cleanupAuctionRoutes(): void {
+  if (cacheCleanupIntervalId) {
+    clearInterval(cacheCleanupIntervalId);
+    cacheCleanupIntervalId = null;
+    console.log('[Auction] Cache cleanup interval cleared');
+  }
+}
+
+/**
  * Helper to get auction data with file-based caching.
- * Uses scraping locks to prevent concurrent scrapes for the same room.
+ * Uses distributed Redis locks (with in-memory fallback) to prevent concurrent scrapes
+ * for the same room across multiple server instances.
  */
 async function getAuctionDataWithCache(
   roomId: string,
@@ -131,23 +236,60 @@ async function getAuctionDataWithCache(
     }
   }
 
-  // Check if a scrape is already in progress for this room
   const lockKey = `scraping-${roomId}`;
-  let scrapePromise = scrapingLocks.get(lockKey);
 
+  // Check in-memory lock first (handles requests within same instance)
+  let scrapePromise = scrapingLocks.get(lockKey);
   if (scrapePromise) {
-    // Scrape already in progress, wait for it
-    console.log(`[Auction] Waiting for existing scrape for room ${roomId}...`);
+    console.log(`[Auction] Waiting for existing local scrape for room ${roomId}...`);
     return scrapePromise;
   }
 
+  // Check distributed lock (handles requests across instances)
+  const isLockedRemotely = await isDistributedLocked(lockKey);
+  if (isLockedRemotely) {
+    // Another instance is scraping - wait briefly and check cache
+    console.log(`[Auction] Room ${roomId} is being scraped by another instance, waiting...`);
+    // Wait up to 30 seconds, polling cache every 2 seconds
+    for (let i = 0; i < 15; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const cached = await getCachedAuctionData(roomId);
+      if (cached && !cached.isStale) {
+        console.log(`[Auction] Found cached data for room ${roomId} after waiting`);
+        return cached.data;
+      }
+      // Check if still locked
+      if (!(await isDistributedLocked(lockKey))) {
+        console.log(`[Auction] Remote lock released for room ${roomId}, checking cache...`);
+        const freshCached = await getCachedAuctionData(roomId);
+        if (freshCached && !freshCached.isStale) {
+          return freshCached.data;
+        }
+        break; // Lock released but no cache - we should scrape
+      }
+    }
+    console.log(`[Auction] Timeout waiting for remote scrape, attempting own scrape...`);
+  }
+
+  // Try to acquire distributed lock
+  const acquiredDistributedLock = await acquireDistributedLock(lockKey);
+  if (!acquiredDistributedLock) {
+    // Race condition - another instance just acquired the lock
+    // Wait briefly and check cache again
+    console.log(`[Auction] Lost race for distributed lock on room ${roomId}, waiting...`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    const cached = await getCachedAuctionData(roomId);
+    if (cached && !cached.isStale) {
+      return cached.data;
+    }
+    // If still no cache, proceed with scrape anyway (lock may have been released)
+  }
+
   // No scrape in progress, start one
-  // CRITICAL: Set the lock BEFORE starting the async operation to prevent race condition
-  // between checking the lock and setting it
   console.log(`[Auction] Scraping fresh data for room ${roomId}...`);
   const startTime = Date.now();
 
-  // Create the promise and immediately add it to the lock map
+  // Create the promise and immediately add it to the local lock map
   scrapePromise = scrapeAuction(roomId).then(async data => {
     console.log(`[Auction] Scrape completed in ${Date.now() - startTime}ms`);
 
@@ -157,11 +299,13 @@ async function getAuctionDataWithCache(
     }
 
     return data;
-  }).finally(() => {
+  }).finally(async () => {
+    // Release both locks
     scrapingLocks.delete(lockKey);
+    await releaseDistributedLock(lockKey);
   });
 
-  // Set the lock immediately after creating the promise (synchronously)
+  // Set the local lock immediately (synchronously)
   scrapingLocks.set(lockKey, scrapePromise);
 
   return scrapePromise;

@@ -21,7 +21,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 import authRoutes from './routes/auth.js';
-import auctionRoutes from './routes/auction.js';
+import auctionRoutes, { cleanupAuctionRoutes } from './routes/auction.js';
 import projectionsRoutes from './routes/projections.js';
 import { closeBrowser, prewarmBrowser } from './services/couchManagersScraper.js';
 import { apiLimiter, authLimiter, scrapingLimiter } from './middleware/rateLimiter.js';
@@ -268,6 +268,10 @@ export async function startServer(): Promise<void> {
       });
 
       try {
+        // Clear auction cache cleanup interval
+        cleanupAuctionRoutes();
+        logger.info('Auction cache cleanup interval cleared');
+
         // Close browser
         await closeBrowser();
         logger.info('Browser closed');

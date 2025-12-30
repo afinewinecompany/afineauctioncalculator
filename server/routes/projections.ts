@@ -341,7 +341,7 @@ router.get('/dynasty-rankings', async (req: Request, res: Response) => {
  */
 router.get('/dynasty-rankings/status', async (req: Request, res: Response) => {
   try {
-    const status = getDynastyRankingsCacheStatus();
+    const status = await getDynastyRankingsCacheStatus();
     res.json(status);
   } catch (error) {
     console.error('Error getting dynasty rankings cache status:', error);
