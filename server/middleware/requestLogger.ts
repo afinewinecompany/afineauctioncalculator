@@ -69,17 +69,28 @@ const pinoHttpOptions: PinoHttpOptions = {
       id: req.id,
       method: req.method,
       url: req.url,
-      path: req.raw.url,
-      headers: maskHeaders(req.headers),
-      query: req.raw.query,
-      params: req.raw.params,
+      path: req.raw?.url,
+      headers: maskHeaders(req.headers || {}),
+      query: req.raw?.query,
+      params: req.raw?.params,
       // Don't log request body by default (can be huge, may contain sensitive data)
       // Add req.raw.body if needed for debugging specific endpoints
     }),
-    res: (res) => ({
-      statusCode: res.statusCode,
-      headers: maskHeaders(res.getHeaders() as Record<string, unknown>),
-    }),
+    res: (res) => {
+      // Safely get headers - getHeaders() may not exist for redirects
+      let headers = {};
+      try {
+        if (typeof res.getHeaders === 'function') {
+          headers = maskHeaders(res.getHeaders() as Record<string, unknown>);
+        }
+      } catch {
+        // Ignore errors getting headers
+      }
+      return {
+        statusCode: res.statusCode,
+        headers,
+      };
+    },
     err: (err) => ({
       message: err.message,
       stack: isDevelopment ? err.stack : undefined,
