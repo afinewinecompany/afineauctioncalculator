@@ -29,7 +29,9 @@ const envSchema = z.object({
 
   // Frontend
   FRONTEND_URL: z.string().url('FRONTEND_URL must be a valid URL').default('http://localhost:3000'),
-  CORS_ORIGINS: z.string().transform((val) => val.split(',')).default('http://localhost:3000'),
+  // Support both CORS_ORIGINS (preferred) and CORS_ORIGIN (legacy)
+  CORS_ORIGINS: z.string().transform((val) => val.split(',')).optional(),
+  CORS_ORIGIN: z.string().optional(),
 
   // OAuth (optional for now)
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -134,10 +136,26 @@ export const redisConfig = env.REDIS_URL ? {
 } : null;
 
 /**
+ * Get CORS origins - supports both CORS_ORIGINS (array) and CORS_ORIGIN (single)
+ */
+function getCorsOrigins(): string[] | string {
+  // Check for CORS_ORIGINS first (comma-separated list)
+  if (env.CORS_ORIGINS && env.CORS_ORIGINS.length > 0) {
+    return env.CORS_ORIGINS;
+  }
+  // Fall back to CORS_ORIGIN (single origin)
+  if (env.CORS_ORIGIN) {
+    return [env.CORS_ORIGIN];
+  }
+  // Default to FRONTEND_URL
+  return [env.FRONTEND_URL];
+}
+
+/**
  * CORS configuration
  */
 export const corsConfig = {
-  origin: isProduction ? env.CORS_ORIGINS : '*',
+  origin: isProduction ? getCorsOrigins() : '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -179,11 +197,14 @@ export const authRateLimitConfig = {
  * Log configuration details on startup (non-sensitive only)
  */
 export function logConfig() {
+  const origins = getCorsOrigins();
+  const originsStr = Array.isArray(origins) ? origins.join(', ') : origins;
+
   console.log('\n📋 Server Configuration:');
   console.log(`  Environment: ${env.NODE_ENV}`);
   console.log(`  Port: ${env.PORT}`);
   console.log(`  Frontend URL: ${env.FRONTEND_URL}`);
-  console.log(`  CORS Origins: ${env.CORS_ORIGINS.join(', ')}`);
+  console.log(`  CORS Origins: ${originsStr}`);
   console.log(`  Log Level: ${env.LOG_LEVEL}`);
   console.log(`  Database: ${env.DATABASE_URL.replace(/:[^:@]+@/, ':****@')}`);
   console.log(`  Redis: ${env.REDIS_URL ? 'Configured' : 'Not configured (optional)'}`);
