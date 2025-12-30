@@ -3,8 +3,8 @@
 
 [build]
 builder = "nixpacks"
-# Build both frontend and backend
-buildCommand = "npm ci && npx prisma generate && npm run build"
+# Build both frontend and backend (npm ci is handled by Nixpacks install phase)
+buildCommand = "npx prisma generate && npm run build"
 
 [deploy]
 # Run migrations then start the backend (which also serves frontend static files)
