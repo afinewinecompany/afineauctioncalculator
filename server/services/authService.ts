@@ -342,3 +342,52 @@ export async function createUser(email: string, passwordHash: string, name: stri
     },
   });
 }
+
+/**
+ * Create or update a user from Google OAuth
+ *
+ * @param googleProfile - Google profile data
+ * @returns User object (created or updated)
+ */
+export async function findOrCreateGoogleUser(googleProfile: {
+  email: string;
+  name: string;
+  picture?: string;
+  sub: string;
+}) {
+  const existingUser = await findUserByEmail(googleProfile.email);
+
+  if (existingUser) {
+    // Update existing user with Google profile info if they don't have it
+    if (existingUser.authProvider === 'email') {
+      // User previously registered with email, now linking Google
+      return prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          name: existingUser.name || googleProfile.name,
+          profilePictureUrl: existingUser.profilePictureUrl || googleProfile.picture,
+          lastLoginAt: new Date(),
+        },
+      });
+    }
+    // Update last login for existing Google user
+    return prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        lastLoginAt: new Date(),
+        profilePictureUrl: googleProfile.picture || existingUser.profilePictureUrl,
+      },
+    });
+  }
+
+  // Create new user from Google profile
+  return prisma.user.create({
+    data: {
+      email: googleProfile.email.toLowerCase(),
+      name: googleProfile.name,
+      profilePictureUrl: googleProfile.picture,
+      authProvider: 'google',
+      lastLoginAt: new Date(),
+    },
+  });
+}

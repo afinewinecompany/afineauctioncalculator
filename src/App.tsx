@@ -6,6 +6,7 @@ import { calculateLeagueAuctionValues, convertToPlayers } from './lib/auctionApi
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
+import { GoogleCallbackHandler } from './components/GoogleCallbackHandler';
 import { LeaguesList } from './components/LeaguesList';
 import { SetupScreen } from './components/SetupScreen';
 import { DraftRoom } from './components/DraftRoom';
@@ -13,10 +14,13 @@ import { PostDraftAnalysis } from './components/PostDraftAnalysis';
 import { TopMenuBar } from './components/TopMenuBar';
 import { ProjectionsLoadingScreen } from './components/ProjectionsLoadingScreen';
 import { AccountScreen } from './components/AccountScreen';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-type AppScreen = 'landing' | 'login' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account';
+type AppScreen = 'landing' | 'login' | 'google-callback' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account';
 
-export default function App() {
+// Inner app component that uses auth context
+function AppContent() {
+  const { user, isAuthenticated, isLoading: authLoading, logout: authLogout } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('landing');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [currentLeague, setCurrentLeague] = useState<SavedLeague | null>(null);
@@ -29,8 +33,19 @@ export default function App() {
   // Track if we've already shown the storage warning to prevent spamming
   const storageWarningShownRef = useRef(false);
 
+  // Check for Google OAuth callback on mount
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/auth/google/callback' || path.includes('/auth/google/callback')) {
+      setCurrentScreen('google-callback');
+    }
+  }, []);
+
   // Load user data from localStorage
   useEffect(() => {
+    // Don't load localStorage if we're handling OAuth callback
+    if (currentScreen === 'google-callback') return;
+
     try {
       const savedUser = localStorage.getItem('fantasyBaseballUser');
       if (savedUser) {
@@ -45,7 +60,7 @@ export default function App() {
       // Clear corrupted data
       localStorage.removeItem('fantasyBaseballUser');
     }
-  }, []);
+  }, [currentScreen]);
 
   // Save user data to localStorage whenever it changes
   // Note: Only save league metadata, not the full player arrays to avoid quota issues
@@ -117,25 +132,36 @@ export default function App() {
     }
   }, [userData]);
 
-  const handleLogin = (email: string, authProvider: 'email' | 'google', googleData?: { name: string; picture: string }) => {
-    // Derive username from email or use Google name
-    const username = authProvider === 'google' && googleData 
-      ? googleData.name 
-      : email.split('@')[0];
+  // Sync auth state with userData when user logs in via AuthContext
+  useEffect(() => {
+    if (isAuthenticated && user && !userData) {
+      // User logged in via real auth - create userData from auth user
+      const newUserData: UserData = {
+        username: user.name || user.email.split('@')[0],
+        email: user.email,
+        leagues: [],
+        authProvider: user.authProvider,
+        profilePicture: user.profilePictureUrl || undefined
+      };
+      setUserData(newUserData);
+      setCurrentScreen('leagues');
+    } else if (!isAuthenticated && !authLoading && userData) {
+      // User logged out - clear userData
+      setUserData(null);
+      setCurrentLeague(null);
+      setPlayers([]);
+      setCurrentScreen('landing');
+    }
+  }, [isAuthenticated, user, authLoading, userData]);
 
-    const newUserData: UserData = {
-      username,
-      email,
-      leagues: [],
-      authProvider,
-      profilePicture: googleData?.picture
-    };
-    
-    setUserData(newUserData);
+  const handleLoginSuccess = () => {
+    // Auth context handles the user state, this just triggers navigation
+    // The useEffect above will sync userData when auth state changes
     setCurrentScreen('leagues');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authLogout();
     setUserData(null);
     setCurrentLeague(null);
     setPlayers([]);
@@ -460,8 +486,15 @@ export default function App() {
 
       {currentScreen === 'login' && (
         <LoginPage
-          onLogin={handleLogin}
           onBack={() => setCurrentScreen('landing')}
+          onSuccess={handleLoginSuccess}
+        />
+      )}
+
+      {currentScreen === 'google-callback' && (
+        <GoogleCallbackHandler
+          onSuccess={handleLoginSuccess}
+          onError={() => setCurrentScreen('login')}
         />
       )}
 
@@ -560,5 +593,14 @@ export default function App() {
         }}
       />
     </ErrorBoundary>
+  );
+}
+
+// Main App component wrapped with AuthProvider
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

@@ -20,7 +20,9 @@ import {
   findUserByEmail,
   findUserById,
   createUser,
+  findOrCreateGoogleUser,
 } from '../services/authService.js';
+import { env } from '../config/env.js';
 import { requireAuth } from '../middleware/auth.js';
 import {
   toUserResponse,
@@ -424,6 +426,164 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
       error: 'Failed to get user',
       code: 'GET_USER_ERROR',
       message: 'An unexpected error occurred while fetching user information',
+    });
+  }
+});
+
+// =============================================================================
+// GOOGLE OAUTH ROUTES
+// =============================================================================
+
+/**
+ * GET /api/auth/google
+ *
+ * Redirect user to Google OAuth consent screen.
+ * After authorization, Google redirects to the callback URL.
+ */
+router.get('/google', (req: Request, res: Response) => {
+  // Check if Google OAuth is configured
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return res.status(501).json({
+      error: 'Google OAuth not configured',
+      code: 'OAUTH_NOT_CONFIGURED',
+      message: 'Google OAuth is not available. Please use email/password login.',
+    });
+  }
+
+  // Build the Google OAuth URL
+  const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  googleAuthUrl.searchParams.set('client_id', env.GOOGLE_CLIENT_ID);
+  googleAuthUrl.searchParams.set('redirect_uri', env.GOOGLE_CALLBACK_URL || `${env.FRONTEND_URL}/auth/google/callback`);
+  googleAuthUrl.searchParams.set('response_type', 'code');
+  googleAuthUrl.searchParams.set('scope', 'openid email profile');
+  googleAuthUrl.searchParams.set('access_type', 'offline');
+  googleAuthUrl.searchParams.set('prompt', 'consent');
+
+  // Redirect to Google
+  return res.redirect(googleAuthUrl.toString());
+});
+
+/**
+ * POST /api/auth/google/callback
+ *
+ * Exchange Google authorization code for tokens and user info.
+ * Creates or updates user in database.
+ *
+ * Request body:
+ * - code: Authorization code from Google
+ *
+ * Response:
+ * - 200: Login successful with tokens
+ * - 400: Invalid or missing code
+ * - 500: OAuth exchange failed
+ */
+router.post('/google/callback', async (req: Request, res: Response) => {
+  try {
+    const { code } = req.body;
+
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({
+        error: 'Invalid request',
+        code: 'MISSING_CODE',
+        message: 'Authorization code is required',
+      });
+    }
+
+    // Check if Google OAuth is configured
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      return res.status(501).json({
+        error: 'Google OAuth not configured',
+        code: 'OAUTH_NOT_CONFIGURED',
+        message: 'Google OAuth is not available.',
+      });
+    }
+
+    // Exchange code for tokens
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: env.GOOGLE_CALLBACK_URL || `${env.FRONTEND_URL}/auth/google/callback`,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json().catch(() => ({}));
+      console.error('[Auth] Google token exchange failed:', errorData);
+      return res.status(400).json({
+        error: 'OAuth failed',
+        code: 'TOKEN_EXCHANGE_FAILED',
+        message: 'Failed to exchange authorization code. Please try again.',
+      });
+    }
+
+    const tokenData = await tokenResponse.json() as { access_token: string; id_token?: string };
+
+    // Get user info from Google
+    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    if (!userInfoResponse.ok) {
+      console.error('[Auth] Failed to get Google user info');
+      return res.status(500).json({
+        error: 'OAuth failed',
+        code: 'USER_INFO_FAILED',
+        message: 'Failed to retrieve user information from Google.',
+      });
+    }
+
+    const googleUser = await userInfoResponse.json() as {
+      id: string;
+      email: string;
+      name: string;
+      picture?: string;
+      verified_email: boolean;
+    };
+
+    if (!googleUser.email) {
+      return res.status(400).json({
+        error: 'OAuth failed',
+        code: 'NO_EMAIL',
+        message: 'Google account does not have an email address.',
+      });
+    }
+
+    // Find or create user in database
+    const user = await findOrCreateGoogleUser({
+      email: googleUser.email,
+      name: googleUser.name || googleUser.email.split('@')[0],
+      picture: googleUser.picture,
+      sub: googleUser.id,
+    });
+
+    // Generate tokens
+    const accessToken = generateAccessToken(user);
+    const { token: refreshToken } = generateRefreshToken(user);
+
+    // Store refresh token in database
+    await storeRefreshToken(user.id, refreshToken);
+
+    // Prepare response
+    const response: AuthResponse = {
+      user: toUserResponse(user),
+      accessToken,
+      refreshToken,
+    };
+
+    console.log(`[Auth] User logged in via Google: ${user.email}`);
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('[Auth] Google OAuth error:', error);
+    return res.status(500).json({
+      error: 'OAuth failed',
+      code: 'OAUTH_ERROR',
+      message: 'An unexpected error occurred during Google login.',
     });
   }
 });

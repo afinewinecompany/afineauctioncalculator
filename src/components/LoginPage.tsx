@@ -1,33 +1,62 @@
 import { useState } from 'react';
-import { DollarSign, Mail, Lock } from 'lucide-react';
+import { DollarSign, Mail, Lock, User, Loader2, AlertCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginPageProps {
-  onLogin: (email: string, authProvider: 'email' | 'google', googleData?: { name: string; picture: string }) => void;
   onBack: () => void;
+  onSuccess: () => void;
 }
 
-export function LoginPage({ onLogin, onBack }: LoginPageProps) {
+export function LoginPage({ onBack, onSuccess }: LoginPageProps) {
+  const { login, register, isLoading, error, clearError } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
-      onLogin(email, 'email');
+    setLocalError(null);
+    clearError();
+
+    // Validation
+    if (!email || !password) {
+      setLocalError('Please fill in all required fields');
+      return;
+    }
+
+    if (isSignUp) {
+      if (password.length < 8) {
+        setLocalError('Password must be at least 8 characters');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setLocalError('Passwords do not match');
+        return;
+      }
+    }
+
+    try {
+      if (isSignUp) {
+        await register(email, password, name || undefined);
+      } else {
+        await login(email, password);
+      }
+      onSuccess();
+    } catch {
+      // Error is handled by AuthContext
     }
   };
 
   const handleGoogleLogin = () => {
-    // In a real app, this would trigger Google OAuth flow
-    // For demo purposes, we'll simulate a successful Google login
-    const mockGoogleUser = {
-      name: 'Demo User',
-      email: 'demo@gmail.com',
-      picture: 'https://ui-avatars.com/api/?name=Demo+User&background=dc2626&color=fff'
-    };
-    onLogin(mockGoogleUser.email, 'google', { name: mockGoogleUser.name, picture: mockGoogleUser.picture });
+    // Redirect to backend Google OAuth endpoint
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    window.location.href = `${apiUrl}/api/auth/google`;
   };
+
+  const displayError = localError || error;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4">
@@ -53,7 +82,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl backdrop-blur-sm animate-slideInLeft">
           <div className="flex gap-2 mb-6">
             <button
-              onClick={() => setIsSignUp(false)}
+              onClick={() => { setIsSignUp(false); clearError(); setLocalError(null); }}
               className={`flex-1 py-2 rounded-lg transition-all ${
                 !isSignUp
                   ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/30'
@@ -63,7 +92,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
               Login
             </button>
             <button
-              onClick={() => setIsSignUp(true)}
+              onClick={() => { setIsSignUp(true); clearError(); setLocalError(null); }}
               className={`flex-1 py-2 rounded-lg transition-all ${
                 isSignUp
                   ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/30'
@@ -74,7 +103,32 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
             </button>
           </div>
 
+          {/* Error Display */}
+          {displayError && (
+            <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg flex items-center gap-2 text-red-300">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm">{displayError}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isSignUp && (
+              <div>
+                <label className="block text-slate-300 mb-2">
+                  <User className="w-4 h-4 inline mr-2" />
+                  Name (optional)
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  placeholder="Enter your name"
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+
             <div>
               <label className="block text-slate-300 mb-2">
                 <Mail className="w-4 h-4 inline mr-2" />
@@ -87,6 +141,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                 placeholder="Enter your email"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -100,16 +155,43 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                placeholder="Enter your password"
+                placeholder={isSignUp ? 'Create a password (min 8 chars)' : 'Enter your password'}
                 required
+                disabled={isLoading}
               />
             </div>
 
+            {isSignUp && (
+              <div>
+                <label className="block text-slate-300 mb-2">
+                  <Lock className="w-4 h-4 inline mr-2" />
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  placeholder="Confirm your password"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30 hover:shadow-red-500/50"
+              disabled={isLoading}
+              className="w-full px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30 hover:shadow-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isSignUp ? 'Create Account' : 'Sign In'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                </>
+              ) : (
+                isSignUp ? 'Create Account' : 'Sign In'
+              )}
             </button>
           </form>
 
@@ -126,7 +208,8 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
           {/* Google OAuth Button */}
           <button
             onClick={handleGoogleLogin}
-            className="w-full px-4 py-3 bg-white text-slate-800 rounded-lg hover:bg-slate-100 transition-all shadow-lg flex items-center justify-center gap-3 group"
+            disabled={isLoading}
+            className="w-full px-4 py-3 bg-white text-slate-800 rounded-lg hover:bg-slate-100 transition-all shadow-lg flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -141,7 +224,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
             <p className="text-center text-slate-400 text-sm">
               {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
               <button
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => { setIsSignUp(!isSignUp); clearError(); setLocalError(null); }}
                 className="text-red-400 hover:text-red-300 transition-colors"
               >
                 {isSignUp ? 'Login' : 'Sign Up'}
@@ -156,14 +239,6 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
         >
           ← Back to Home
         </button>
-
-        {/* Demo Notice */}
-        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg text-center">
-          <p className="text-blue-300 text-sm">
-            <strong>Demo Mode:</strong> Your data is stored locally in your browser. 
-            Enter any username/email to continue.
-          </p>
-        </div>
       </div>
     </div>
   );
