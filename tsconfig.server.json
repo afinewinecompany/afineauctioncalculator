@@ -32,6 +32,7 @@
     "dist",
     "build",
     "src",
+    "server/scripts",
     "**/*.test.ts",
     "**/*.spec.ts"
   ]
