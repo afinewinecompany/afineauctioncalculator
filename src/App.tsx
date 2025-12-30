@@ -33,24 +33,36 @@ function AppContent() {
   // Track if we've already shown the storage warning to prevent spamming
   const storageWarningShownRef = useRef(false);
 
-  // Check for Google OAuth callback and load user data on mount
+  // Check for Google OAuth callback on mount
   useEffect(() => {
     const path = window.location.pathname;
-
-    // Handle OAuth callback
     if (path === '/auth/google/callback' || path.includes('/auth/google/callback')) {
       setCurrentScreen('google-callback');
-      return; // Don't load localStorage during OAuth callback
     }
+  }, []);
 
-    // Load user data from localStorage (only on initial mount)
+  // Load user data from localStorage after auth is initialized
+  useEffect(() => {
+    // Wait for auth to finish loading before checking localStorage
+    if (authLoading) return;
+
+    // Don't load localStorage during OAuth callback
+    if (currentScreen === 'google-callback') return;
+
+    // If already authenticated via AuthContext, let the sync effect handle it
+    if (isAuthenticated) return;
+
+    // If we already have userData (set by auth sync), don't override it
+    if (userData) return;
+
+    // Try to load from localStorage for returning users with valid tokens
     try {
       const savedUser = localStorage.getItem('fantasyBaseballUser');
       if (savedUser) {
-        const user = JSON.parse(savedUser);
+        const parsedUser = JSON.parse(savedUser);
         // Note: Saved data may have lightweight player arrays (only drafted players)
         // Full player data will be fetched when entering the draft room
-        setUserData(user);
+        setUserData(parsedUser);
         setCurrentScreen('leagues');
       }
     } catch (error) {
@@ -58,7 +70,7 @@ function AppContent() {
       // Clear corrupted data
       localStorage.removeItem('fantasyBaseballUser');
     }
-  }, []); // Empty dependency - only run on mount
+  }, [authLoading, isAuthenticated, currentScreen, userData]);
 
   // Save user data to localStorage whenever it changes
   // Note: Only save league metadata, not the full player arrays to avoid quota issues
