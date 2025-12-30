@@ -60,7 +60,7 @@ export function generateAccessToken(user: { id: string; email: string }): string
   };
 
   return jwt.sign(payload, jwtConfig.secret, {
-    expiresIn: jwtConfig.accessExpiry,
+    expiresIn: jwtConfig.accessExpiry as jwt.SignOptions['expiresIn'],
   });
 }
 
@@ -80,7 +80,7 @@ export function generateRefreshToken(user: { id: string }): { token: string; tok
   };
 
   const token = jwt.sign(payload, jwtConfig.refreshSecret, {
-    expiresIn: jwtConfig.refreshExpiry,
+    expiresIn: jwtConfig.refreshExpiry as jwt.SignOptions['expiresIn'],
   });
 
   return { token, tokenId };

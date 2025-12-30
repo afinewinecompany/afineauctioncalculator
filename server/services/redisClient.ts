@@ -87,7 +87,7 @@ export function initializeRedis(): Redis | null {
       isRedisAvailable = false;
     });
 
-    redisClient.on('reconnecting', (delay) => {
+    redisClient.on('reconnecting', (delay: number) => {
       console.log(`[Redis] Reconnecting in ${delay}ms...`);
     });
 

@@ -77,23 +77,18 @@ class ErrorTrackingService {
 
     try {
       // Dynamically import Sentry only if configured
-      const { init, Integrations } = await import('@sentry/node');
-      const { ProfilingIntegration } = await import('@sentry/profiling-node');
-
       this.Sentry = await import('@sentry/node');
+      const { nodeProfilingIntegration } = await import('@sentry/profiling-node');
 
-      init({
+      this.Sentry.init({
         dsn: sentryConfig!.dsn,
         environment: sentryConfig!.environment,
         tracesSampleRate: sentryConfig!.tracesSampleRate,
         beforeSend: sentryConfig!.beforeSend,
 
-        // Integrations
+        // Integrations (updated for @sentry/node v8)
         integrations: [
-          // Express integration for request context
-          new Integrations.Http({ tracing: true }),
-          // Profiling for performance insights
-          new ProfilingIntegration(),
+          nodeProfilingIntegration(),
         ],
 
         // Release tracking (from package.json version or git commit)

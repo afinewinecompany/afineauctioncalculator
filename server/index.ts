@@ -167,7 +167,12 @@ export function createServer(): Express {
     const __dirname = path.dirname(__filename);
 
     // Serve static files from the dist folder (built frontend)
-    const distPath = path.join(__dirname, '..', 'dist');
+    // Server runs from dist/server/index.js, frontend is at dist/
+    // So we go up one level from dist/server/ to dist/
+    const distPath = path.join(__dirname, '..');
+
+    logger.info({ distPath }, 'Serving static files from');
+
     app.use(express.static(distPath));
 
     // SPA fallback - serve index.html for all non-API routes
