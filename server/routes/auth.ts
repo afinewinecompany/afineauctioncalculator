@@ -435,6 +435,25 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
 // =============================================================================
 
 /**
+ * GET /api/auth/google/status
+ *
+ * Check if Google OAuth is configured on the server.
+ * Used by frontend to show appropriate UI before attempting OAuth.
+ *
+ * Response:
+ * - 200: { configured: boolean }
+ */
+router.get('/google/status', (req: Request, res: Response) => {
+  const configured = !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+  return res.status(200).json({
+    configured,
+    message: configured
+      ? 'Google OAuth is available'
+      : 'Google OAuth is not configured. Please use email/password authentication.',
+  });
+});
+
+/**
  * GET /api/auth/google
  *
  * Redirect user to Google OAuth consent screen.
