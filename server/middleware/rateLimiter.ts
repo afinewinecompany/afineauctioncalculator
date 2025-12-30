@@ -58,8 +58,8 @@ export const apiLimiter = rateLimit({
 });
 
 /**
- * Authentication rate limiter
- * 10 requests per minute for auth endpoints
+ * Authentication rate limiter (strict)
+ * 10 requests per minute for login/register endpoints
  * Stricter to prevent brute force attacks
  */
 export const authLimiter = rateLimit({
@@ -78,6 +78,15 @@ export const authLimiter = rateLimit({
       return forwarded.split(',')[0].trim();
     }
     return req.ip || req.socket.remoteAddress || 'unknown';
+  },
+  skip: (req: Request): boolean => {
+    // Don't apply strict rate limiting to session verification endpoints
+    // These are called frequently and don't need brute force protection
+    const path = req.path;
+    return path === '/me' ||
+           path === '/refresh' ||
+           path === '/google/status' ||
+           path === '/logout';
   },
 });
 
