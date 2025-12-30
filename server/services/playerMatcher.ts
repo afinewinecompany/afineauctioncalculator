@@ -121,6 +121,21 @@ function isHitter(positions: string[]): boolean {
 }
 
 /**
+ * Check if a player is a minor league player (has MiLB position marker)
+ * Couch Managers marks minor league players with 'MiLB' in their positions array
+ */
+export function isMinorLeaguePlayer(positions: string[]): boolean {
+  return positions.some(p => p.toUpperCase() === 'MILB');
+}
+
+/**
+ * Get the actual playing positions (excluding markers like MiLB)
+ */
+export function getPlayingPositions(positions: string[]): string[] {
+  return positions.filter(p => p.toUpperCase() !== 'MILB');
+}
+
+/**
  * Calculate a match score based on multiple factors
  * Higher score = better match
  */
@@ -143,6 +158,25 @@ function calculateMatchScore(
     return 0; // Names don't match at all - no match
   }
 
+  // CRITICAL: Minor league player check
+  // If the scraped player has 'MiLB' in their positions, they are a minor league prospect
+  // and should NOT match to MLB projections unless confirmed by other signals
+  const scrapedIsMiLB = isMinorLeaguePlayer(scraped.positions);
+  if (scrapedIsMiLB) {
+    // Heavy penalty for MiLB players - they should NOT match to MLB projections
+    // This prevents "Jesus Rodriguez (MiLB)" from matching to "Julio Rodriguez (MLB)"
+    // or minor league "Jose Ramirez" matching to Cleveland's Jose Ramirez
+    score -= 200;
+
+    // Log the MiLB player to help with debugging
+    logger.debug({
+      player: scraped.fullName,
+      team: scraped.mlbTeam,
+      positions: scraped.positions,
+      projectionCandidate: projection.name,
+    }, 'Penalizing MiLB player match attempt');
+  }
+
   // Team matching (very important for disambiguation)
   const scrapedTeam = normalizeTeam(scraped.mlbTeam);
   const projTeam = normalizeTeam(projection.team);
@@ -153,19 +187,21 @@ function calculateMatchScore(
   }
 
   // Position matching (crucial for same-name players like "Juan Soto" OF vs RP)
-  const scrapedIsPitcher = isPitcher(scraped.positions);
+  // Use playing positions (excluding MiLB marker) for comparison
+  const scrapedPlayingPositions = getPlayingPositions(scraped.positions);
+  const scrapedIsPitcher = isPitcher(scrapedPlayingPositions);
   const projIsPitcher = isPitcher(projection.positions);
-  const scrapedIsHitter = isHitter(scraped.positions);
+  const scrapedIsHitter = isHitter(scrapedPlayingPositions);
   const projIsHitter = isHitter(projection.positions);
 
   if (scrapedIsPitcher && projIsPitcher) {
     score += 40; // Both pitchers
-    if (positionsOverlap(scraped.positions, projection.positions)) {
+    if (positionsOverlap(scrapedPlayingPositions, projection.positions)) {
       score += 20; // Specific position match (SP vs RP)
     }
   } else if (scrapedIsHitter && projIsHitter) {
     score += 40; // Both hitters
-    if (positionsOverlap(scraped.positions, projection.positions)) {
+    if (positionsOverlap(scrapedPlayingPositions, projection.positions)) {
       score += 20; // Specific position match
     }
   } else if ((scrapedIsPitcher && projIsHitter) || (scrapedIsHitter && projIsPitcher)) {

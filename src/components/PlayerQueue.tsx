@@ -2,7 +2,21 @@ import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import { Player, PositionalScarcity } from '../lib/types';
 import { getDraftSurplus } from '../lib/calculations';
 import { getPlayerPhotoUrl } from '../lib/auctionApi';
-import { ArrowUpDown, Filter, TrendingUp, TrendingDown, User, Check, X, UserPlus, Info } from 'lucide-react';
+import { ArrowUpDown, Filter, TrendingUp, TrendingDown, User, Check, X, UserPlus, Info, AlertTriangle } from 'lucide-react';
+
+/**
+ * Check if a player is a minor league player (has MiLB position marker)
+ */
+function isMinorLeaguePlayer(positions: string[]): boolean {
+  return positions.some(p => p.toUpperCase() === 'MILB');
+}
+
+/**
+ * Get playing positions (excluding MiLB marker)
+ */
+function getPlayingPositions(positions: string[]): string[] {
+  return positions.filter(p => p.toUpperCase() !== 'MILB');
+}
 
 // Virtualization constants
 const ROW_HEIGHT = 64; // Height of each player row in pixels
@@ -48,6 +62,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     return highestScarcity;
   }, [scarcityByPosition]);
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'on_block' | 'drafted'>('available');
+  const [hideMiLB, setHideMiLB] = useState<boolean>(true); // Hide minor league players by default
   const [sortBy, setSortBy] = useState<'name' | 'projectedValue' | 'adjustedValue'>('adjustedValue');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -107,6 +122,10 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
       }
 
       if (searchQuery && !p.name.toLowerCase().includes(searchLower)) return false;
+
+      // MiLB filter: if hideMiLB is true, filter out minor league players
+      if (hideMiLB && isMinorLeaguePlayer(p.positions)) return false;
+
       return true;
     });
 
@@ -137,7 +156,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     });
 
     return filtered;
-  }, [players, filterStatus, filterPosition, searchQuery, sortBy, sortOrder]);
+  }, [players, filterStatus, filterPosition, searchQuery, sortBy, sortOrder, hideMiLB]);
 
   // Determine if virtualization should be used
   const useVirtualization = filteredPlayers.length > VIRTUALIZATION_THRESHOLD;
@@ -199,7 +218,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
       scrollContainerRef.current.scrollTop = 0;
       setScrollTop(0);
     }
-  }, [filterStatus, filterPosition, searchQuery, sortBy, sortOrder]);
+  }, [filterStatus, filterPosition, searchQuery, sortBy, sortOrder, hideMiLB]);
 
   // Filter change handlers
   const handleFilterChange = useCallback((newFilter: string) => {
@@ -277,6 +296,20 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
               </button>
             ))}
           </div>
+
+          {/* MiLB Filter Toggle */}
+          <button
+            onClick={() => setHideMiLB(!hideMiLB)}
+            className={`px-3 py-2 rounded-lg transition-all text-sm flex items-center gap-1.5 ${
+              hideMiLB
+                ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
+            }`}
+            title={hideMiLB ? 'Click to show minor league players' : 'Click to hide minor league players'}
+          >
+            <AlertTriangle className="w-3 h-3" />
+            {hideMiLB ? 'MiLB Hidden' : 'Show All'}
+          </button>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -448,7 +481,20 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
               </div>
 
               <div className="col-span-2 flex items-center gap-2">
-                <span className={isOnBlock ? 'text-white' : 'text-slate-400'}>{player.positions.join(', ')}</span>
+                {/* Show playing positions (excluding MiLB marker) */}
+                <span className={isOnBlock ? 'text-white' : 'text-slate-400'}>
+                  {getPlayingPositions(player.positions).join(', ') || 'UTIL'}
+                </span>
+                {/* MiLB Badge - show when player is a minor leaguer */}
+                {isMinorLeaguePlayer(player.positions) && (
+                  <span
+                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-900/50 text-yellow-400 border border-yellow-500/30"
+                    title="Minor League Player - Not in MLB projections"
+                  >
+                    <AlertTriangle className="w-3 h-3" />
+                    MiLB
+                  </span>
+                )}
                 {/* Scarcity Badge */}
                 {playerScarcity && playerScarcity.scarcityLevel !== 'normal' && playerScarcity.scarcityLevel !== 'surplus' && (
                   <span
