@@ -310,27 +310,75 @@ export function SetupScreen({
 
                 {/* Dynasty Settings (shown when dynasty is selected) */}
                 {settings.leagueType === 'dynasty' && (
-                  <div className={`bg-gradient-to-br from-purple-900/30 to-slate-800/80 border-2 border-purple-500/60 rounded-xl ${isMobile ? 'p-4 space-y-4' : 'p-6 space-y-5'} shadow-lg shadow-purple-500/10`}>
-                    <div className={`flex items-center gap-3 ${isMobile ? 'pb-2' : 'pb-3'} border-b border-purple-500/30`}>
-                      <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg bg-purple-500/20 flex items-center justify-center`}>
-                        <Crown className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6'} text-purple-400`} />
+                  <div
+                    className={`rounded-xl ${isMobile ? 'p-4' : 'p-6'}`}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(217, 70, 239, 0.15) 0%, rgba(147, 51, 234, 0.1) 50%, rgba(13, 13, 13, 0.95) 100%)',
+                      border: '2px solid rgba(217, 70, 239, 0.4)',
+                      boxShadow: '0 4px 20px rgba(217, 70, 239, 0.15)'
+                    }}
+                  >
+                    <div
+                      className={`flex items-center gap-3 ${isMobile ? 'pb-3 mb-4' : 'pb-4 mb-5'}`}
+                      style={{ borderBottom: '1px solid rgba(217, 70, 239, 0.3)' }}
+                    >
+                      <div
+                        className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl flex items-center justify-center`}
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(217, 70, 239, 0.3) 0%, rgba(147, 51, 234, 0.2) 100%)',
+                          border: '1px solid rgba(217, 70, 239, 0.4)'
+                        }}
+                      >
+                        <Crown className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} style={{ color: '#d946ef' }} />
                       </div>
                       <div>
-                        <h3 className={`text-white font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>Dynasty Settings</h3>
-                        <p className={`text-purple-300/70 ${isMobile ? 'text-xs' : 'text-sm'}`}>Configure long-term league options</p>
+                        <h3 className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`} style={{ color: 'white' }}>Dynasty Settings</h3>
+                        <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(217, 70, 239, 0.8)' }}>Configure long-term league options</p>
                       </div>
                     </div>
 
                     {/* Rankings Source Selection */}
-                    <div>
-                      <label className={`block text-white font-medium ${isMobile ? 'mb-1.5 text-sm' : 'mb-2'}`}>Dynasty Rankings Source</label>
+                    <div className={`${isMobile ? 'mb-4' : 'mb-5'}`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className={`font-medium ${isMobile ? 'text-sm' : 'text-base'}`} style={{ color: 'white' }}>
+                          Dynasty Rankings Source
+                        </label>
+                        <span
+                          className={`px-3 py-1 rounded-full ${isMobile ? 'text-xs' : 'text-sm'} font-semibold`}
+                          style={{
+                            backgroundColor: settings.dynastySettings?.rankingsSource
+                              ? 'rgba(34, 197, 94, 0.2)'
+                              : 'rgba(251, 191, 36, 0.2)',
+                            color: settings.dynastySettings?.rankingsSource ? '#22c55e' : '#fbbf24',
+                            border: settings.dynastySettings?.rankingsSource
+                              ? '1px solid rgba(34, 197, 94, 0.4)'
+                              : '1px solid rgba(251, 191, 36, 0.4)'
+                          }}
+                        >
+                          {settings.dynastySettings?.rankingsSource ? '✓ Selected' : 'Select One'}
+                        </span>
+                      </div>
+
                       {/* Prompt message when nothing selected */}
                       {!settings.dynastySettings?.rankingsSource && (
-                        <p className={`text-amber-400 ${isMobile ? 'text-xs mb-2' : 'text-sm mb-3'} animate-pulse`}>
-                          Please select a rankings source below
-                        </p>
+                        <div
+                          className={`flex items-center gap-2 ${isMobile ? 'mb-3 p-2' : 'mb-4 p-3'} rounded-lg`}
+                          style={{
+                            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                            border: '1px solid rgba(251, 191, 36, 0.3)'
+                          }}
+                        >
+                          <div
+                            className="w-2 h-2 rounded-full animate-pulse"
+                            style={{ backgroundColor: '#fbbf24' }}
+                          />
+                          <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: '#fbbf24' }}>
+                            Choose one option below to set your dynasty rankings source
+                          </p>
+                        </div>
                       )}
-                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-4'}`}>
+
+                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'}`}>
                         {/* Harry Knows Ball Option */}
                         <button
                           type="button"
@@ -342,22 +390,42 @@ export function SetupScreen({
                               customRankings: undefined
                             }
                           })}
-                          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
-                            settings.dynastySettings?.rankingsSource === 'harryknowsball'
-                              ? 'border-purple-400 bg-purple-600/30 scale-[1.02]'
+                          className={`${isMobile ? 'p-4' : 'p-5'} rounded-xl text-left transition-all duration-300`}
+                          style={{
+                            backgroundColor: settings.dynastySettings?.rankingsSource === 'harryknowsball'
+                              ? 'rgba(217, 70, 239, 0.2)'
+                              : 'rgba(255, 255, 255, 0.05)',
+                            border: settings.dynastySettings?.rankingsSource === 'harryknowsball'
+                              ? '2px solid #d946ef'
                               : !settings.dynastySettings?.rankingsSource
-                                ? 'border-amber-500/60 bg-slate-700/50 hover:border-purple-400 hover:bg-purple-600/20 animate-pulse'
-                                : 'border-slate-500 bg-slate-700/50 hover:border-slate-400 hover:bg-slate-700'
-                          }`}
+                                ? '2px solid rgba(251, 191, 36, 0.5)'
+                                : '2px solid rgba(255, 255, 255, 0.15)',
+                            transform: settings.dynastySettings?.rankingsSource === 'harryknowsball' ? 'scale(1.02)' : 'scale(1)',
+                            boxShadow: settings.dynastySettings?.rankingsSource === 'harryknowsball'
+                              ? '0 4px 15px rgba(217, 70, 239, 0.3)'
+                              : 'none'
+                          }}
                         >
-                          <div className="font-semibold text-base text-white">
-                            Harry Knows Ball
+                          <div className="flex items-center justify-between mb-2">
+                            <span className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`} style={{ color: 'white' }}>
+                              Harry Knows Ball
+                            </span>
+                            {settings.dynastySettings?.rankingsSource === 'harryknowsball' && (
+                              <span
+                                className="px-2 py-0.5 rounded text-xs font-bold"
+                                style={{ backgroundColor: '#22c55e', color: 'white' }}
+                              >
+                                ACTIVE
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm mt-1 text-slate-300">
-                            Crowd-sourced dynasty rankings
-                          </div>
-                          {settings.dynastySettings?.rankingsSource === 'harryknowsball' && (
-                            <div className="mt-2 text-green-400 text-sm font-medium">✓ Selected</div>
+                          <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                            Crowd-sourced dynasty rankings from the community
+                          </p>
+                          {!settings.dynastySettings?.rankingsSource && (
+                            <p className={`mt-2 ${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: '#fbbf24' }}>
+                              Click to select
+                            </p>
                           )}
                         </button>
 
@@ -365,23 +433,43 @@ export function SetupScreen({
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
-                            settings.dynastySettings?.rankingsSource === 'custom'
-                              ? 'border-purple-400 bg-purple-600/30 scale-[1.02]'
+                          className={`${isMobile ? 'p-4' : 'p-5'} rounded-xl text-left transition-all duration-300`}
+                          style={{
+                            backgroundColor: settings.dynastySettings?.rankingsSource === 'custom'
+                              ? 'rgba(217, 70, 239, 0.2)'
+                              : 'rgba(255, 255, 255, 0.05)',
+                            border: settings.dynastySettings?.rankingsSource === 'custom'
+                              ? '2px solid #d946ef'
                               : !settings.dynastySettings?.rankingsSource
-                                ? 'border-amber-500/60 bg-slate-700/50 hover:border-purple-400 hover:bg-purple-600/20 animate-pulse'
-                                : 'border-slate-500 bg-slate-700/50 hover:border-slate-400 hover:bg-slate-700'
-                          }`}
+                                ? '2px solid rgba(251, 191, 36, 0.5)'
+                                : '2px solid rgba(255, 255, 255, 0.15)',
+                            transform: settings.dynastySettings?.rankingsSource === 'custom' ? 'scale(1.02)' : 'scale(1)',
+                            boxShadow: settings.dynastySettings?.rankingsSource === 'custom'
+                              ? '0 4px 15px rgba(217, 70, 239, 0.3)'
+                              : 'none'
+                          }}
                         >
-                          <div className="font-semibold text-base flex items-center gap-2 text-white">
-                            <Upload className="w-4 h-4" />
-                            Upload Custom
+                          <div className="flex items-center justify-between mb-2">
+                            <span className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'} flex items-center gap-2`} style={{ color: 'white' }}>
+                              <Upload className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                              Upload Custom
+                            </span>
+                            {settings.dynastySettings?.rankingsSource === 'custom' && (
+                              <span
+                                className="px-2 py-0.5 rounded text-xs font-bold"
+                                style={{ backgroundColor: '#22c55e', color: 'white' }}
+                              >
+                                ACTIVE
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm mt-1 text-slate-300">
-                            CSV file with rankings
-                          </div>
-                          {settings.dynastySettings?.rankingsSource === 'custom' && (
-                            <div className="mt-2 text-green-400 text-sm font-medium">✓ Selected</div>
+                          <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                            Upload your own CSV file with custom rankings
+                          </p>
+                          {!settings.dynastySettings?.rankingsSource && (
+                            <p className={`mt-2 ${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: '#fbbf24' }}>
+                              Click to select
+                            </p>
                           )}
                         </button>
                       </div>
@@ -397,17 +485,23 @@ export function SetupScreen({
                       />
 
                       {/* File Format Help */}
-                      <p className="text-slate-300 text-sm mt-3">
+                      <p className={`${isMobile ? 'text-xs mt-2' : 'text-sm mt-3'}`} style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
                         CSV format: name column (name, player, fullname, or first+last) and rank column (rank, ranking, overall, etc.). Any column with "id" in the name is used for matching.
                       </p>
                     </div>
 
                     {/* Custom Rankings Status */}
                     {settings.dynastySettings?.rankingsSource === 'custom' && settings.dynastySettings?.customRankings && (
-                      <div className="bg-green-900/40 border border-green-500/60 rounded-lg p-4">
+                      <div
+                        className={`rounded-xl ${isMobile ? 'p-3' : 'p-4'}`}
+                        style={{
+                          backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                          border: '1px solid rgba(34, 197, 94, 0.4)'
+                        }}
+                      >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-green-300">
-                            <FileSpreadsheet className="w-5 h-5" />
+                          <div className="flex items-center gap-2" style={{ color: '#22c55e' }}>
+                            <FileSpreadsheet className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                             <span className="font-semibold">
                               {settings.dynastySettings.customRankings.length} players loaded
                             </span>
@@ -415,13 +509,14 @@ export function SetupScreen({
                           <button
                             type="button"
                             onClick={clearCustomRankings}
-                            className="text-slate-300 hover:text-red-400 transition-colors p-1"
+                            className="p-1 rounded transition-colors"
+                            style={{ color: 'rgba(255, 255, 255, 0.6)' }}
                             title="Remove custom rankings"
                           >
-                            <X className="w-5 h-5" />
+                            <X className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                           </button>
                         </div>
-                        <div className="mt-2 text-slate-200 text-sm">
+                        <div className={`mt-2 ${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                           Top 3: {settings.dynastySettings.customRankings.slice(0, 3).map(r => r.name).join(', ')}
                         </div>
                       </div>
@@ -429,21 +524,43 @@ export function SetupScreen({
 
                     {/* Upload Error */}
                     {uploadError && (
-                      <div className="bg-red-900/40 border border-red-500/60 rounded-lg p-4 text-red-200">
+                      <div
+                        className={`rounded-xl ${isMobile ? 'p-3 text-sm' : 'p-4'}`}
+                        style={{
+                          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                          color: '#fca5a5'
+                        }}
+                      >
                         {uploadError}
                       </div>
                     )}
 
                     {/* Parsing Indicator */}
                     {isParsingFile && (
-                      <div className="text-white flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                      <div className="flex items-center gap-2" style={{ color: 'white' }}>
+                        <div
+                          className="w-5 h-5 rounded-full animate-spin"
+                          style={{
+                            border: '2px solid rgba(217, 70, 239, 0.3)',
+                            borderTopColor: '#d946ef'
+                          }}
+                        />
                         Parsing file...
                       </div>
                     )}
 
-                    <div>
-                      <label className="block text-white font-medium mb-2">Dynasty Weight</label>
+                    {/* Dynasty Weight Slider */}
+                    <div
+                      className={`rounded-xl ${isMobile ? 'p-3' : 'p-4'}`}
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}
+                    >
+                      <label className={`block font-medium ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`} style={{ color: 'white' }}>
+                        Dynasty Weight
+                      </label>
                       <div className="flex items-center gap-4">
                         <input
                           type="range"
@@ -457,27 +574,47 @@ export function SetupScreen({
                               dynastyWeight: Number(e.target.value) / 100
                             }
                           })}
-                          className="flex-1 h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-purple-400"
+                          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
+                          style={{
+                            background: `linear-gradient(to right, #d946ef ${(settings.dynastySettings?.dynastyWeight ?? 0.5) * 100}%, rgba(255,255,255,0.2) ${(settings.dynastySettings?.dynastyWeight ?? 0.5) * 100}%)`
+                          }}
                         />
-                        <span className="text-white font-semibold w-16 text-center text-lg">
+                        <span
+                          className={`font-bold ${isMobile ? 'w-12 text-base' : 'w-16 text-lg'} text-center`}
+                          style={{ color: '#d946ef' }}
+                        >
                           {Math.round((settings.dynastySettings?.dynastyWeight ?? 0.5) * 100)}%
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm text-slate-300 mt-2">
+                      <div className={`flex justify-between ${isMobile ? 'text-xs mt-1' : 'text-sm mt-2'}`} style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
                         <span>More Projections</span>
                         <span>More Dynasty Rank</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between py-2">
+                    {/* Include Minor Leaguers Toggle */}
+                    <div
+                      className={`flex items-center justify-between rounded-xl ${isMobile ? 'p-3' : 'p-4'}`}
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}
+                    >
                       <div>
-                        <label className="text-white font-medium">Include Minor Leaguers</label>
-                        <p className="text-slate-300 text-sm">Include prospects in dynasty rankings</p>
+                        <label className={`font-medium ${isMobile ? 'text-sm' : ''}`} style={{ color: 'white' }}>
+                          Include Minor Leaguers
+                        </label>
+                        <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                          Include prospects in dynasty rankings
+                        </p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={`text-sm font-medium transition-colors ${
-                          settings.dynastySettings?.includeMinors === true ? 'text-slate-500' : 'text-slate-300'
-                        }`}>Off</span>
+                        <span
+                          className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium transition-colors`}
+                          style={{ color: settings.dynastySettings?.includeMinors === true ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)' }}
+                        >
+                          Off
+                        </span>
                         <button
                           type="button"
                           onClick={() => setSettings({
@@ -487,24 +624,27 @@ export function SetupScreen({
                               includeMinors: settings.dynastySettings?.includeMinors === true ? false : true
                             }
                           })}
-                          className={`relative w-14 h-7 rounded-full transition-colors duration-300 ease-in-out ${
-                            settings.dynastySettings?.includeMinors === true
-                              ? 'bg-purple-500'
-                              : 'bg-slate-600'
-                          }`}
+                          className="relative w-14 h-7 rounded-full transition-all duration-300 ease-in-out"
+                          style={{
+                            backgroundColor: settings.dynastySettings?.includeMinors === true ? '#d946ef' : 'rgba(255,255,255,0.2)'
+                          }}
                           role="switch"
                           aria-checked={settings.dynastySettings?.includeMinors === true}
                         >
                           <span
-                            className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 ease-in-out"
+                            className="absolute top-0.5 w-6 h-6 rounded-full shadow-md transition-all duration-300 ease-in-out"
                             style={{
+                              backgroundColor: 'white',
                               left: settings.dynastySettings?.includeMinors === true ? 'calc(100% - 26px)' : '2px'
                             }}
                           />
                         </button>
-                        <span className={`text-sm font-medium transition-colors ${
-                          settings.dynastySettings?.includeMinors === true ? 'text-purple-400' : 'text-slate-500'
-                        }`}>On</span>
+                        <span
+                          className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium transition-colors`}
+                          style={{ color: settings.dynastySettings?.includeMinors === true ? '#d946ef' : 'rgba(255,255,255,0.3)' }}
+                        >
+                          On
+                        </span>
                       </div>
                     </div>
                   </div>
