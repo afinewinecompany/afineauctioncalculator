@@ -19,6 +19,20 @@ function getApiUrl(): string {
   return url;
 }
 
+// Retro color palette matching landing page
+const colors = {
+  bg: '#0d0d0d',
+  amber400: '#fbbf24',
+  amber500: '#f59e0b',
+  orange400: '#fb923c',
+  orange500: '#f97316',
+  orange600: '#ea580c',
+  rose400: '#fb7185',
+  rose500: '#f43f5e',
+  fuchsia500: '#d946ef',
+  purple600: '#9333ea',
+};
+
 interface LoginPageProps {
   onBack: () => void;
   onSuccess: () => void;
@@ -132,45 +146,177 @@ export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProp
   const displayError = localError || error;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4">
-      {/* Animated background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-red-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: colors.bg,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Animated background orbs */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '80px',
+            left: '40px',
+            width: '400px',
+            height: '400px',
+            background: `linear-gradient(135deg, ${colors.amber500}20, ${colors.orange600}15, transparent)`,
+            borderRadius: '50%',
+            filter: 'blur(60px)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: '160px',
+            right: '40px',
+            width: '350px',
+            height: '350px',
+            background: `linear-gradient(225deg, ${colors.fuchsia500}15, ${colors.purple600}10, transparent)`,
+            borderRadius: '50%',
+            filter: 'blur(60px)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '100px',
+            left: '30%',
+            width: '300px',
+            height: '300px',
+            background: `linear-gradient(45deg, ${colors.rose500}15, transparent)`,
+            borderRadius: '50%',
+            filter: 'blur(60px)',
+          }}
+        />
       </div>
 
-      <div className="relative w-full max-w-md">
+      <div style={{ position: 'relative', width: '100%', maxWidth: '448px' }}>
         {/* Logo */}
-        <div className="text-center mb-8 animate-fadeIn">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-full flex items-center justify-center shadow-2xl shadow-red-500/50">
-              <DollarSign className="w-8 h-8 text-white" />
+        <div style={{ textAlign: 'center', marginBottom: '32px' }} className="animate-fadeIn">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+            <div
+              style={{
+                position: 'relative',
+              }}
+            >
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  background: `linear-gradient(135deg, ${colors.amber400}, ${colors.orange500}, ${colors.rose500})`,
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: `0 20px 40px ${colors.orange500}40`,
+                }}
+              >
+                <DollarSign style={{ width: '32px', height: '32px', color: 'white' }} />
+              </div>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: `linear-gradient(135deg, ${colors.amber400}, ${colors.orange500}, ${colors.rose500})`,
+                  borderRadius: '16px',
+                  filter: 'blur(20px)',
+                  opacity: 0.5,
+                }}
+              />
             </div>
           </div>
-          <h1 className="text-3xl text-white mb-2">Fantasy Baseball Auction</h1>
-          <p className="text-slate-400">Sign in to manage your drafts</p>
+          <h1 style={{ fontSize: '1.875rem', color: 'white', marginBottom: '8px', fontWeight: 700 }}>
+            A Fine Auction Calculator
+          </h1>
+          <a
+            href="https://x.com/afinewineco"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: 'rgba(255,255,255,0.4)',
+              fontSize: '14px',
+              textDecoration: 'none',
+              transition: 'color 0.3s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = colors.amber400}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+          >
+            by Dylan Merlo
+          </a>
+          <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '16px' }}>Sign in to manage your drafts</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl backdrop-blur-sm animate-slideInLeft">
-          <div className="flex gap-2 mb-6">
+        <div
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px',
+            padding: '32px',
+          }}
+          className="animate-slideInLeft"
+        >
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
             <button
               onClick={() => { setIsSignUp(false); clearError(); setLocalError(null); }}
-              className={`flex-1 py-2 rounded-lg transition-all ${
-                !isSignUp
-                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/30'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
-              }`}
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '8px',
+                transition: 'all 0.3s',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 500,
+                ...(
+                  !isSignUp
+                    ? {
+                        background: `linear-gradient(90deg, ${colors.amber500}, ${colors.orange500}, ${colors.rose500})`,
+                        color: 'white',
+                        boxShadow: `0 10px 25px ${colors.orange500}40`,
+                      }
+                    : {
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        color: 'rgba(255,255,255,0.6)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                      }
+                ),
+              }}
             >
               Login
             </button>
             <button
               onClick={() => { setIsSignUp(true); clearError(); setLocalError(null); }}
-              className={`flex-1 py-2 rounded-lg transition-all ${
-                isSignUp
-                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/30'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
-              }`}
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '8px',
+                transition: 'all 0.3s',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 500,
+                ...(
+                  isSignUp
+                    ? {
+                        background: `linear-gradient(90deg, ${colors.amber500}, ${colors.orange500}, ${colors.rose500})`,
+                        color: 'white',
+                        boxShadow: `0 10px 25px ${colors.orange500}40`,
+                      }
+                    : {
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        color: 'rgba(255,255,255,0.6)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                      }
+                ),
+              }}
             >
               Sign Up
             </button>
@@ -178,66 +324,123 @@ export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProp
 
           {/* Error Display */}
           {displayError && (
-            <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg flex items-center gap-2 text-red-300">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm">{displayError}</span>
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '12px',
+                backgroundColor: 'rgba(244, 63, 94, 0.15)',
+                border: `1px solid ${colors.rose500}50`,
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: colors.rose400,
+              }}
+            >
+              <AlertCircle style={{ width: '20px', height: '20px', flexShrink: 0 }} />
+              <span style={{ fontSize: '14px' }}>{displayError}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {isSignUp && (
               <div>
-                <label className="block text-slate-300 mb-2">
-                  <User className="w-4 h-4 inline mr-2" />
+                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>
+                  <User style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
                   Name (optional)
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '16px',
+                    outline: 'none',
+                    transition: 'all 0.3s',
+                  }}
                   placeholder="Enter your name"
                   disabled={isLoading}
+                  onFocus={(e) => e.target.style.borderColor = colors.orange500}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-slate-300 mb-2">
-                <Mail className="w-4 h-4 inline mr-2" />
+              <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>
+                <Mail style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
                 Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'all 0.3s',
+                }}
                 placeholder="Enter your email"
                 required
                 disabled={isLoading}
+                onFocus={(e) => e.target.style.borderColor = colors.orange500}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 mb-2">
-                <Lock className="w-4 h-4 inline mr-2" />
+              <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>
+                <Lock style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
                 Password
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'all 0.3s',
+                }}
                 placeholder={isSignUp ? 'Create a password (min 8 chars)' : 'Enter your password'}
                 required
                 disabled={isLoading}
+                onFocus={(e) => e.target.style.borderColor = colors.orange500}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
               />
               {!isSignUp && (
-                <div className="mt-2 text-right">
+                <div style={{ marginTop: '8px', textAlign: 'right' }}>
                   <button
                     type="button"
                     onClick={onForgotPassword}
-                    className="text-sm text-red-400 hover:text-red-300 transition-colors"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: colors.orange400,
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'color 0.3s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = colors.amber400}
+                    onMouseLeave={(e) => e.currentTarget.style.color = colors.orange400}
                   >
                     Forgot password?
                   </button>
@@ -247,18 +450,30 @@ export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProp
 
             {isSignUp && (
               <div>
-                <label className="block text-slate-300 mb-2">
-                  <Lock className="w-4 h-4 inline mr-2" />
+                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>
+                  <Lock style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
                   Confirm Password
                 </label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '16px',
+                    outline: 'none',
+                    transition: 'all 0.3s',
+                  }}
                   placeholder="Confirm your password"
                   required
                   disabled={isLoading}
+                  onFocus={(e) => e.target.style.borderColor = colors.orange500}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
                 />
               </div>
             )}
@@ -266,11 +481,28 @@ export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProp
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30 hover:shadow-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: `linear-gradient(90deg, ${colors.amber500}, ${colors.orange500}, ${colors.rose500})`,
+                color: 'white',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '16px',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                boxShadow: `0 15px 35px ${colors.orange500}40`,
+                opacity: isLoading ? 0.7 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.3s',
+              }}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 style={{ width: '20px', height: '20px' }} className="animate-spin" />
                   {isSignUp ? 'Creating Account...' : 'Signing In...'}
                 </>
               ) : (
@@ -280,12 +512,12 @@ export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProp
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-700"></div>
+          <div style={{ position: 'relative', margin: '24px 0' }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)' }} />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-gradient-to-br from-slate-800 to-slate-900 text-slate-400">Or continue with</span>
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', fontSize: '14px' }}>
+              <span style={{ padding: '0 16px', backgroundColor: colors.bg, color: 'rgba(255,255,255,0.4)' }}>Or continue with</span>
             </div>
           </div>
 
@@ -293,16 +525,32 @@ export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProp
           <button
             onClick={handleGoogleLogin}
             disabled={isLoading || isGoogleLoading}
-            className="w-full px-4 py-3 bg-white text-slate-800 rounded-lg hover:bg-slate-100 transition-all shadow-lg flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              width: '100%',
+              padding: '14px',
+              backgroundColor: 'white',
+              color: '#1f2937',
+              borderRadius: '8px',
+              border: 'none',
+              fontWeight: 500,
+              fontSize: '16px',
+              cursor: isLoading || isGoogleLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              opacity: isLoading || isGoogleLoading ? 0.7 : 1,
+              transition: 'all 0.3s',
+            }}
           >
             {isGoogleLoading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin text-slate-600" />
+                <Loader2 style={{ width: '20px', height: '20px', color: '#4b5563' }} className="animate-spin" />
                 <span>Connecting...</span>
               </>
             ) : (
               <>
-                <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -313,12 +561,20 @@ export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProp
             )}
           </button>
 
-          <div className="mt-6 pt-6 border-t border-slate-700">
-            <p className="text-center text-slate-400 text-sm">
+          <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>
               {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
               <button
                 onClick={() => { setIsSignUp(!isSignUp); clearError(); setLocalError(null); }}
-                className="text-red-400 hover:text-red-300 transition-colors"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: colors.orange400,
+                  cursor: 'pointer',
+                  transition: 'color 0.3s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = colors.amber400}
+                onMouseLeave={(e) => e.currentTarget.style.color = colors.orange400}
               >
                 {isSignUp ? 'Login' : 'Sign Up'}
               </button>
@@ -328,7 +584,19 @@ export function LoginPage({ onBack, onSuccess, onForgotPassword }: LoginPageProp
 
         <button
           onClick={onBack}
-          className="mt-4 w-full px-4 py-2 text-slate-400 hover:text-white transition-colors text-center"
+          style={{
+            marginTop: '16px',
+            width: '100%',
+            padding: '10px',
+            background: 'none',
+            border: 'none',
+            color: 'rgba(255,255,255,0.5)',
+            cursor: 'pointer',
+            textAlign: 'center',
+            transition: 'color 0.3s',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.color = 'white'}
+          onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
         >
           ← Back to Home
         </button>

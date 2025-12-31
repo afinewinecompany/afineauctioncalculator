@@ -134,11 +134,12 @@ export function LeaguesList({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
-      {/* Animated background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-red-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+    <div className="min-h-screen" style={{ backgroundColor: '#0d0d0d' }}>
+      {/* Animated background orbs - retro colors */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-96 h-96 rounded-full" style={{ background: 'linear-gradient(135deg, #f59e0b30, #ea580c20, transparent)', filter: 'blur(60px)' }}></div>
+        <div className="absolute top-40 right-10 w-80 h-80 rounded-full" style={{ background: 'linear-gradient(225deg, #d946ef20, #9333ea15, transparent)', filter: 'blur(60px)' }}></div>
+        <div className="absolute bottom-20 left-1/3 w-72 h-72 rounded-full" style={{ background: 'linear-gradient(45deg, #f43f5e20, transparent)', filter: 'blur(60px)' }}></div>
       </div>
 
       <div className={`relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? 'py-6' : 'py-12'}`}>
@@ -149,10 +150,10 @@ export function LeaguesList({
               <img
                 src={profilePicture}
                 alt={username}
-                className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} rounded-full border-2 border-red-500 shadow-lg shadow-red-500/30`}
+                className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} rounded-full border-2`} style={{ borderColor: '#f97316', boxShadow: '0 10px 25px rgba(249, 115, 22, 0.3)' }}
               />
             ) : (
-              <div className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} bg-gradient-to-br from-red-600 to-red-800 rounded-full flex items-center justify-center shadow-lg shadow-red-500/30`}>
+              <div className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} rounded-full flex items-center justify-center`} style={{ background: 'linear-gradient(135deg, #fbbf24, #f97316, #f43f5e)', boxShadow: '0 10px 25px rgba(249, 115, 22, 0.3)' }}>
                 <User className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-white`} />
               </div>
             )}
@@ -168,7 +169,7 @@ export function LeaguesList({
                 )}
               </div>
               <p className={`text-slate-400 ${isMobile ? 'text-sm' : ''}`}>
-                {isMobile ? 'Manage your drafts' : 'Manage your fantasy baseball auction drafts'}
+                {isMobile ? 'Manage your drafts' : 'Manage your auction drafts'}
               </p>
             </div>
           </div>
@@ -193,7 +194,7 @@ export function LeaguesList({
         {/* Create New League Button */}
         <button
           onClick={onCreateNew}
-          className={`w-full ${isMobile ? 'mb-4 p-4' : 'mb-8 p-6'} bg-gradient-to-r from-red-600 to-red-700 border border-red-500 rounded-2xl hover:from-red-700 hover:to-red-800 transition-all shadow-2xl shadow-red-500/30 hover:shadow-red-500/50 group animate-slideInLeft`}
+          className={`w-full ${isMobile ? 'mb-4 p-4' : 'mb-8 p-6'} rounded-2xl transition-all group animate-slideInLeft`} style={{ background: 'linear-gradient(90deg, #f59e0b, #f97316, #f43f5e)', border: '1px solid rgba(249, 115, 22, 0.5)', boxShadow: '0 25px 50px rgba(249, 115, 22, 0.3)' }}
         >
           <div className="flex items-center justify-center gap-3">
             <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-white/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -213,8 +214,7 @@ export function LeaguesList({
             {leagues.map((league, index) => (
               <div
                 key={league.id}
-                className={`bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl ${isMobile ? 'p-4' : 'p-6'} hover:border-emerald-500/50 transition-all shadow-xl backdrop-blur-sm animate-slideInLeft`}
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className={`rounded-2xl ${isMobile ? 'p-4' : 'p-6'} transition-all shadow-xl backdrop-blur-sm animate-slideInLeft`} style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', animationDelay: `${index * 0.1}s` }}
               >
                 {isMobile ? (
                   /* MOBILE LAYOUT */
@@ -431,7 +431,7 @@ export function LeaguesList({
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl">
+          <div className="text-center py-16 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <DollarSign className="w-8 h-8 text-slate-500" />
             </div>
@@ -439,7 +439,7 @@ export function LeaguesList({
             <p className="text-slate-500 mb-6">Create your first league to get started</p>
             <button
               onClick={onCreateNew}
-              className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30 inline-flex items-center gap-2"
+              className="px-6 py-3 text-white rounded-lg transition-all inline-flex items-center gap-2" style={{ background: 'linear-gradient(90deg, #f59e0b, #f97316, #f43f5e)', boxShadow: '0 15px 35px rgba(249, 115, 22, 0.3)' }}
             >
               <Plus className="w-4 h-4" />
               Create New League

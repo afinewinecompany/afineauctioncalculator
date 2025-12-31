@@ -1,169 +1,408 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { DollarSign, TrendingUp, Users, BarChart3, Target, LineChart, ChevronDown, LogIn, Zap, Play, RefreshCw, Palette, Calculator } from 'lucide-react';
-import { useRef } from 'react';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { DollarSign, ArrowRight, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
 }
 
+// Color palette - using hex values directly for reliability
+const colors = {
+  bg: '#0d0d0d',
+  amber400: '#fbbf24',
+  amber500: '#f59e0b',
+  orange400: '#fb923c',
+  orange500: '#f97316',
+  orange600: '#ea580c',
+  rose400: '#fb7185',
+  rose500: '#f43f5e',
+  fuchsia500: '#d946ef',
+  purple600: '#9333ea',
+  cyan500: '#06b6d4',
+  teal500: '#14b8a6',
+  pink500: '#ec4899',
+};
+
+// Animated counter component
+function AnimatedCounter({ value, duration = 2 }: { value: number; duration?: number }) {
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (latest) => Math.round(latest));
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    const controls = animate(count, value, { duration });
+    const unsubscribe = rounded.on("change", (v) => setDisplayValue(v));
+    return () => {
+      controls.stop();
+      unsubscribe();
+    };
+  }, [value, duration, count, rounded]);
+
+  return <span>{displayValue}</span>;
+}
+
+// Floating orb component
+function FloatingOrb({
+  style,
+  delay = 0,
+  duration = 20
+}: {
+  style: React.CSSProperties;
+  delay?: number;
+  duration?: number;
+}) {
+  return (
+    <motion.div
+      style={{
+        position: 'absolute',
+        borderRadius: '9999px',
+        filter: 'blur(60px)',
+        opacity: 0.4,
+        ...style
+      }}
+      animate={{
+        x: [0, 30, -20, 0],
+        y: [0, -40, 20, 0],
+        scale: [1, 1.1, 0.95, 1],
+      }}
+      transition={{
+        duration,
+        repeat: Infinity,
+        ease: "easeInOut",
+        delay,
+      }}
+    />
+  );
+}
+
 export function LandingPage({ onGetStarted }: LandingPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"]
-  });
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  // Parallax transforms for hero elements
-  const heroY = useTransform(scrollYProgress, [0, 0.3], [0, -100]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-
-  // Animation variants
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 40 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }
-    }
-  };
-
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
+  // Track mouse for subtle parallax effect
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setMousePosition({
+          x: (e.clientX - rect.width / 2) / rect.width,
+          y: (e.clientY - rect.height / 2) / rect.height,
+        });
       }
-    }
-  };
+    };
 
-  const scaleIn = {
-    hidden: { opacity: 0, scale: 0.9 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { type: "spring" as const, stiffness: 100, damping: 15 }
-    }
-  };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#0a0f1a] overflow-hidden">
-      {/* Gradient background overlay */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-r from-violet-600/10 to-fuchsia-600/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-r from-cyan-600/10 to-blue-600/10 rounded-full blur-3xl" />
+    <div
+      ref={containerRef}
+      style={{
+        minHeight: '100vh',
+        backgroundColor: colors.bg,
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+    >
+      {/* Animated gradient mesh background */}
+      <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
+        {/* Primary gradient orbs with retro colors */}
+        <FloatingOrb
+          style={{
+            width: '800px',
+            height: '800px',
+            top: '-160px',
+            left: '-160px',
+            background: `linear-gradient(135deg, ${colors.amber500}4d, ${colors.orange600}33, transparent)`,
+          }}
+          delay={0}
+          duration={25}
+        />
+        <FloatingOrb
+          style={{
+            width: '600px',
+            height: '600px',
+            top: '25%',
+            right: 0,
+            background: `linear-gradient(225deg, ${colors.fuchsia500}40, ${colors.purple600}26, transparent)`,
+          }}
+          delay={2}
+          duration={22}
+        />
+        <FloatingOrb
+          style={{
+            width: '500px',
+            height: '500px',
+            bottom: 0,
+            left: '25%',
+            background: `linear-gradient(45deg, ${colors.cyan500}33, ${colors.teal500}26, transparent)`,
+          }}
+          delay={4}
+          duration={28}
+        />
+        <FloatingOrb
+          style={{
+            width: '400px',
+            height: '400px',
+            bottom: '25%',
+            right: '25%',
+            background: `linear-gradient(315deg, ${colors.rose500}33, ${colors.pink500}1a, transparent)`,
+          }}
+          delay={1}
+          duration={24}
+        />
+
+        {/* Subtle grid overlay for retro feel */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.03,
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+          }}
+        />
+
+        {/* Radial gradient overlay for depth */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: `radial-gradient(ellipse at center, transparent 0%, ${colors.bg} 70%)`
+          }}
+        />
       </div>
 
-      {/* Fixed Header with Login Button */}
+      {/* Header */}
       <motion.header
-        initial={{ y: -100, opacity: 0 }}
+        initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          padding: '20px 24px',
+        }}
       >
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/25">
-              <DollarSign className="w-5 h-5 text-white" />
+        <div style={{ maxWidth: '1152px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <motion.div
+            style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
+            whileHover={{ scale: 1.02 }}
+          >
+            <div style={{ position: 'relative' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  background: `linear-gradient(135deg, ${colors.amber400}, ${colors.orange500}, ${colors.rose500})`,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: `0 10px 25px ${colors.orange500}33`,
+                }}
+              >
+                <DollarSign style={{ width: '20px', height: '20px', color: 'white' }} />
+              </div>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: `linear-gradient(135deg, ${colors.amber400}, ${colors.orange500}, ${colors.rose500})`,
+                  borderRadius: '12px',
+                  filter: 'blur(12px)',
+                  opacity: 0.4,
+                }}
+              />
             </div>
-            <span className="text-white/90 font-semibold hidden sm:block">AFAC</span>
-          </div>
+            <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600, letterSpacing: '-0.025em' }}>AFAC</span>
+          </motion.div>
+
           <motion.button
             onClick={onGetStarted}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 text-white rounded-full text-sm font-medium transition-all"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.9)',
+              borderRadius: '9999px',
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'}
           >
-            <LogIn className="w-4 h-4" />
-            <span>Login</span>
+            Sign In
           </motion.button>
         </div>
       </motion.header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-4">
+      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
         <motion.div
-          style={{ y: heroY, opacity: heroOpacity }}
-          className="relative z-10 text-center max-w-4xl mx-auto pt-20"
+          style={{
+            transform: `translate(${mousePosition.x * -10}px, ${mousePosition.y * -10}px)`,
+            position: 'relative',
+            zIndex: 10,
+            textAlign: 'center',
+            maxWidth: '896px',
+            margin: '0 auto',
+          }}
         >
-          {/* Logo */}
+          {/* Animated sparkle badge */}
           <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
-            className="flex items-center justify-center mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              marginBottom: '32px',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '9999px',
+            }}
           >
-            <div className="w-20 h-20 bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-violet-500/30 rotate-3">
-              <DollarSign className="w-10 h-10 text-white" />
-            </div>
+            <Sparkles style={{ width: '16px', height: '16px', color: colors.amber400 }} />
+            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>Real-time auction intelligence</span>
           </motion.div>
 
-          {/* Title */}
+          {/* Main headline with gradient */}
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="text-5xl md:text-7xl font-bold mb-4"
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              fontSize: 'clamp(3rem, 8vw, 6rem)',
+              fontWeight: 700,
+              letterSpacing: '-0.025em',
+              marginBottom: '24px',
+              lineHeight: 1.1,
+            }}
           >
-            <span className="bg-gradient-to-r from-white via-violet-200 to-white bg-clip-text text-transparent">
-              A Fine Auction Calculator
+            <span style={{ display: 'block', color: 'white' }}>Win Your</span>
+            <span
+              style={{
+                display: 'block',
+                background: `linear-gradient(90deg, ${colors.amber400}, ${colors.orange400}, ${colors.rose400})`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              Fantasy Draft
             </span>
           </motion.h1>
 
+          {/* Subheadline */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            style={{
+              fontSize: 'clamp(1.125rem, 2vw, 1.25rem)',
+              color: 'rgba(255,255,255,0.5)',
+              maxWidth: '576px',
+              margin: '0 auto 16px',
+              lineHeight: 1.625,
+            }}
+          >
+            Live inflation tracking that syncs with your auction.
+            Know exactly what every player is worth as your draft unfolds.
+          </motion.p>
+
+          {/* Creator credit */}
           <motion.a
             href="https://x.com/afinewineco"
             target="_blank"
             rel="noopener noreferrer"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            whileHover={{ scale: 1.05 }}
-            className="inline-block text-slate-400 hover:text-violet-400 italic text-lg mb-8 transition-colors"
+            transition={{ duration: 0.6, delay: 0.6 }}
+            whileHover={{ scale: 1.02 }}
+            style={{
+              display: 'inline-block',
+              color: 'rgba(255,255,255,0.3)',
+              fontSize: '14px',
+              marginBottom: '40px',
+              textDecoration: 'none',
+              transition: 'color 0.3s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = `${colors.amber400}b3`}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
           >
             by Dylan Merlo
           </motion.a>
 
-          {/* Tagline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-            className="text-xl md:text-2xl text-slate-300 mb-6 max-w-2xl mx-auto leading-relaxed"
-          >
-            The only fantasy baseball auction tool with{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400 font-semibold">
-              real-time inflation tracking
-            </span>
-          </motion.p>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-            className="text-lg text-slate-400 mb-10 max-w-xl mx-auto"
-          >
-            Syncs with Couch Managers to adjust player values live as your draft unfolds.
-            Stop guessing. Start winning.
-          </motion.p>
-
-          {/* CTA */}
+          {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9, duration: 0.6 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            transition={{ duration: 0.6, delay: 0.7 }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}
           >
             <motion.button
               onClick={onGetStarted}
-              whileHover={{ scale: 1.03, boxShadow: "0 20px 40px rgba(139, 92, 246, 0.3)" }}
-              whileTap={{ scale: 0.97 }}
-              className="group px-8 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-lg font-semibold rounded-2xl shadow-xl shadow-violet-500/25 flex items-center gap-3"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                position: 'relative',
+                padding: '16px 32px',
+                background: `linear-gradient(90deg, ${colors.amber500}, ${colors.orange500}, ${colors.rose500})`,
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: 600,
+                borderRadius: '16px',
+                border: 'none',
+                boxShadow: `0 20px 40px ${colors.orange500}33`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                overflow: 'hidden',
+                cursor: 'pointer',
+              }}
             >
-              <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              Start Your Draft
+              <span style={{ position: 'relative', zIndex: 10 }}>Start Free Draft</span>
+              <ArrowRight style={{ width: '20px', height: '20px', position: 'relative', zIndex: 10 }} />
             </motion.button>
-            <p className="text-slate-500 text-sm">Free to use • No credit card</p>
+          </motion.div>
+
+          {/* Trust indicators */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.9 }}
+            style={{
+              marginTop: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '32px',
+              color: 'rgba(255,255,255,0.3)',
+              fontSize: '14px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <span>No credit card</span>
+            <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <span>Syncs with Couch Managers</span>
+            <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            <span>Save to cloud</span>
           </motion.div>
         </motion.div>
 
@@ -172,255 +411,218 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)' }}
         >
           <motion.div
-            animate={{ y: [0, 10, 0] }}
+            animate={{ y: [0, 8, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="flex flex-col items-center text-slate-500"
+            style={{
+              width: '24px',
+              height: '40px',
+              border: '2px solid rgba(255,255,255,0.2)',
+              borderRadius: '9999px',
+              display: 'flex',
+              justifyContent: 'center',
+              paddingTop: '8px',
+            }}
           >
-            <span className="text-xs mb-2">Learn more</span>
-            <ChevronDown className="w-5 h-5" />
+            <div style={{ width: '6px', height: '6px', backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: '50%' }} />
           </motion.div>
         </motion.div>
       </section>
 
-      {/* What It Does Section */}
+      {/* Features Section - Simplified */}
       <motion.section
-        initial="hidden"
-        whileInView="visible"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
         viewport={{ once: true, margin: "-100px" }}
-        variants={staggerContainer}
-        className="relative py-24 px-4"
+        transition={{ duration: 0.8 }}
+        style={{ position: 'relative', padding: '128px 24px' }}
       >
-        <div className="max-w-6xl mx-auto">
-          <motion.div variants={fadeInUp} className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-              What is{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">
-                A Fine Auction Calculator
-              </span>
-              ?
+        <div style={{ maxWidth: '1024px', margin: '0 auto' }}>
+          {/* Section header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            style={{ textAlign: 'center', marginBottom: '80px' }}
+          >
+            <h2 style={{ fontSize: 'clamp(1.875rem, 5vw, 3rem)', fontWeight: 700, color: 'white', marginBottom: '16px' }}>
+              How It Works
             </h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-              A real-time auction draft companion that calculates player values based on your league settings
-              and adjusts them as your draft progresses
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '18px', maxWidth: '576px', margin: '0 auto' }}>
+              Connect, calculate, conquer. Three steps to draft domination.
             </p>
           </motion.div>
 
-          {/* Core Features Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Calculator,
-                title: "Custom Value Calculations",
-                description: "Enter your league's exact settings—teams, budget, roster spots, scoring categories—and get player values tailored specifically to your league.",
-                gradient: "from-violet-500 to-purple-600"
-              },
-              {
-                icon: RefreshCw,
-                title: "Live Couch Managers Sync",
-                description: "Connect to your Couch Managers draft room and watch values automatically update every 2 minutes as players are drafted.",
-                gradient: "from-cyan-500 to-blue-600"
-              },
-              {
-                icon: TrendingUp,
-                title: "Real-Time Inflation Tracking",
-                description: "See exactly how inflation is affecting each price tier. Elite players often deflate while $1-5 players can inflate 1000%+.",
-                gradient: "from-fuchsia-500 to-pink-600"
-              },
-              {
-                icon: Palette,
-                title: "Color-Coded Value Alerts",
-                description: "Instantly know if a player is a steal (green), fair value (yellow), or overpay (red) based on current inflation-adjusted prices.",
-                gradient: "from-emerald-500 to-teal-600"
-              },
-              {
-                icon: Target,
-                title: "Positional Scarcity Alerts",
-                description: "Get warned when catcher, closer, or other thin positions are running low so you don't get stuck paying premium prices.",
-                gradient: "from-orange-500 to-amber-600"
-              },
-              {
-                icon: LineChart,
-                title: "Post-Draft Analysis",
-                description: "After your draft, see your best picks, biggest reaches, and total value gained or lost compared to projections.",
-                gradient: "from-rose-500 to-red-600"
-              }
-            ].map((feature, i) => (
-              <motion.div
-                key={feature.title}
-                variants={scaleIn}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                className="group relative bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition-all"
-              >
-                <div className={`w-12 h-12 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 transition-transform`}>
-                  <feature.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
-                <p className="text-slate-400 leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* How It Works */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        variants={staggerContainer}
-        className="relative py-24 px-4 bg-gradient-to-b from-slate-900/50 to-transparent"
-      >
-        <div className="max-w-5xl mx-auto">
-          <motion.div variants={fadeInUp} className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-              How It Works
-            </h2>
-            <p className="text-slate-400 text-lg">Three simple steps to draft domination</p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
+          {/* Steps */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '48px' }}>
             {[
               {
                 step: "01",
-                title: "Configure Your League",
-                description: "Set your number of teams, auction budget, roster positions, and scoring categories. Takes about 30 seconds."
+                title: "Configure",
+                description: "Enter your league settings - teams, budget, roster slots, and scoring categories.",
+                gradient: `linear-gradient(90deg, ${colors.amber500}, ${colors.orange500})`
               },
               {
                 step: "02",
-                title: "Connect Your Draft",
-                description: "Paste your Couch Managers room ID. We'll automatically pull draft results every 2 minutes."
+                title: "Connect",
+                description: "Link your Couch Managers draft room. Values update automatically as picks happen.",
+                gradient: `linear-gradient(90deg, ${colors.orange500}, ${colors.rose500})`
               },
               {
                 step: "03",
-                title: "Draft With Confidence",
-                description: "Watch values adjust in real-time. Green means bid, red means let it go. It's that simple."
+                title: "Dominate",
+                description: "See real-time inflation. Green means bid, red means pass. Win your league.",
+                gradient: `linear-gradient(90deg, ${colors.rose500}, ${colors.fuchsia500})`
               }
             ].map((item, index) => (
               <motion.div
                 key={item.step}
-                variants={fadeInUp}
-                className="relative text-center"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                style={{ position: 'relative' }}
               >
-                {index < 2 && (
-                  <div className="hidden md:block absolute top-12 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-violet-600/50 to-transparent" />
-                )}
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 3 }}
-                  className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-xl shadow-violet-500/25"
+                <div
+                  style={{
+                    fontSize: '112px',
+                    fontWeight: 700,
+                    background: item.gradient,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    opacity: 0.2,
+                    lineHeight: 1,
+                  }}
                 >
                   {item.step}
-                </motion.div>
-                <h3 className="text-xl font-semibold text-white mb-3">{item.title}</h3>
-                <p className="text-slate-400">{item.description}</p>
+                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: 600, color: 'white', marginTop: '16px', marginBottom: '12px' }}>{item.title}</h3>
+                <p style={{ color: 'rgba(255,255,255,0.4)', lineHeight: 1.625 }}>{item.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </motion.section>
 
-      {/* Projection Systems */}
+      {/* Stats Section */}
       <motion.section
-        initial="hidden"
-        whileInView="visible"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
         viewport={{ once: true, margin: "-100px" }}
-        variants={staggerContainer}
-        className="relative py-24 px-4"
+        transition={{ duration: 0.8 }}
+        style={{ position: 'relative', padding: '96px 24px' }}
       >
-        <div className="max-w-5xl mx-auto">
-          <motion.div variants={fadeInUp} className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Powered by Pro Projections
-            </h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-              Choose from industry-leading projection systems, calculated for your exact league format
-            </p>
-          </motion.div>
-
-          <motion.div variants={fadeInUp} className="flex flex-wrap justify-center gap-4">
+        <div style={{ maxWidth: '896px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px' }}>
             {[
-              { name: "Steamer", desc: "Most popular" },
-              { name: "THE BAT X", desc: "Hybrid approach" },
-              { name: "Harry Knows Ball", desc: "Dynasty rankings" }
-            ].map((proj) => (
-              <div
-                key={proj.name}
-                className="px-6 py-4 bg-slate-900/50 border border-slate-800 rounded-xl text-center"
+              { value: 2, suffix: "min", label: "Sync interval" },
+              { value: 100, suffix: "%", label: "Free to use" },
+              { value: 10, suffix: "+", label: "Scoring formats" }
+            ].map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                style={{ textAlign: 'center' }}
               >
-                <div className="text-white font-semibold mb-1">{proj.name}</div>
-                <div className="text-slate-500 text-sm">{proj.desc}</div>
-              </div>
+                <div style={{ fontSize: 'clamp(2.25rem, 6vw, 3.75rem)', fontWeight: 700, color: 'white', marginBottom: '8px' }}>
+                  <AnimatedCounter value={stat.value} />
+                  <span style={{ color: 'rgba(255,255,255,0.4)' }}>{stat.suffix}</span>
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</div>
+              </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </motion.section>
 
-      {/* CTA Section */}
+      {/* Final CTA Section */}
       <motion.section
-        initial="hidden"
-        whileInView="visible"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        variants={staggerContainer}
-        className="relative py-24 px-4"
+        transition={{ duration: 0.8 }}
+        style={{ position: 'relative', padding: '128px 24px' }}
       >
-        <div className="max-w-3xl mx-auto text-center">
+        <div style={{ maxWidth: '672px', margin: '0 auto', textAlign: 'center' }}>
           <motion.div
-            variants={scaleIn}
-            className="relative bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 rounded-3xl p-8 md:p-12 overflow-hidden"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            {/* Background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 via-transparent to-fuchsia-600/10" />
+            <h2 style={{ fontSize: 'clamp(1.875rem, 5vw, 3rem)', fontWeight: 700, color: 'white', marginBottom: '24px' }}>
+              Ready to draft smarter?
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '18px', marginBottom: '40px' }}>
+              Join thousands of fantasy owners using real-time data to make better auction decisions.
+            </p>
 
-            <div className="relative">
-              <motion.div
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-2xl flex items-center justify-center shadow-xl shadow-violet-500/30"
-              >
-                <DollarSign className="w-8 h-8 text-white" />
-              </motion.div>
-
-              <h2 className="text-2xl md:text-4xl font-bold text-white mb-4">
-                Ready to Win Your Draft?
-              </h2>
-              <p className="text-slate-400 mb-8 max-w-lg mx-auto">
-                Join thousands of fantasy owners using real-time data to make smarter auction decisions.
-              </p>
-
-              <motion.button
-                onClick={onGetStarted}
-                whileHover={{ scale: 1.03, boxShadow: "0 25px 50px rgba(139, 92, 246, 0.3)" }}
-                whileTap={{ scale: 0.97 }}
-                className="px-10 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-lg font-semibold rounded-2xl shadow-xl shadow-violet-500/25 inline-flex items-center gap-3"
-              >
-                <Zap className="w-5 h-5" />
-                Get Started Free
-              </motion.button>
-
-              <p className="mt-6 text-slate-500 text-sm">
-                No credit card required • Save drafts to cloud
-              </p>
-            </div>
+            <motion.button
+              onClick={onGetStarted}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                position: 'relative',
+                padding: '20px 40px',
+                background: `linear-gradient(90deg, ${colors.amber500}, ${colors.orange500}, ${colors.rose500})`,
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: 600,
+                borderRadius: '16px',
+                border: 'none',
+                boxShadow: `0 25px 50px ${colors.orange500}4d`,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '12px',
+                overflow: 'hidden',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ position: 'relative', zIndex: 10 }}>Get Started Free</span>
+              <ArrowRight style={{ width: '20px', height: '20px', position: 'relative', zIndex: 10 }} />
+            </motion.button>
           </motion.div>
         </div>
       </motion.section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-slate-800/50">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm">
-          <div className="flex items-center gap-3 mb-4 md:mb-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-white" />
+      <footer style={{ position: 'relative', padding: '32px 24px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ maxWidth: '1152px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                background: `linear-gradient(135deg, ${colors.amber400}, ${colors.orange500}, ${colors.rose500})`,
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <DollarSign style={{ width: '16px', height: '16px', color: 'white' }} />
             </div>
-            <span className="text-slate-400">A Fine Auction Calculator</span>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>A Fine Auction Calculator</span>
           </div>
           <a
             href="https://x.com/afinewineco"
             target="_blank"
             rel="noopener noreferrer"
-            className="italic hover:text-violet-400 transition-colors"
+            style={{
+              color: 'rgba(255,255,255,0.3)',
+              fontSize: '14px',
+              textDecoration: 'none',
+              transition: 'color 0.3s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = `${colors.amber400}b3`}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
           >
             by Dylan Merlo
           </a>

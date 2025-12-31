@@ -133,26 +133,25 @@ export function SetupScreen({
   ];
 
   return (
-    <div className={`bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 ${isMobile ? 'p-4' : 'p-8'} relative overflow-hidden`} style={{ minHeight: 'calc(100vh - 57px)' }}>
-      {/* Baseball field pattern overlay */}
-      {!isMobile && (
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border-4 border-white"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border-4 border-white"></div>
-        </div>
-      )}
+    <div className={`${isMobile ? 'p-4' : 'p-8'} relative overflow-hidden`} style={{ minHeight: 'calc(100vh - 57px)', backgroundColor: '#0d0d0d' }}>
+      {/* Animated background orbs - retro colors */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 left-10 w-96 h-96 rounded-full" style={{ background: 'linear-gradient(135deg, #f59e0b25, #ea580c18, transparent)', filter: 'blur(60px)' }}></div>
+        <div className="absolute top-1/3 right-10 w-80 h-80 rounded-full" style={{ background: 'linear-gradient(225deg, #d946ef18, #9333ea12, transparent)', filter: 'blur(60px)' }}></div>
+        <div className="absolute bottom-10 left-1/4 w-72 h-72 rounded-full" style={{ background: 'linear-gradient(45deg, #f43f5e18, transparent)', filter: 'blur(60px)' }}></div>
+      </div>
 
       <div className="max-w-5xl mx-auto relative z-10">
-        <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+        <div className="backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
           {/* Header */}
-          <div className={`relative bg-gradient-to-r from-red-600 via-red-700 to-slate-800 ${isMobile ? 'p-4' : 'p-8'} border-b border-slate-700/50`}>
+          <div className={`relative ${isMobile ? 'p-4' : 'p-8'}`} style={{ background: 'linear-gradient(90deg, #f59e0b, #f97316, #f43f5e)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             {!isMobile && (
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiIC8+PC9zdmc+')] opacity-20"></div>
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
             )}
             <div className={`relative ${isMobile ? 'flex flex-col gap-2' : 'flex items-start justify-between'}`}>
               <div>
                 <h1 className={`text-white ${isMobile ? 'text-lg' : ''} mb-1 drop-shadow-lg`}>
-                  {isMobile ? '⚾ League Setup' : '⚾ Fantasy Baseball Auction Setup'}
+                  {isMobile ? '⚾ League Setup' : '⚾ Auction Setup'}
                 </h1>
                 <p className={`text-slate-200 ${isMobile ? 'text-sm' : ''}`}>
                   {isMobile ? 'Configure your league' : 'Configure your league parameters for the perfect draft'}
