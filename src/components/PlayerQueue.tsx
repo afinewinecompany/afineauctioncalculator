@@ -34,7 +34,7 @@ interface PlayerQueueProps {
    * Maximum number of players to show in the queue.
    * Players are sorted by projected value and only the top N are shown.
    * This prevents MiLB prospects from appearing - they won't be in top projections.
-   * Default: 550 (enough for 10-team x 40-roster league + 150 buffer)
+   * Default: 1200 (aligns with server-side MAX_PROJECTION_PLAYERS)
    */
   maxPlayers?: number;
 }
@@ -42,8 +42,9 @@ interface PlayerQueueProps {
 // Mobile-specific row height for card layout (compact single-row design)
 const MOBILE_ROW_HEIGHT = 64;
 
-// Default max players - enough for a large league plus buffer for variance
-const DEFAULT_MAX_PLAYERS = 550;
+// Default max players - aligns with server-side MAX_PROJECTION_PLAYERS (1200)
+// This is a safety filter in case more players somehow get through
+const DEFAULT_MAX_PLAYERS = 1200;
 
 export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, positionalScarcity, isManualMode, onManualDraft, isMobile, maxPlayers = DEFAULT_MAX_PLAYERS }: PlayerQueueProps) {
   const [searchQuery, setSearchQuery] = useState('');
