@@ -39,8 +39,8 @@ interface PlayerQueueProps {
   maxPlayers?: number;
 }
 
-// Mobile-specific row height for card layout
-const MOBILE_ROW_HEIGHT = 100;
+// Mobile-specific row height for card layout (compact single-row design)
+const MOBILE_ROW_HEIGHT = 64;
 
 // Default max players - enough for a large league plus buffer for variance
 const DEFAULT_MAX_PLAYERS = 550;
@@ -502,7 +502,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                 key={player.id}
                 onClick={() => onPlayerClick(player)}
                 style={useVirtualization ? { height: MOBILE_ROW_HEIGHT } : undefined}
-                className={`mx-2 my-1 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                className={`mx-2 my-0.5 px-2 py-1.5 rounded-lg border transition-all cursor-pointer ${
                   isOnBlock
                     ? 'bg-gradient-to-r from-amber-900/40 to-orange-900/40 border-amber-500/50 animate-pulse'
                     : player.status === 'drafted'
@@ -512,14 +512,19 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                     : 'bg-slate-800/80 border-slate-700 active:border-emerald-500/50'
                 }`}
               >
-                {/* Top row: Photo, Name, badges */}
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0 flex items-center justify-center">
+                {/* Single row: Photo, Name/Position, Values */}
+                <div className="flex items-center gap-2">
+                  {/* Photo - explicit dimensions to prevent sizing issues */}
+                  <div
+                    className="rounded-full overflow-hidden bg-slate-700 flex-shrink-0 flex items-center justify-center"
+                    style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px' }}
+                  >
                     {player.mlbamId ? (
                       <img
                         src={getPlayerPhotoUrl(player.mlbamId) || ''}
                         alt={player.name}
-                        className="w-full h-full object-cover object-[center_20%]"
+                        className="object-cover object-[center_20%]"
+                        style={{ width: '32px', height: '32px' }}
                         onError={(e) => {
                           const parent = e.currentTarget.parentElement;
                           if (parent) {
@@ -531,8 +536,10 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                       <User className="w-4 h-4 text-slate-500" />
                     )}
                   </div>
+
+                  {/* Name and position */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5">
                       <span className="text-white text-sm font-medium truncate">{player.name}</span>
                       {isOnBlock && (
                         <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-600 text-white rounded-full animate-pulse">
@@ -545,7 +552,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                         </span>
                       )}
                     </div>
-                    <div className="text-slate-400 text-xs flex items-center gap-1.5">
+                    <div className="text-slate-400 text-[11px] flex items-center gap-1">
                       <span>{getPlayingPositions(player.positions).join(', ') || 'UTIL'}</span>
                       {player.tier && <span className="text-slate-500">• T{player.tier}</span>}
                       {isMinorLeaguePlayer(player.positions) && (
@@ -553,35 +560,36 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                       )}
                     </div>
                   </div>
-                </div>
 
-                {/* Bottom row: Values */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="text-center">
-                      <div className="text-slate-500 text-[9px] uppercase">Proj</div>
-                      <div className="text-white text-sm">${player.projectedValue}</div>
+                  {/* Values - right side of row */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Proj value (smaller) */}
+                    <div className="text-right">
+                      <div className="text-slate-500 text-[9px]">Proj</div>
+                      <div className="text-slate-300 text-xs">${player.projectedValue}</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-emerald-500 text-[9px] uppercase">Adj</div>
-                      <div className="text-emerald-400 text-sm font-medium">${player.adjustedValue}</div>
+
+                    {/* Adj value (prominent - the key decision metric) */}
+                    <div className="text-right bg-emerald-900/30 px-2 py-1 rounded-lg border border-emerald-700/50">
+                      <div className="text-emerald-400 text-[9px]">Adj</div>
+                      <div className="text-emerald-300 text-base font-bold">${player.adjustedValue}</div>
                     </div>
+
+                    {/* Bid/Paid for on_block or drafted */}
+                    {isOnBlock && player.currentBid !== undefined && (
+                      <div className="text-right bg-amber-900/40 px-2 py-1 rounded-lg border border-amber-500/50">
+                        <div className="text-amber-400 text-[9px]">Bid</div>
+                        <div className="text-amber-300 text-base font-bold">${player.currentBid}</div>
+                      </div>
+                    )}
                     {isDrafted && player.draftedPrice !== undefined && (
-                      <div className="text-center">
-                        <div className="text-slate-500 text-[9px] uppercase">Paid</div>
+                      <div className="text-right">
+                        <div className="text-slate-500 text-[9px]">Paid</div>
                         <div className="text-white text-sm">${player.draftedPrice}</div>
                       </div>
                     )}
-                    {isOnBlock && player.currentBid !== undefined && (
-                      <div className="text-center">
-                        <div className="text-amber-500 text-[9px] uppercase">Bid</div>
-                        <div className="text-amber-400 text-sm font-bold">${player.currentBid}</div>
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Surplus/Value indicator or manual draft button */}
-                  <div className="flex items-center gap-2">
+                    {/* Surplus indicator */}
                     {isDrafted && draftSurplus !== null && draftSurplus !== 0 && (
                       <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                         draftSurplus > 0 ? 'bg-red-900/50 text-red-400' : 'bg-emerald-900/50 text-emerald-400'
@@ -589,6 +597,8 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                         {draftSurplus > 0 ? '+' : ''}{draftSurplus}
                       </span>
                     )}
+
+                    {/* Manual draft button */}
                     {isManualMode && !isDrafted && (
                       <button
                         onClick={(e) => {
@@ -598,11 +608,8 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                         }}
                         className="px-2 py-1 text-xs bg-slate-700 text-slate-300 rounded border border-slate-600"
                       >
-                        Draft
+                        $
                       </button>
-                    )}
-                    {isDrafted && player.draftedBy && (
-                      <span className="text-slate-500 text-xs truncate max-w-[80px]">{player.draftedBy}</span>
                     )}
                   </div>
                 </div>

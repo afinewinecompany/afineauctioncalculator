@@ -26,6 +26,14 @@ const DEFAULT_PITCHER_SPLIT = 0.32;
 // Minimum auction value for players in the pool
 const MIN_AUCTION_VALUE = 1;
 
+/**
+ * Maximum number of players to return from projections.
+ * This limits the player pool to prevent MiLB prospects from being matched.
+ * Steamer projections include ~2000+ players, but we only want the top ones.
+ * 1200 is roughly aligned with JA Projections player count.
+ */
+const MAX_PROJECTION_PLAYERS = 1200;
+
 // ============================================================================
 // MARKET INFLATION CORRECTION FACTORS
 // Based on historical auction analysis from Duke Draft (Room 1362) and others
@@ -475,6 +483,19 @@ export function calculateAuctionValues(
     );
   }
 
+  // CRITICAL: Limit players to top N by auction value to prevent MiLB prospect confusion
+  // Steamer projections include 2000+ players, but only the top ~1200 are relevant
+  // This prevents low-ranked players (who share names with MLB stars) from being matched
+  const sortedPlayers = [...playersWithValues].sort((a, b) => b.auctionValue - a.auctionValue);
+  const topPlayers = sortedPlayers.slice(0, MAX_PROJECTION_PLAYERS);
+
+  logger.info({
+    totalProjections: playersWithValues.length,
+    returnedPlayers: topPlayers.length,
+    maxAllowed: MAX_PROJECTION_PLAYERS,
+    lowestValueReturned: topPlayers[topPlayers.length - 1]?.auctionValue ?? 0,
+  }, 'Filtered projections to top players by value');
+
   return {
     projectionSystem: settings.projectionSystem,
     calculatedAt: new Date().toISOString(),
@@ -491,7 +512,7 @@ export function calculateAuctionValues(
       leagueType: settings.leagueType,
       dynastyWeight: settings.dynastySettings?.dynastyWeight,
     },
-    players: playersWithValues,
+    players: topPlayers,
   };
 }
 
