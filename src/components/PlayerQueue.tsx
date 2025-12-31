@@ -570,33 +570,71 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                       <div className="text-slate-300 text-xs">${player.projectedValue}</div>
                     </div>
 
-                    {/* Adj value (prominent - the key decision metric) */}
-                    <div className="text-right bg-emerald-900/30 px-2 py-1 rounded-lg border border-emerald-700/50">
-                      <div className="text-emerald-400 text-[9px]">Adj</div>
-                      <div className="text-emerald-300 text-base font-bold">${player.adjustedValue}</div>
-                    </div>
-
-                    {/* Bid/Paid for on_block or drafted */}
-                    {isOnBlock && player.currentBid !== undefined && (
-                      <div className="text-right bg-amber-900/40 px-2 py-1 rounded-lg border border-amber-500/50">
-                        <div className="text-amber-400 text-[9px]">Bid</div>
-                        <div className="text-amber-300 text-base font-bold">${player.currentBid}</div>
+                    {/* Adj value - for drafted players shows difference (Adj - Paid), for others shows Adj value */}
+                    {isDrafted ? (
+                      // For drafted players: show difference between Adj and Paid
+                      <div className={`text-right px-2 py-1 rounded-lg border ${
+                        draftSurplus !== null && draftSurplus > 0
+                          ? 'bg-red-900/30 border-red-700/50'
+                          : draftSurplus !== null && draftSurplus < 0
+                          ? 'bg-emerald-900/30 border-emerald-700/50'
+                          : 'bg-slate-800/50 border-slate-700/50'
+                      }`}>
+                        <div className={`text-[9px] ${
+                          draftSurplus !== null && draftSurplus > 0 ? 'text-red-400' :
+                          draftSurplus !== null && draftSurplus < 0 ? 'text-emerald-400' :
+                          'text-slate-400'
+                        }`}>+/-</div>
+                        <div className={`text-base font-bold ${
+                          draftSurplus !== null && draftSurplus > 0 ? 'text-red-400' :
+                          draftSurplus !== null && draftSurplus < 0 ? 'text-emerald-400' :
+                          'text-slate-300'
+                        }`}>
+                          {draftSurplus !== null ? (
+                            draftSurplus === 0 ? '$0' :
+                            draftSurplus > 0 ? `+$${draftSurplus}` : `-$${Math.abs(draftSurplus)}`
+                          ) : '--'}
+                        </div>
+                      </div>
+                    ) : (
+                      // For available/on_block players: show Adj value
+                      <div className="text-right bg-emerald-900/30 px-2 py-1 rounded-lg border border-emerald-700/50">
+                        <div className="text-emerald-400 text-[9px]">Adj</div>
+                        <div className="text-emerald-300 text-base font-bold">${player.adjustedValue}</div>
                       </div>
                     )}
+
+                    {/* Bid for on_block - colored based on comparison to Adj */}
+                    {isOnBlock && player.currentBid !== undefined && (() => {
+                      const bidDiff = player.currentBid - player.adjustedValue;
+                      const isGoodDeal = bidDiff < 0; // Bid less than Adj = good deal
+                      const isOverpay = bidDiff > 0; // Bid more than Adj = overpay
+                      return (
+                        <div className={`text-right px-2 py-1 rounded-lg border ${
+                          isGoodDeal ? 'bg-emerald-900/40 border-emerald-500/50' :
+                          isOverpay ? 'bg-red-900/40 border-red-500/50' :
+                          'bg-amber-900/40 border-amber-500/50'
+                        }`}>
+                          <div className={`text-[9px] ${
+                            isGoodDeal ? 'text-emerald-400' :
+                            isOverpay ? 'text-red-400' :
+                            'text-amber-400'
+                          }`}>Bid</div>
+                          <div className={`text-base font-bold ${
+                            isGoodDeal ? 'text-emerald-300' :
+                            isOverpay ? 'text-red-300' :
+                            'text-amber-300'
+                          }`}>${player.currentBid}</div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Paid for drafted players */}
                     {isDrafted && player.draftedPrice !== undefined && (
                       <div className="text-right">
                         <div className="text-slate-500 text-[9px]">Paid</div>
                         <div className="text-white text-sm">${player.draftedPrice}</div>
                       </div>
-                    )}
-
-                    {/* Surplus indicator */}
-                    {isDrafted && draftSurplus !== null && draftSurplus !== 0 && (
-                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                        draftSurplus > 0 ? 'bg-red-900/50 text-red-400' : 'bg-emerald-900/50 text-emerald-400'
-                      }`}>
-                        {draftSurplus > 0 ? '+' : ''}{draftSurplus}
-                      </span>
                     )}
 
                     {/* Manual draft button */}
@@ -826,42 +864,57 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                     Enter $
                   </button>
                 ) : actualCost !== null && actualCost !== undefined ? (
-                  <div className="flex items-center gap-1">
-                    <span className="text-white font-medium">
-                      ${actualCost}
-                    </span>
-                    {/* Value comparison indicator for on_block players */}
-                    {isOnBlock && player.currentBid !== undefined && (
-                      (() => {
-                        const bidDiff = player.adjustedValue - player.currentBid;
-                        if (bidDiff > 0) {
-                          // Current bid is LESS than adjusted value = good deal (green up arrow)
-                          return (
-                            <span
-                              className="inline-flex items-center text-emerald-400"
-                              title={`$${bidDiff} below adjusted value - good deal!`}
-                            >
-                              <TrendingUp className="w-3.5 h-3.5" />
-                              <span className="text-xs ml-0.5">+{bidDiff}</span>
-                            </span>
-                          );
-                        } else if (bidDiff < 0) {
-                          // Current bid is MORE than adjusted value = overpaying (red down arrow)
-                          return (
-                            <span
-                              className="inline-flex items-center text-red-400"
-                              title={`$${Math.abs(bidDiff)} above adjusted value - overpaying!`}
-                            >
-                              <TrendingDown className="w-3.5 h-3.5" />
-                              <span className="text-xs ml-0.5">{bidDiff}</span>
-                            </span>
-                          );
+                  (() => {
+                    // Calculate color gradient based on how good/bad the deal is
+                    // Positive diff = good deal (green), negative diff = overpay (red)
+                    const bidDiff = isOnBlock && player.currentBid !== undefined
+                      ? player.adjustedValue - player.currentBid
+                      : 0;
+
+                    // Calculate color based on difference magnitude
+                    // Scale: -20 or worse = full red, +20 or better = full green
+                    const maxDiff = 20;
+
+                    // Interpolate between red (overpay), white (neutral), and green (good deal)
+                    let colorClass = 'text-white';
+                    let title = '';
+
+                    if (isOnBlock && bidDiff !== 0) {
+                      if (bidDiff > 0) {
+                        // Good deal - use green gradient based on how good
+                        const intensity = Math.min(bidDiff / maxDiff, 1);
+                        if (intensity > 0.75) {
+                          colorClass = 'text-emerald-300';
+                        } else if (intensity > 0.5) {
+                          colorClass = 'text-emerald-400';
+                        } else if (intensity > 0.25) {
+                          colorClass = 'text-emerald-500';
+                        } else {
+                          colorClass = 'text-emerald-600';
                         }
-                        // Even - no indicator needed
-                        return null;
-                      })()
-                    )}
-                  </div>
+                        title = `$${bidDiff} below adjusted value - good deal!`;
+                      } else {
+                        // Overpay - use red gradient based on how bad
+                        const intensity = Math.min(Math.abs(bidDiff) / maxDiff, 1);
+                        if (intensity > 0.75) {
+                          colorClass = 'text-red-300';
+                        } else if (intensity > 0.5) {
+                          colorClass = 'text-red-400';
+                        } else if (intensity > 0.25) {
+                          colorClass = 'text-red-500';
+                        } else {
+                          colorClass = 'text-red-600';
+                        }
+                        title = `$${Math.abs(bidDiff)} above adjusted value - overpaying!`;
+                      }
+                    }
+
+                    return (
+                      <span className={`font-medium ${colorClass}`} title={title}>
+                        ${actualCost}
+                      </span>
+                    );
+                  })()
                 ) : (
                   <span className={isOnBlock ? 'text-slate-300' : 'text-slate-600'}>—</span>
                 )}
