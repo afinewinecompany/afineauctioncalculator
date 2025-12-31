@@ -21,7 +21,8 @@
       "Bash(findstr:*)",
       "Bash(timeout /t 2 /nobreak)",
       "Bash(cat:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npx playwright:*)"
     ]
   }
 }
