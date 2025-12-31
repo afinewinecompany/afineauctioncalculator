@@ -9,6 +9,7 @@ import {
   hittingPointOptions,
   pitchingPointOptions,
 } from '../lib/scoringCategories';
+import { useIsMobile } from './ui/use-mobile';
 
 interface ScoringConfigProps {
   settings: LeagueSettings;
@@ -18,6 +19,7 @@ interface ScoringConfigProps {
 export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps) {
   const isCategories = settings.scoringType === 'rotisserie' || settings.scoringType === 'h2h-categories';
   const isPoints = settings.scoringType === 'h2h-points';
+  const isMobile = useIsMobile();
 
   // Collapsed sections state for categories
   const [expandedHitting, setExpandedHitting] = useState<Record<string, boolean>>({
@@ -83,30 +85,30 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
   }
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      <h2 className="text-white flex items-center gap-2">
-        <Trophy className="w-6 h-6 text-red-500" />
+    <div className={`space-y-${isMobile ? '4' : '6'} animate-fadeIn`}>
+      <h2 className={`text-white flex items-center gap-2 ${isMobile ? 'text-lg' : ''}`}>
+        <Trophy className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-red-500`} />
         Scoring Configuration
       </h2>
 
-      <div className="bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-blue-500/30 rounded-xl p-4">
-        <p className="text-blue-300">
-          💡 {isCategories 
-            ? 'Select the statistical categories that will be used to determine standings in your league.'
-            : 'Set the point values for each statistical event. Positive values award points, negative values deduct points.'}
+      <div className={`bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-blue-500/30 rounded-xl ${isMobile ? 'p-3' : 'p-4'}`}>
+        <p className={`text-blue-300 ${isMobile ? 'text-sm' : ''}`}>
+          💡 {isCategories
+            ? (isMobile ? 'Select categories for standings.' : 'Select the statistical categories that will be used to determine standings in your league.')
+            : (isMobile ? 'Set point values for each stat.' : 'Set the point values for each statistical event. Positive values award points, negative values deduct points.')}
         </p>
       </div>
 
       {/* Category Selection for Roto/H2H Categories */}
       {isCategories && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-6'}`}>
           {/* Hitting Categories */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 max-h-[600px] overflow-y-auto">
-            <h3 className="text-emerald-400 mb-4 flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm">
-              <Target className="w-5 h-5" />
-              Hitting Categories
-              <span className="ml-auto text-sm text-slate-400">
-                {Object.values(settings.hittingCategories || {}).filter(Boolean).length} selected
+          <div className={`bg-slate-800/50 border border-slate-700 rounded-xl ${isMobile ? 'p-3' : 'p-6'} max-h-[400px] md:max-h-[600px] overflow-y-auto`}>
+            <h3 className={`text-emerald-400 ${isMobile ? 'mb-2 text-sm' : 'mb-4'} flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm`}>
+              <Target className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+              {isMobile ? 'Hitting' : 'Hitting Categories'}
+              <span className={`ml-auto ${isMobile ? 'text-xs' : 'text-sm'} text-slate-400`}>
+                {Object.values(settings.hittingCategories || {}).filter(Boolean).length}
               </span>
             </h3>
             <div className="space-y-4">
@@ -164,12 +166,12 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
           </div>
 
           {/* Pitching Categories */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 max-h-[600px] overflow-y-auto">
-            <h3 className="text-blue-400 mb-4 flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm">
-              <Target className="w-5 h-5" />
-              Pitching Categories
-              <span className="ml-auto text-sm text-slate-400">
-                {Object.values(settings.pitchingCategories || {}).filter(Boolean).length} selected
+          <div className={`bg-slate-800/50 border border-slate-700 rounded-xl ${isMobile ? 'p-3' : 'p-6'} max-h-[400px] md:max-h-[600px] overflow-y-auto`}>
+            <h3 className={`text-blue-400 ${isMobile ? 'mb-2 text-sm' : 'mb-4'} flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm`}>
+              <Target className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+              {isMobile ? 'Pitching' : 'Pitching Categories'}
+              <span className={`ml-auto ${isMobile ? 'text-xs' : 'text-sm'} text-slate-400`}>
+                {Object.values(settings.pitchingCategories || {}).filter(Boolean).length}
               </span>
             </h3>
             <div className="space-y-4">
@@ -230,14 +232,14 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
 
       {/* Points Settings for H2H Points */}
       {isPoints && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-6'}`}>
           {/* Hitting Points */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 max-h-[600px] overflow-y-auto">
-            <h3 className="text-emerald-400 mb-4 flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm">
-              <Target className="w-5 h-5" />
-              Hitting Point Values
-              <span className="ml-auto text-sm text-slate-400">
-                {hittingPointOptions.filter(o => (settings.pointsSettings?.[o.key as keyof typeof settings.pointsSettings] ?? o.defaultValue) !== 0).length} active
+          <div className={`bg-slate-800/50 border border-slate-700 rounded-xl ${isMobile ? 'p-3' : 'p-6'} max-h-[400px] md:max-h-[600px] overflow-y-auto`}>
+            <h3 className={`text-emerald-400 ${isMobile ? 'mb-2 text-sm' : 'mb-4'} flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm`}>
+              <Target className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+              {isMobile ? 'Hitting Pts' : 'Hitting Point Values'}
+              <span className={`ml-auto ${isMobile ? 'text-xs' : 'text-sm'} text-slate-400`}>
+                {hittingPointOptions.filter(o => (settings.pointsSettings?.[o.key as keyof typeof settings.pointsSettings] ?? o.defaultValue) !== 0).length}
               </span>
             </h3>
             <div className="space-y-4">
@@ -287,12 +289,12 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
           </div>
 
           {/* Pitching Points */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 max-h-[600px] overflow-y-auto">
-            <h3 className="text-blue-400 mb-4 flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm">
-              <Target className="w-5 h-5" />
-              Pitching Point Values
-              <span className="ml-auto text-sm text-slate-400">
-                {pitchingPointOptions.filter(o => (settings.pointsSettings?.[o.key as keyof typeof settings.pointsSettings] ?? o.defaultValue) !== 0).length} active
+          <div className={`bg-slate-800/50 border border-slate-700 rounded-xl ${isMobile ? 'p-3' : 'p-6'} max-h-[400px] md:max-h-[600px] overflow-y-auto`}>
+            <h3 className={`text-blue-400 ${isMobile ? 'mb-2 text-sm' : 'mb-4'} flex items-center gap-2 sticky top-0 bg-slate-800/90 py-2 -mt-2 backdrop-blur-sm`}>
+              <Target className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+              {isMobile ? 'Pitching Pts' : 'Pitching Point Values'}
+              <span className={`ml-auto ${isMobile ? 'text-xs' : 'text-sm'} text-slate-400`}>
+                {pitchingPointOptions.filter(o => (settings.pointsSettings?.[o.key as keyof typeof settings.pointsSettings] ?? o.defaultValue) !== 0).length}
               </span>
             </h3>
             <div className="space-y-4">
@@ -344,13 +346,13 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
       )}
 
       {/* Summary */}
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6">
-        <h3 className="text-white mb-3">Summary</h3>
+      <div className={`bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl ${isMobile ? 'p-4' : 'p-6'}`}>
+        <h3 className={`text-white ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`}>Summary</h3>
         {isCategories && (
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-4'} text-sm`}>
             <div>
-              <div className="text-slate-400 mb-2">Hitting Categories:</div>
-              <div className="text-emerald-400">
+              <div className={`text-slate-400 ${isMobile ? 'mb-1' : 'mb-2'}`}>{isMobile ? 'Hitting:' : 'Hitting Categories:'}</div>
+              <div className={`text-emerald-400 ${isMobile ? 'text-xs' : ''}`}>
                 {Object.entries(settings.hittingCategories || {})
                   .filter(([_, enabled]) => enabled)
                   .map(([key]) => key)
@@ -358,8 +360,8 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
               </div>
             </div>
             <div>
-              <div className="text-slate-400 mb-2">Pitching Categories:</div>
-              <div className="text-blue-400">
+              <div className={`text-slate-400 ${isMobile ? 'mb-1' : 'mb-2'}`}>{isMobile ? 'Pitching:' : 'Pitching Categories:'}</div>
+              <div className={`text-blue-400 ${isMobile ? 'text-xs' : ''}`}>
                 {Object.entries(settings.pitchingCategories || {})
                   .filter(([_, enabled]) => enabled)
                   .map(([key]) => key)
@@ -369,7 +371,7 @@ export function ScoringConfig({ settings, onUpdateSettings }: ScoringConfigProps
           </div>
         )}
         {isPoints && (
-          <div className="text-slate-400 text-sm">
+          <div className={`text-slate-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
             Point values configured for {Object.keys(settings.pointsSettings || {}).length} statistics
           </div>
         )}
