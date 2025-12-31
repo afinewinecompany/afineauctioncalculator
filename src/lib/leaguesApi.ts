@@ -108,6 +108,7 @@ export async function createLeague(league: SavedLeague): Promise<SavedLeague> {
         leagueName: league.leagueName,
         settings: league.settings,
         status: league.status,
+        setupStep: league.setupStep,
         createdAt: league.createdAt,
         lastModified: league.lastModified,
       }),
@@ -138,6 +139,7 @@ export async function updateLeague(id: string, league: Partial<SavedLeague>): Pr
         leagueName: league.leagueName,
         settings: league.settings,
         status: league.status,
+        setupStep: league.setupStep,
         lastModified: new Date().toISOString(),
       }),
     });

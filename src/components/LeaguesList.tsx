@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SavedLeague, LeagueSettings, SubscriptionInfo, ScrapedAuctionData } from '../lib/types';
-import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle, Settings, User, Crown, Loader2 } from 'lucide-react';
+import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle, Settings, User, Crown, Loader2, Pencil } from 'lucide-react';
 import { EditLeagueModal } from './EditLeagueModal';
 import { fetchAuctionData } from '../lib/auctionApi';
 
@@ -9,6 +9,7 @@ interface LeaguesListProps {
   leagues: SavedLeague[];
   onCreateNew: () => void;
   onContinueDraft: (league: SavedLeague) => void;
+  onResumeSetup?: (league: SavedLeague) => void;
   onDeleteLeague: (leagueId: string) => void;
   onEditLeague: (league: SavedLeague) => void;
   onReloadProjections: (league: SavedLeague, newProjectionSystem?: LeagueSettings['projectionSystem']) => Promise<void>;
@@ -32,6 +33,7 @@ export function LeaguesList({
   leagues,
   onCreateNew,
   onContinueDraft,
+  onResumeSetup,
   onDeleteLeague,
   onEditLeague,
   onReloadProjections,
@@ -234,6 +236,12 @@ export function LeaguesList({
                       </div>
                     )}
 
+                    {league.status === 'setup' && league.setupStep && (
+                      <div className="mt-2 text-sm text-blue-400">
+                        Setup in progress - Step {league.setupStep} of 5
+                      </div>
+                    )}
+
                     {league.status === 'drafting' && (() => {
                       const { count, loading, fromRoom } = getDraftedCount(league);
                       return (
@@ -257,22 +265,32 @@ export function LeaguesList({
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() => onContinueDraft(league)}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-lg hover:from-emerald-700 hover:to-green-800 transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2"
-                    >
-                      {league.status === 'complete' ? (
-                        <>
-                          <CheckCircle className="w-4 h-4" />
-                          View Results
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4" />
-                          {league.status === 'drafting' ? 'Continue Draft' : 'Start Draft'}
-                        </>
-                      )}
-                    </button>
+                    {league.status === 'setup' && onResumeSetup ? (
+                      <button
+                        onClick={() => onResumeSetup(league)}
+                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Resume Setup
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onContinueDraft(league)}
+                        className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-lg hover:from-emerald-700 hover:to-green-800 transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2"
+                      >
+                        {league.status === 'complete' ? (
+                          <>
+                            <CheckCircle className="w-4 h-4" />
+                            View Results
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4" />
+                            Continue Draft
+                          </>
+                        )}
+                      </button>
+                    )}
 
                     <button
                       onClick={() => setEditingLeague(league)}

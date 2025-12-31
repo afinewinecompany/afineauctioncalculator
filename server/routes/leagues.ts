@@ -82,6 +82,7 @@ const createLeagueSchema = z.object({
   settings: leagueSettingsSchema,
   players: z.array(z.any()).optional(), // Player data is complex, store as JSON
   status: z.enum(['setup', 'drafting', 'complete']).default('setup'),
+  setupStep: z.number().int().min(1).max(5).optional(), // Current step in setup wizard
   createdAt: z.string().optional(),
   lastModified: z.string().optional(),
 });
@@ -127,6 +128,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
       createdAt: league.createdAt.toISOString(),
       lastModified: league.updatedAt.toISOString(),
       status: league.status,
+      setupStep: league.setupStep,
     }));
 
     logger.info({ userId: user.id, count: leagues.length }, 'Leagues fetched successfully');
@@ -187,6 +189,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       createdAt: league.createdAt.toISOString(),
       lastModified: league.updatedAt.toISOString(),
       status: league.status,
+      setupStep: league.setupStep,
     };
 
     res.json({ league: formattedLeague });
@@ -240,6 +243,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         pitchingCategories: data.settings.pitchingCategories ?? undefined,
         dynastySettings: data.settings.dynastySettings ?? undefined,
         status: data.status,
+        setupStep: data.setupStep ?? null,
       },
     });
 
@@ -274,6 +278,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       createdAt: league.createdAt.toISOString(),
       lastModified: league.updatedAt.toISOString(),
       status: league.status,
+      setupStep: league.setupStep,
     };
 
     res.status(201).json({ league: formattedLeague });
@@ -330,6 +335,9 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     logger.info({ userId: user.id, leagueId: id }, 'Updating league');
 
     // Update the league
+    // Clear setupStep when status changes from 'setup' to 'drafting' or 'complete'
+    const setupStepValue = data.status === 'setup' ? (data.setupStep ?? existingLeague.setupStep) : null;
+
     const league = await prisma.league.update({
       where: { id },
       data: {
@@ -345,6 +353,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         pitchingCategories: data.settings.pitchingCategories ?? undefined,
         dynastySettings: data.settings.dynastySettings ?? undefined,
         status: data.status,
+        setupStep: setupStepValue,
         updatedAt: new Date(),
       },
     });
@@ -371,6 +380,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       createdAt: league.createdAt.toISOString(),
       lastModified: league.updatedAt.toISOString(),
       status: league.status,
+      setupStep: league.setupStep,
     };
 
     res.json({ league: formattedLeague });

@@ -1,20 +1,55 @@
-import { useState, useRef } from 'react';
-import { LeagueSettings } from '../lib/types';
+import { useState, useRef, useEffect } from 'react';
+import { LeagueSettings, SavedLeague } from '../lib/types';
 import { defaultLeagueSettings } from '../lib/mockData';
-import { ChevronRight, ChevronLeft, Zap, Database, Crown, RefreshCw, Upload, X, FileSpreadsheet } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Zap, Database, Crown, RefreshCw, Upload, X, FileSpreadsheet, Save, LogOut, Check, Loader2 } from 'lucide-react';
 import { ScoringConfig } from './ScoringConfig';
 import { parseCSV } from '../lib/csvParser';
+import { useSetupAutoSave, clearDraftSetup } from '../hooks/useSetupAutoSave';
 
 interface SetupScreenProps {
   onComplete: (settings: LeagueSettings) => void;
+  onSaveAndExit?: () => void;
+  existingLeague?: SavedLeague;
+  onLeagueCreated?: (league: SavedLeague) => void;
+  onLeagueUpdated?: (league: SavedLeague) => void;
 }
 
-export function SetupScreen({ onComplete }: SetupScreenProps) {
-  const [settings, setSettings] = useState<LeagueSettings>(defaultLeagueSettings);
-  const [currentStep, setCurrentStep] = useState(1);
+export function SetupScreen({
+  onComplete,
+  onSaveAndExit,
+  existingLeague,
+  onLeagueCreated,
+  onLeagueUpdated,
+}: SetupScreenProps) {
+  // Initialize state from existing league if resuming
+  const [settings, setSettings] = useState<LeagueSettings>(
+    existingLeague?.settings || defaultLeagueSettings
+  );
+  const [currentStep, setCurrentStep] = useState(existingLeague?.setupStep || 1);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-save hook
+  const { isSaving, lastSaved, error: saveError, saveNow, clearDraft } = useSetupAutoSave(
+    existingLeague?.id || null,
+    settings,
+    currentStep,
+    onLeagueCreated,
+    onLeagueUpdated
+  );
+
+  // Track if save indicator should be visible
+  const [showSaved, setShowSaved] = useState(false);
+
+  // Show "Saved" indicator briefly after save completes
+  useEffect(() => {
+    if (lastSaved && !isSaving) {
+      setShowSaved(true);
+      const timer = setTimeout(() => setShowSaved(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastSaved, isSaving]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -108,9 +143,31 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
           {/* Header */}
           <div className="relative bg-gradient-to-r from-red-600 via-red-700 to-slate-800 p-8 border-b border-slate-700/50">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiIC8+PC9zdmc+')] opacity-20"></div>
-            <div className="relative">
-              <h1 className="text-white mb-2 drop-shadow-lg">⚾ Fantasy Baseball Auction Setup</h1>
-              <p className="text-slate-200">Configure your league parameters for the perfect draft</p>
+            <div className="relative flex items-start justify-between">
+              <div>
+                <h1 className="text-white mb-2 drop-shadow-lg">⚾ Fantasy Baseball Auction Setup</h1>
+                <p className="text-slate-200">Configure your league parameters for the perfect draft</p>
+              </div>
+              {/* Save indicator */}
+              <div className="flex items-center gap-2 text-sm">
+                {isSaving && (
+                  <span className="flex items-center gap-1.5 text-slate-300 animate-pulse">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </span>
+                )}
+                {showSaved && !isSaving && (
+                  <span className="flex items-center gap-1.5 text-emerald-400 transition-opacity">
+                    <Check className="w-4 h-4" />
+                    Saved
+                  </span>
+                )}
+                {saveError && !isSaving && (
+                  <span className="text-red-400 text-xs">
+                    Save failed
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -728,16 +785,33 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
 
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-12">
-              {currentStep > 1 && (
-                <button
-                  onClick={() => setCurrentStep(currentStep - 1)}
-                  className="px-6 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-2 group"
-                >
-                  <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                  Back
-                </button>
-              )}
-              
+              <div className="flex items-center gap-3">
+                {currentStep > 1 && (
+                  <button
+                    onClick={() => setCurrentStep(currentStep - 1)}
+                    className="px-6 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-2 group"
+                  >
+                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                    Back
+                  </button>
+                )}
+
+                {/* Save & Exit button */}
+                {onSaveAndExit && (
+                  <button
+                    onClick={async () => {
+                      await saveNow();
+                      onSaveAndExit();
+                    }}
+                    disabled={isSaving}
+                    className="px-6 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-2 group disabled:opacity-50"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Save & Exit
+                  </button>
+                )}
+              </div>
+
               <div className="ml-auto">
                 {currentStep < 5 ? (
                   <button
@@ -749,7 +823,11 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
                   </button>
                 ) : (
                   <button
-                    onClick={() => onComplete(settings)}
+                    onClick={() => {
+                      // Clear draft from localStorage since we're starting the actual draft
+                      clearDraft();
+                      onComplete(settings);
+                    }}
                     className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-xl hover:from-emerald-700 hover:to-green-800 transition-all shadow-lg shadow-emerald-500/30 flex items-center gap-2 group"
                   >
                     Start Draft

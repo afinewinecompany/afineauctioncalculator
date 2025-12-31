@@ -509,6 +509,7 @@ export interface SavedLeague {
   createdAt: string;
   lastModified: string;
   status: 'setup' | 'drafting' | 'complete';
+  setupStep?: number; // Current step in setup wizard (1-5), only for status='setup'
 }
 
 export interface SubscriptionInfo {

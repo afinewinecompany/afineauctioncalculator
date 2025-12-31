@@ -619,14 +619,14 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
               <TabsList className="w-full grid grid-cols-2 bg-slate-900 border-2 border-slate-600 rounded-xl p-1.5 shadow-lg">
                 <TabsTrigger
                   value="players"
-                  className="flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all data-[state=inactive]:text-slate-400 data-[state=inactive]:bg-slate-800 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/30"
+                  className="flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all text-slate-300 bg-slate-800 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/30"
                 >
                   <ListFilter className="w-4 h-4" />
                   <span>Players</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="roster"
-                  className="flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all data-[state=inactive]:text-slate-400 data-[state=inactive]:bg-slate-800 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/30"
+                  className="flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all text-slate-300 bg-slate-800 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/30"
                 >
                   <Users className="w-4 h-4" />
                   <span>Roster ({myRoster.length})</span>

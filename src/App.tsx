@@ -225,15 +225,58 @@ function AppContent() {
     setCurrentScreen('landing');
   };
 
+  // Track which league we're resuming setup for
+  const [resumingLeague, setResumingLeague] = useState<SavedLeague | null>(null);
+
   const handleCreateNewLeague = () => {
     setCurrentLeague(null);
+    setResumingLeague(null);
     setCurrentScreen('setup');
+  };
+
+  const handleResumeSetup = (league: SavedLeague) => {
+    setResumingLeague(league);
+    setCurrentLeague(null);
+    setCurrentScreen('setup');
+  };
+
+  const handleSaveAndExitSetup = () => {
+    // Clear resuming state and go back to leagues list
+    setResumingLeague(null);
+    setCurrentScreen('leagues');
+  };
+
+  // Callback for when auto-save creates a new league during setup
+  const handleSetupLeagueCreated = (league: SavedLeague) => {
+    // Add the new league to userData
+    if (userData) {
+      const updatedUser = {
+        ...userData,
+        leagues: [...userData.leagues, league]
+      };
+      setUserData(updatedUser);
+    }
+    // Update resumingLeague with the backend ID
+    setResumingLeague(league);
+  };
+
+  // Callback for when auto-save updates an existing league during setup
+  const handleSetupLeagueUpdated = (league: SavedLeague) => {
+    // Update the league in userData
+    if (userData) {
+      const updatedUser = {
+        ...userData,
+        leagues: userData.leagues.map(l => l.id === league.id ? { ...l, ...league } : l)
+      };
+      setUserData(updatedUser);
+    }
   };
 
   const handleSetupComplete = async (settings: LeagueSettings) => {
     if (import.meta.env.DEV) {
       console.log('[App] Starting handleSetupComplete, setting isLoadingProjections=true');
       console.log('[App] Settings:', settings.leagueName, settings.projectionSystem);
+      console.log('[App] Resuming league:', resumingLeague?.id);
     }
 
     // Set loading state synchronously
@@ -261,27 +304,42 @@ function AppContent() {
         console.log(`League summary:`, calculatedValues.leagueSummary);
       }
 
-      const newLeague: SavedLeague = {
-        id: `league-${Date.now()}`,
+      // Determine if we're updating an existing league or creating a new one
+      const isResuming = resumingLeague && !resumingLeague.id.startsWith('draft-');
+      const leagueId = isResuming ? resumingLeague.id : `league-${Date.now()}`;
+
+      const leagueToSave: SavedLeague = {
+        id: leagueId,
         leagueName: settings.leagueName,
         settings,
         players: projectedPlayers,
-        createdAt: new Date().toISOString(),
+        createdAt: resumingLeague?.createdAt || new Date().toISOString(),
         lastModified: new Date().toISOString(),
-        status: 'drafting'
+        status: 'drafting',
+        setupStep: undefined, // Clear setup step since we're now drafting
       };
 
       // Save league to backend for persistence
-      let savedLeague = newLeague;
+      let savedLeague = leagueToSave;
       try {
         if (import.meta.env.DEV) {
           console.log('[App] Saving league to backend...');
         }
-        savedLeague = await createLeagueApi(newLeague);
-        // Merge backend ID with local player data (backend doesn't store players)
-        savedLeague = { ...savedLeague, players: projectedPlayers };
-        if (import.meta.env.DEV) {
-          console.log('[App] League saved to backend with ID:', savedLeague.id);
+
+        if (isResuming) {
+          // Update existing league
+          savedLeague = await updateLeagueApi(leagueId, leagueToSave);
+          savedLeague = { ...savedLeague, players: projectedPlayers };
+          if (import.meta.env.DEV) {
+            console.log('[App] League updated on backend with ID:', savedLeague.id);
+          }
+        } else {
+          // Create new league
+          savedLeague = await createLeagueApi(leagueToSave);
+          savedLeague = { ...savedLeague, players: projectedPlayers };
+          if (import.meta.env.DEV) {
+            console.log('[App] League saved to backend with ID:', savedLeague.id);
+          }
         }
       } catch (error) {
         console.error('[App] Failed to save league to backend:', error);
@@ -290,14 +348,19 @@ function AppContent() {
         });
       }
 
-      // Add league to user's leagues
+      // Add or update league in user's leagues
       if (userData) {
         const updatedUser = {
           ...userData,
-          leagues: [...userData.leagues, savedLeague]
+          leagues: isResuming
+            ? userData.leagues.map(l => l.id === savedLeague.id ? savedLeague : l)
+            : [...userData.leagues, savedLeague]
         };
         setUserData(updatedUser);
       }
+
+      // Clear resuming state
+      setResumingLeague(null);
 
       setCurrentLeague(savedLeague);
       setPlayers(savedLeague.players);
@@ -663,6 +726,7 @@ function AppContent() {
             leagues={userData.leagues}
             onCreateNew={handleCreateNewLeague}
             onContinueDraft={handleContinueDraft}
+            onResumeSetup={handleResumeSetup}
             onDeleteLeague={handleDeleteLeague}
             onEditLeague={handleEditLeague}
             onReloadProjections={handleReloadProjections}
@@ -686,7 +750,13 @@ function AppContent() {
             onSwitchLeague={handleSwitchLeague}
             showLeagueSelector={false}
           />
-          <SetupScreen onComplete={handleSetupComplete} />
+          <SetupScreen
+            onComplete={handleSetupComplete}
+            onSaveAndExit={handleSaveAndExitSetup}
+            existingLeague={resumingLeague || undefined}
+            onLeagueCreated={handleSetupLeagueCreated}
+            onLeagueUpdated={handleSetupLeagueUpdated}
+          />
 
           {projectionError && (
             <div className="fixed bottom-4 right-4 bg-red-900/90 border border-red-700 rounded-xl p-4 max-w-md z-50">
