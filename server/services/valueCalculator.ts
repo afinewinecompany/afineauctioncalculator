@@ -483,18 +483,30 @@ export function calculateAuctionValues(
     );
   }
 
-  // CRITICAL: Limit players to top N by auction value to prevent MiLB prospect confusion
+  // CRITICAL: Limit players to top N by SGP (Z-Score) to prevent MiLB prospect confusion
   // Steamer projections include 2000+ players, but only the top ~1200 are relevant
-  // This prevents low-ranked players (who share names with MLB stars) from being matched
-  const sortedPlayers = [...playersWithValues].sort((a, b) => b.auctionValue - a.auctionValue);
+  //
+  // IMPORTANT: Sort by SGP (Z-Score), NOT auction value!
+  // Many marginal players have $1 auction value, but their SGP scores differ significantly.
+  // MiLB prospects typically have lower SGP than MLB players with the same name.
+  // By sorting by SGP, we ensure we keep the BEST 1200 players, not just any 1200.
+  //
+  // For H2H Points leagues that use pointsValue instead of sgpValue, fall back to auction value
+  const sortedPlayers = [...playersWithValues].sort((a, b) => {
+    // Primary sort: by SGP (Z-Score) or points value
+    const aValue = a.sgpValue ?? a.pointsValue ?? a.auctionValue;
+    const bValue = b.sgpValue ?? b.pointsValue ?? b.auctionValue;
+    return bValue - aValue;
+  });
   const topPlayers = sortedPlayers.slice(0, MAX_PROJECTION_PLAYERS);
 
   logger.info({
     totalProjections: playersWithValues.length,
     returnedPlayers: topPlayers.length,
     maxAllowed: MAX_PROJECTION_PLAYERS,
+    lowestSgpReturned: topPlayers[topPlayers.length - 1]?.sgpValue ?? topPlayers[topPlayers.length - 1]?.pointsValue ?? 0,
     lowestValueReturned: topPlayers[topPlayers.length - 1]?.auctionValue ?? 0,
-  }, 'Filtered projections to top players by value');
+  }, 'Filtered projections to top players by SGP/Z-Score');
 
   return {
     projectionSystem: settings.projectionSystem,
