@@ -11,6 +11,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { LeagueSettings, SavedLeague } from '../lib/types';
 import { createLeague, updateLeague } from '../lib/leaguesApi';
 import { defaultLeagueSettings } from '../lib/mockData';
+import { isAuthenticated, getAccessToken } from '../lib/authApi';
 
 const LOCALSTORAGE_KEY = 'fantasyBaseballDraftSetup';
 const DEBOUNCE_MS = 2000;
@@ -116,6 +117,12 @@ export function useSetupAutoSave(
    * Returns a promise that resolves to the saved league, or null if save is skipped/fails
    */
   const saveToBackend = useCallback(async (): Promise<SavedLeague | null> => {
+    // Check if user is authenticated before attempting backend save
+    if (!isAuthenticated() || !getAccessToken()) {
+      console.log('[useSetupAutoSave] User not authenticated, skipping backend save');
+      return null;
+    }
+
     // Prevent concurrent saves - if already saving, return existing promise
     if (isSavingRef.current && savePromiseRef.current) {
       console.log('[useSetupAutoSave] Save already in progress, returning existing promise');

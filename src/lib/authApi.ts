@@ -169,19 +169,47 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
 export async function refreshAccessToken(): Promise<string> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
+    if (import.meta.env.DEV) {
+      console.error('[authApi] No refresh token in localStorage');
+    }
     throw new AuthError('No refresh token available', 'NO_REFRESH_TOKEN', 401);
   }
 
-  const response = await fetch(`${AUTH_BASE}/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  });
+  try {
+    const response = await fetch(`${AUTH_BASE}/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
 
-  const result = await handleResponse<{ accessToken: string }>(response);
-  // Only update the access token, keep the existing refresh token
-  localStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken);
-  return result.accessToken;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (import.meta.env.DEV) {
+        console.error('[authApi] Token refresh failed:', response.status, errorData);
+      }
+      throw new AuthError(
+        errorData.message || 'Token refresh failed',
+        errorData.code || 'REFRESH_FAILED',
+        response.status
+      );
+    }
+
+    const result = await response.json() as { accessToken: string };
+    // Only update the access token, keep the existing refresh token
+    localStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken);
+    if (import.meta.env.DEV) {
+      console.log('[authApi] Token refreshed successfully');
+    }
+    return result.accessToken;
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+    if (import.meta.env.DEV) {
+      console.error('[authApi] Token refresh error:', error);
+    }
+    throw new AuthError('Token refresh failed', 'REFRESH_ERROR', 401);
+  }
 }
 
 /**
@@ -209,9 +237,10 @@ export async function logout(): Promise<void> {
 
 /**
  * Get the current authenticated user
+ * Uses authenticatedFetch to auto-refresh tokens if expired
  */
 export async function getCurrentUser(): Promise<AuthUser> {
-  const response = await authFetch(`${AUTH_BASE}/me`);
+  const response = await authenticatedFetch(`${AUTH_BASE}/me`);
   const result = await handleResponse<{ user: AuthUser }>(response);
   return result.user;
 }
@@ -254,15 +283,30 @@ export async function authenticatedFetch(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
+  // Check if we have a token before making the request
+  const token = getAccessToken();
+  if (!token) {
+    if (import.meta.env.DEV) {
+      console.error('[authApi] No access token available for authenticated request to:', url);
+    }
+    throw new AuthError('No authentication token available. Please login.', 'NO_TOKEN', 401);
+  }
+
   let response = await authFetch(url, options);
 
   // If unauthorized, try to refresh token and retry
   if (response.status === 401) {
+    if (import.meta.env.DEV) {
+      console.log('[authApi] Got 401, attempting token refresh for:', url);
+    }
     try {
       await refreshAccessToken();
       response = await authFetch(url, options);
-    } catch {
+    } catch (refreshError) {
       // Refresh failed, user needs to login again
+      if (import.meta.env.DEV) {
+        console.error('[authApi] Token refresh failed:', refreshError);
+      }
       clearTokens();
       throw new AuthError('Session expired. Please login again.', 'SESSION_EXPIRED', 401);
     }
