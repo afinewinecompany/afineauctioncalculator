@@ -6,11 +6,12 @@
 |-----------|-------|
 | **Project Name** | Fantasy Baseball Auction Tool |
 | **Purpose** | Optimize draft budgeting during fantasy baseball salary cap auctions |
-| **Tech Stack** | React 18 + TypeScript + Vite + Framer Motion (Frontend) + Node.js/Express (Backend) |
+| **Tech Stack** | React 18 + TypeScript + Vite + Framer Motion (Frontend) + Node.js/Express + Prisma (Backend) |
+| **Database** | PostgreSQL via Railway (production) |
 | **UI Framework** | Radix UI + Tailwind CSS (shadcn/ui) |
 | **Data Sources** | FanGraphs (Steamer), JA Projections (Jon Anderson, MLB Data Warehouse), Harry Knows Ball (Dynasty), Couch Managers Live Sync |
-| **Backend Status** | Implemented - Projections API, Auction Sync, Value Calculator, Dynasty Rankings |
-| **Status** | Full-Stack MVP with Dynasty League Support & Market Correction |
+| **Backend Status** | Full Authentication + Leagues API + Projections + Auction Sync |
+| **Status** | Production-Ready MVP with Full Auth, Persistence & Dynasty Support |
 
 ---
 
@@ -20,18 +21,21 @@ This is a **React single-page application** that helps fantasy baseball team man
 
 ### Core Features
 
-1. **League Configuration** - Custom scoring systems (Roto, H2H Categories, H2H Points), roster positions, and budget settings
-2. **Dynasty League Support** - Dynasty rankings integration (Harry Knows Ball or custom CSV), configurable dynasty weight
-3. **Live Auction Sync** - Real-time integration with Couch Managers draft rooms
-4. **Manual Draft Mode** - Offline drafting with manual price entry when not using Couch Managers
-5. **Projections Engine** - FanGraphs (Steamer) and JA Projections (Jon Anderson, MLB Data Warehouse) with SGP-based value calculation
-6. **Category Validation** - 100+ scoring categories with accuracy classification (direct/calculated/estimated)
-7. **Market Inflation Correction** - Tier-based and position-based adjustments from historical auction analysis
-8. **Tier-Weighted Inflation** - Sophisticated inflation tracking with historical baselines and positional scarcity
-9. **Value Adjustment** - Dynamic player value adjustment based on remaining budget and positional need
-10. **Team Analytics** - Post-draft team analysis with projected stats and charts
-11. **Account Management** - User settings, subscription tiers (free/premium), email/password management
-12. **Error Recovery** - Global ErrorBoundary with graceful crash recovery and retry UI
+1. **JWT Authentication** - Full auth flow with access/refresh tokens, Google OAuth, password reset
+2. **PostgreSQL Persistence** - Leagues, users, and draft state synced across devices via Prisma ORM
+3. **League Configuration** - Custom scoring systems (Roto, H2H Categories, H2H Points), roster positions, and budget settings
+4. **Dynasty League Support** - Dynasty rankings integration (Harry Knows Ball or custom CSV), configurable dynasty weight
+5. **Live Auction Sync** - Real-time integration with Couch Managers draft rooms
+6. **Manual Draft Mode** - Offline drafting with manual price entry when not using Couch Managers
+7. **Projections Engine** - FanGraphs (Steamer) and JA Projections (Jon Anderson, MLB Data Warehouse) with SGP-based value calculation
+8. **Category Validation** - 100+ scoring categories with accuracy classification (direct/calculated/estimated)
+9. **Market Inflation Correction** - Tier-based and position-based adjustments from historical auction analysis
+10. **Tier-Weighted Inflation** - Sophisticated inflation tracking with historical baselines and positional scarcity
+11. **Value Adjustment** - Dynamic player value adjustment based on remaining budget and positional need
+12. **Team Analytics** - Post-draft team analysis with projected stats and charts
+13. **Account Management** - User settings, subscription tiers (free/premium), email/password management
+14. **Error Recovery** - Global ErrorBoundary with graceful crash recovery and retry UI
+15. **Cross-Device Draft Sync** - Draft state persists in database, accessible from any device
 
 ---
 
@@ -60,10 +64,16 @@ afineauctioncalculator/
 │   └── main.tsx                # Entry point
 ├── server/                     # Backend Express server
 │   ├── index.ts                # Server entry point
+│   ├── db.ts                   # Prisma client singleton
 │   ├── routes/
+│   │   ├── auth.ts             # Authentication endpoints (JWT, Google OAuth)
+│   │   ├── leagues.ts          # Leagues CRUD + draft state sync
 │   │   ├── auction.ts          # Couch Managers sync endpoints
 │   │   └── projections.ts      # Projections API endpoints
+│   ├── middleware/
+│   │   └── auth.ts             # JWT auth middleware (requireAuth, optionalAuth)
 │   ├── services/
+│   │   ├── authService.ts             # Auth business logic (tokens, passwords)
 │   │   ├── couchManagersScraper.ts    # Couch Managers web scraper
 │   │   ├── projectionsService.ts      # FanGraphs projections fetcher
 │   │   ├── projectionsCacheService.ts # 24-hour projection cache
@@ -74,8 +84,11 @@ afineauctioncalculator/
 │   │   ├── inflationCalculator.ts     # Tier-weighted inflation
 │   │   └── playerMatcher.ts           # Name matching algorithm
 │   └── types/
+│       ├── auth.ts             # Auth types (AuthUser, TokenPayload)
 │       ├── auction.ts          # Auction/sync types
 │       └── projections.ts      # Projection types
+├── prisma/
+│   └── schema.prisma           # Database schema definition
 ├── docs/                       # Project documentation
 ├── .claude/                    # Claude agent configurations
 ├── package.json
@@ -92,10 +105,14 @@ afineauctioncalculator/
 | File | Purpose | When to Read |
 |------|---------|--------------|
 | `src/lib/types.ts` | All TypeScript interfaces (frontend + shared) | Before any coding task |
+| `prisma/schema.prisma` | Database schema (Prisma) | Database changes |
+| `server/types/auth.ts` | Auth types (AuthUser, TokenPayload) | Auth development |
 | `server/types/auction.ts` | Backend auction/sync types | Backend development |
 | `src/lib/calculations.ts` | Frontend inflation & value calculations | Modifying calculations |
 | `server/services/inflationCalculator.ts` | Server-side inflation with positional scarcity | Backend inflation work |
 | `server/services/valueCalculator.ts` | SGP-based auction value calculator | Value calculation changes |
+| `src/lib/authApi.ts` | Auth API client (login, register, tokens) | Auth integration |
+| `src/lib/leaguesApi.ts` | Leagues API client (CRUD, draft state) | Leagues integration |
 | `src/lib/auctionApi.ts` | API client for backend services | API integration |
 
 ### Component Files
@@ -116,8 +133,12 @@ afineauctioncalculator/
 
 | Service | File | Purpose |
 |---------|------|---------|
+| Auth Routes | `server/routes/auth.ts` | JWT auth, Google OAuth, password reset |
+| Leagues Routes | `server/routes/leagues.ts` | Leagues CRUD + draft state sync |
 | Auction Routes | `server/routes/auction.ts` | Couch Managers sync endpoints |
 | Projections Routes | `server/routes/projections.ts` | FanGraphs/JA projection endpoints |
+| Auth Middleware | `server/middleware/auth.ts` | requireAuth, optionalAuth, requireTier |
+| Auth Service | `server/services/authService.ts` | Token generation, password hashing |
 | Value Calculator | `server/services/valueCalculator.ts` | SGP/Points value calculation |
 | Inflation Calculator | `server/services/inflationCalculator.ts` | Enhanced inflation with scarcity |
 | Projections Cache | `server/services/projectionsCacheService.ts` | 24-hour projection caching |
@@ -229,10 +250,15 @@ PositionalScarcity {
 
 ## Current State vs Planned State
 
-### Current (Full-Stack MVP with Dynasty Support)
+### Current (Production-Ready MVP)
 
-**Implemented:**
+**Implemented (v3.2):**
 
+- **PostgreSQL database** via Prisma ORM (Railway production)
+- **JWT authentication** with access/refresh tokens
+- **Google OAuth** integration
+- **Leagues API** with full CRUD operations
+- **Cross-device draft state sync** via database
 - Express backend with projections and auction sync APIs
 - FanGraphs projections (Steamer) with 24-hour caching
 - JA Projections from Google Sheets
@@ -248,22 +274,23 @@ PositionalScarcity {
 - **Account management** with subscription tiers (free/premium)
 - **Edit league modal** for modifying settings after creation
 - **Animated loading screens** using Framer Motion
+- **E2E authentication tests** for production verification
 
 **Storage:**
 
-- localStorage for draft progress persistence
+- PostgreSQL database (primary) via Railway
+- LocalStorage (fallback for offline/temporary data)
 - Server-side projection caching (24-hour TTL)
 - **File-based auction caching (5-minute TTL)**
 - Dynasty rankings caching (12-hour TTL)
 
 ### Future Enhancements
 
-- PostgreSQL database for persistent storage
-- JWT authentication with OAuth (backend)
-- Multi-user league sharing
-- Real-time draft rooms via WebSocket
+- Real-time draft rooms via WebSocket (replace polling)
 - Stripe payment integration (currently mock)
+- Multi-user league sharing
 - Historical auction data analysis
+- Player search API with filtering
 
 ---
 
@@ -291,6 +318,15 @@ npm run build        # Production build
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
+| `/api/auth/register` | POST | Create new account |
+| `/api/auth/login` | POST | Email/password login |
+| `/api/auth/refresh` | POST | Refresh access token |
+| `/api/auth/logout` | POST | Invalidate refresh token |
+| `/api/auth/me` | GET | Get current user |
+| `/api/auth/google` | GET | Google OAuth redirect |
+| `/api/leagues` | GET/POST | List/create leagues |
+| `/api/leagues/:id` | GET/PUT/DELETE | League CRUD |
+| `/api/leagues/:id/draft-state` | GET/PUT | Draft state sync |
 | `/api/projections/:system` | GET | Fetch cached projections |
 | `/api/projections/calculate-values` | POST | Calculate auction values for league |
 | `/api/projections/:system/refresh` | POST | Force cache refresh |
@@ -407,20 +443,23 @@ Based on historical auction analysis (Duke Draft and others):
 | Dec 2025 | Dynasty league support | Expand user base to keeper/dynasty league managers |
 | Dec 2025 | Framer Motion animations | Premium feel for loading screens |
 | Dec 2025 | File-based auction cache | Persist cache across server restarts, configurable TTL |
+| Dec 2025 | PostgreSQL + Prisma | Production-ready persistence with type-safe queries |
+| Dec 2025 | JWT authentication | Secure auth with access/refresh token flow |
+| Dec 2025 | Railway hosting | PostgreSQL and backend deployment |
+| Dec 2025 | E2E auth tests | Verify production auth flow works correctly |
 
 ---
 
 ## Open Questions / TODOs
 
-1. **Persistence**: Move from localStorage to PostgreSQL for multi-device
-2. **Authentication**: JWT + refresh token flow (backend)
-3. **Real-time**: WebSocket for live auction updates (reduce polling)
-4. **Testing**: Vitest for unit tests, Playwright for E2E
-5. **Deployment**: Consider Railway/Render for backend
-6. **Payments**: Stripe integration (currently mock subscription system)
+1. ~~**Persistence**: Move from localStorage to PostgreSQL~~ - **DONE**
+2. ~~**Authentication**: JWT + refresh token flow~~ - **DONE**
+3. **Real-time**: WebSocket for live auction updates (replace polling)
+4. **Testing**: Expand E2E tests, add unit tests with Vitest
+5. **Payments**: Stripe integration (currently mock subscription system)
 
 ---
 
-*Document Version: 3.1*
+*Document Version: 3.2*
 *Last Updated: December 2025*
 *Maintained by: context-manager agent*

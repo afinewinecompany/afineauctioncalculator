@@ -17,14 +17,16 @@ const envSchema = z.object({
   // Redis
   REDIS_URL: z.string().url('REDIS_URL must be a valid Redis connection string').optional(),
 
-  // JWT Secrets
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters for security'),
-  JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
+  // JWT Secrets (with test defaults for CI/testing)
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters for security')
+    .default('test-jwt-secret-that-is-at-least-32-chars'),
+  JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters')
+    .default('test-refresh-secret-that-is-at-least-32-chars'),
   JWT_ACCESS_EXPIRY: z.string().default('15m'),
   JWT_REFRESH_EXPIRY: z.string().default('7d'),
 
   // Environment
-  NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
+  NODE_ENV: z.enum(['development', 'staging', 'production', 'test']).default('development'),
   PORT: z.string().transform(Number).pipe(z.number().int().positive()).default('3001'),
 
   // Frontend

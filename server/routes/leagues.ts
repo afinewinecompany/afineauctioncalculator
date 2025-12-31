@@ -411,6 +411,8 @@ const draftPlayerSchema = z.object({
 
 const saveDraftStateSchema = z.object({
   players: z.array(draftPlayerSchema),
+  // Optional: for optimistic locking - if provided, save will fail if data has been modified
+  expectedLastModified: z.string().datetime().optional(),
 });
 
 /**
@@ -507,7 +509,28 @@ router.put('/:id/draft-state', requireAuth, async (req: Request, res: Response) 
       return;
     }
 
-    const { players } = validationResult.data;
+    const { players, expectedLastModified } = validationResult.data;
+
+    // Optimistic locking: check if data has been modified since client last read it
+    if (expectedLastModified) {
+      const expectedDate = new Date(expectedLastModified);
+      const actualDate = existingLeague.updatedAt;
+
+      // Allow 1 second tolerance for timing differences
+      if (Math.abs(actualDate.getTime() - expectedDate.getTime()) > 1000) {
+        logger.warn(
+          { userId: user.id, leagueId: id, expected: expectedLastModified, actual: actualDate.toISOString() },
+          'Draft state conflict detected'
+        );
+        res.status(409).json({
+          error: 'Draft state conflict',
+          code: 'CONFLICT',
+          message: 'The draft state has been modified by another device. Please refresh and try again.',
+          serverLastModified: actualDate.toISOString(),
+        });
+        return;
+      }
+    }
 
     // Only store drafted players (not available ones) to keep storage minimal
     const draftedPlayers = players.filter(p => p.status !== 'available');
@@ -518,11 +541,12 @@ router.put('/:id/draft-state', requireAuth, async (req: Request, res: Response) 
     );
 
     // Store draft state as JSON in the league record
+    const newUpdatedAt = new Date();
     await prisma.league.update({
       where: { id },
       data: {
         draftState: { players: draftedPlayers },
-        updatedAt: new Date(),
+        updatedAt: newUpdatedAt,
       },
     });
 
@@ -532,6 +556,7 @@ router.put('/:id/draft-state', requireAuth, async (req: Request, res: Response) 
       success: true,
       leagueId: id,
       savedCount: draftedPlayers.length,
+      lastModified: newUpdatedAt.toISOString(),
       message: 'Draft state saved successfully',
     });
   } catch (error) {

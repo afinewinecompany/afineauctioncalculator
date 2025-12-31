@@ -95,13 +95,19 @@ Use this index to quickly find relevant documentation for your task.
 
 | File | Purpose |
 |------|---------|
+| `server/routes/auth.ts` | Authentication endpoints (register, login, refresh, logout, Google OAuth) |
+| `server/routes/leagues.ts` | Leagues CRUD + draft state persistence |
 | `server/routes/auction.ts` | Couch Managers sync endpoints |
 | `server/routes/projections.ts` | FanGraphs/JA projection endpoints |
+| `server/middleware/auth.ts` | JWT authentication middleware (requireAuth, optionalAuth) |
+| `server/services/authService.ts` | Auth business logic (tokens, password hashing, user management) |
 | `server/services/projectionsCacheService.ts` | 24-hour projection caching |
 | `server/services/auctionCacheService.ts` | File-based auction caching (5-min TTL) |
 | `server/services/couchManagersScraper.ts` | Auction data scraper |
 | `server/services/dynastyRankingsScraper.ts` | Harry Knows Ball dynasty rankings |
-| `server/services/jaProjectionsService.ts` | JA Projections from Google Sheets |
+| `server/services/jaProjectionsService.ts` | JA Projections (Jon Anderson, MLB Data Warehouse) from Google Sheets |
+| `server/db.ts` | Prisma client singleton |
+| `prisma/schema.prisma` | Database schema definition |
 
 ### New Frontend Components
 
@@ -118,8 +124,17 @@ Use this index to quickly find relevant documentation for your task.
 
 | File                             | Purpose                                                            |
 |----------------------------------|--------------------------------------------------------------------|
+| `src/lib/authApi.ts`             | Authentication API client (login, register, token refresh)         |
+| `src/lib/leaguesApi.ts`          | Leagues API client (CRUD, draft state sync)                        |
 | `src/lib/scoringCategories.ts`   | Shared category definitions for ScoringConfig and EditLeagueModal  |
 | `src/lib/csvParser.ts`           | CSV parser for custom dynasty rankings upload                      |
+
+### Test Files
+
+| File                             | Purpose                                                            |
+|----------------------------------|--------------------------------------------------------------------|
+| `tests/e2e/auth-flow-test.ts`    | E2E authentication flow tests (production endpoints)               |
+| `tests/e2e/leagues-flow-test.ts` | E2E leagues CRUD tests                                             |
 
 ### Configuration Files
 
@@ -136,37 +151,44 @@ Use this index to quickly find relevant documentation for your task.
 **Fantasy Baseball Auction Tool**
 
 - **Purpose**: Optimize fantasy baseball draft budgets with live auction sync
-- **Status**: Full-Stack MVP with Dynasty League Support
+- **Status**: Production-Ready MVP with Full Authentication & Persistence
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind + Framer Motion
-- **Backend**: Express + TypeScript
-- **Data Sources**: FanGraphs (Steamer), JA Projections, Harry Knows Ball dynasty rankings, Couch Managers live sync
+- **Backend**: Express + TypeScript + Prisma + PostgreSQL
+- **Database**: PostgreSQL via Railway (production) / local (development)
+- **Data Sources**: FanGraphs (Steamer), JA Projections (Jon Anderson, MLB Data Warehouse), Harry Knows Ball dynasty rankings, Couch Managers live sync
 
 ### Key Features (Implemented)
 
-1. League configuration (scoring, rosters, Couch Managers room ID)
-2. **Dynasty league support** with dynasty rankings integration
-3. Live auction sync with player matching
-4. Tier-weighted inflation tracking with historical baselines
-5. Positional scarcity analysis with adjustments
-6. SGP-based and Points-based value calculation
-7. Post-draft analytics
-8. **Account management** with subscription tiers (free/premium)
-9. **Edit league modal** for modifying settings after creation
-10. **Animated loading screens** for projections and draft room sync
-11. **JA Projections** support from Google Sheets
-12. **Custom dynasty rankings upload** (CSV)
-13. **Manual draft mode** for offline drafting without Couch Managers
-14. **Market inflation correction** with tier/position adjustments
-15. **ErrorBoundary** for graceful error recovery
+1. **JWT Authentication** with access/refresh token flow (NEW v3.2)
+2. **PostgreSQL persistence** via Prisma ORM (NEW v3.2)
+3. **Leagues CRUD API** with cross-device sync (NEW v3.2)
+4. **Cross-device draft state persistence** via database (NEW v3.2)
+5. League configuration (scoring, rosters, Couch Managers room ID)
+6. **Dynasty league support** with dynasty rankings integration
+7. Live auction sync with player matching
+8. Tier-weighted inflation tracking with historical baselines
+9. Positional scarcity analysis with adjustments
+10. SGP-based and Points-based value calculation
+11. Post-draft analytics
+12. **Account management** with subscription tiers (free/premium)
+13. **Edit league modal** for modifying settings after creation
+14. **Animated loading screens** for projections and draft room sync
+15. **JA Projections** (Jon Anderson, MLB Data Warehouse) support from Google Sheets
+16. **Custom dynasty rankings upload** (CSV)
+17. **Manual draft mode** for offline drafting without Couch Managers
+18. **Market inflation correction** with tier/position adjustments
+19. **ErrorBoundary** for graceful error recovery
+20. **Google OAuth** integration (optional)
+21. **E2E Authentication Tests** for production verification
 
 ### Open Work
 
 See [PRODUCTION_ROADMAP.md](./PRODUCTION_ROADMAP.md) for detailed implementation plan:
 
-1. PostgreSQL persistence (replace localStorage)
-2. JWT authentication (backend)
+1. ~~PostgreSQL persistence~~ - **DONE** (Prisma + PostgreSQL)
+2. ~~JWT authentication~~ - **DONE** (access/refresh tokens)
 3. WebSocket for real-time drafts (replace polling)
-4. Testing framework setup
+4. ~~Testing framework setup~~ - **PARTIAL** (E2E auth tests added)
 5. Stripe payment integration (currently mock)
 
 ---
@@ -175,17 +197,62 @@ See [PRODUCTION_ROADMAP.md](./PRODUCTION_ROADMAP.md) for detailed implementation
 
 | Document | Version | Last Updated |
 |----------|---------|--------------|
-| PROJECT_CONTEXT.md | 3.1 | December 2025 |
-| FRONTEND_ARCHITECTURE.md | 3.1 | December 2025 |
-| API_DESIGN.md | 3.1 | December 2025 |
+| PROJECT_CONTEXT.md | 3.2 | December 2025 |
+| FRONTEND_ARCHITECTURE.md | 3.2 | December 2025 |
+| API_DESIGN.md | 3.2 | December 2025 |
 | COMPONENT_REFERENCE.md | 3.1 | December 2025 |
-| DATABASE_ARCHITECTURE.md | 1.0 | December 2025 |
+| DATABASE_ARCHITECTURE.md | 2.0 | December 2025 |
 | PRODUCTION_ROADMAP.md | 1.0 | December 2025 |
-| CONTEXT_INDEX.md | 3.2 | December 2025 |
+| CONTEXT_INDEX.md | 3.3 | December 2025 |
 
 ---
 
-## Recent Changes (December 2025 - v3.1)
+## Recent Changes (December 2025 - v3.2)
+
+### Full Backend Authentication - IMPLEMENTED
+
+- **JWT authentication** with access tokens (1h) and refresh tokens (7d)
+- **Password hashing** with bcrypt (cost factor 12)
+- **Timing attack protection** for login (prevents email enumeration)
+- **Token refresh endpoint** with mutex to prevent race conditions
+- **Google OAuth** integration with consent flow
+- **Password reset flow** with secure token generation
+- **Rate limiting** on authentication endpoints
+- Files: `server/routes/auth.ts`, `server/middleware/auth.ts`, `server/services/authService.ts`
+
+### PostgreSQL Database - IMPLEMENTED
+
+- **Prisma ORM** with PostgreSQL backend
+- Production database on **Railway**
+- Schema includes: Users, RefreshTokens, Leagues, UserLeagues, Players, PlayerProjections, LeaguePlayers, DraftPicks
+- **Draft state persistence** stored as JSON in League model
+- Files: `prisma/schema.prisma`, `server/db.ts`
+
+### Leagues CRUD API - IMPLEMENTED
+
+- Full CRUD operations for leagues (`/api/leagues`)
+- **Cross-device sync** - leagues persist across login/logout
+- **Draft state endpoints** (`GET/PUT /api/leagues/:id/draft-state`)
+- **Optimistic locking** to prevent concurrent edit conflicts
+- Files: `server/routes/leagues.ts`, `src/lib/leaguesApi.ts`
+
+### Frontend Auth Integration
+
+- **authApi.ts** - Token management with auto-refresh
+- **leaguesApi.ts** - Authenticated league API calls
+- **authenticatedFetch** wrapper handles 401 → refresh → retry
+- Token storage in localStorage (access + refresh)
+
+### E2E Testing
+
+- **auth-flow-test.ts** - Comprehensive auth flow testing
+- Tests: registration, login, token refresh, logout, Google OAuth
+- Security tests: timing attacks, token invalidation, rate limiting
+- Run with: `npx tsx tests/e2e/auth-flow-test.ts`
+
+---
+
+## Previous Changes (December 2025 - v3.1)
 
 ### Error Handling & Stability
 
@@ -232,7 +299,7 @@ See [PRODUCTION_ROADMAP.md](./PRODUCTION_ROADMAP.md) for detailed implementation
 
 ### New Projection Source
 
-- JA Projections from Google Sheets (`jaProjectionsService.ts`)
+- JA Projections (Jon Anderson, MLB Data Warehouse) from Google Sheets (`jaProjectionsService.ts`)
 - BatX projections currently disabled (unavailable)
 
 ### Account & Subscription System
@@ -285,4 +352,4 @@ See [PRODUCTION_ROADMAP.md](./PRODUCTION_ROADMAP.md) for detailed implementation
 ---
 
 *This index is maintained by the context-manager agent*
-*Last Updated: December 2025 (v3.1)*
+*Last Updated: December 2025 (v3.3)*

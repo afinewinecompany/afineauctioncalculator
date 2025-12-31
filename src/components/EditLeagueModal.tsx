@@ -43,7 +43,7 @@ export function EditLeagueModal({
   const projectionSystems: Array<{ value: LeagueSettings['projectionSystem']; label: string; description: string; disabled?: boolean; disabledReason?: string }> = [
     { value: 'steamer', label: 'Steamer', description: 'Popular, conservative' },
     { value: 'batx', label: 'BatX', description: 'Advanced metrics', disabled: true, disabledReason: 'Currently unavailable' },
-    { value: 'ja', label: 'JA Projections', description: 'Custom algorithm' },
+    { value: 'ja', label: 'JA Projections', description: 'Jon Anderson (MLB Data Warehouse)' },
   ];
 
   const scoringTypes: Array<{ value: LeagueSettings['scoringType']; label: string }> = [

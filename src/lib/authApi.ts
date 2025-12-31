@@ -102,6 +102,9 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
+// Token refresh mutex to prevent concurrent refresh attempts
+let refreshPromise: Promise<string> | null = null;
+
 // Helper to make authenticated requests
 async function authFetch(
   url: string,
@@ -165,8 +168,18 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
 
 /**
  * Refresh the access token using the refresh token
+ * Uses a mutex to prevent concurrent refresh attempts - multiple callers
+ * will await the same promise if a refresh is already in progress
  */
 export async function refreshAccessToken(): Promise<string> {
+  // If a refresh is already in progress, wait for it
+  if (refreshPromise) {
+    if (import.meta.env.DEV) {
+      console.log('[authApi] Token refresh already in progress, waiting...');
+    }
+    return refreshPromise;
+  }
+
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
     if (import.meta.env.DEV) {
@@ -175,41 +188,49 @@ export async function refreshAccessToken(): Promise<string> {
     throw new AuthError('No refresh token available', 'NO_REFRESH_TOKEN', 401);
   }
 
-  try {
-    const response = await fetch(`${AUTH_BASE}/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    });
+  // Create the refresh promise and store it
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${AUTH_BASE}/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      if (import.meta.env.DEV) {
-        console.error('[authApi] Token refresh failed:', response.status, errorData);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (import.meta.env.DEV) {
+          console.error('[authApi] Token refresh failed:', response.status, errorData);
+        }
+        throw new AuthError(
+          errorData.message || 'Token refresh failed',
+          errorData.code || 'REFRESH_FAILED',
+          response.status
+        );
       }
-      throw new AuthError(
-        errorData.message || 'Token refresh failed',
-        errorData.code || 'REFRESH_FAILED',
-        response.status
-      );
-    }
 
-    const result = await response.json() as { accessToken: string };
-    // Only update the access token, keep the existing refresh token
-    localStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken);
-    if (import.meta.env.DEV) {
-      console.log('[authApi] Token refreshed successfully');
+      const result = await response.json() as { accessToken: string };
+      // Only update the access token, keep the existing refresh token
+      localStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken);
+      if (import.meta.env.DEV) {
+        console.log('[authApi] Token refreshed successfully');
+      }
+      return result.accessToken;
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
+      if (import.meta.env.DEV) {
+        console.error('[authApi] Token refresh error:', error);
+      }
+      throw new AuthError('Token refresh failed', 'REFRESH_ERROR', 401);
+    } finally {
+      // Clear the mutex after completion (success or failure)
+      refreshPromise = null;
     }
-    return result.accessToken;
-  } catch (error) {
-    if (error instanceof AuthError) {
-      throw error;
-    }
-    if (import.meta.env.DEV) {
-      console.error('[authApi] Token refresh error:', error);
-    }
-    throw new AuthError('Token refresh failed', 'REFRESH_ERROR', 401);
-  }
+  })();
+
+  return refreshPromise;
 }
 
 /**

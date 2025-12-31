@@ -114,7 +114,7 @@ export function SetupScreen({
   const projectionSystems: Array<{ value: LeagueSettings['projectionSystem']; label: string; description: string; disabled?: boolean; disabledReason?: string }> = [
     { value: 'steamer', label: 'Steamer', description: 'Popular projection system with conservative estimates' },
     { value: 'batx', label: 'BatX', description: 'Advanced metrics-based projections', disabled: true, disabledReason: 'Currently unavailable' },
-    { value: 'ja', label: 'JA Projections', description: 'Custom projection algorithm' },
+    { value: 'ja', label: 'JA Projections', description: 'Jon Anderson (MLB Data Warehouse)' },
   ];
 
   const leagueTypes: Array<{ value: LeagueSettings['leagueType']; label: string; description: string; icon: React.ReactNode }> = [

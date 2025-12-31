@@ -90,9 +90,15 @@ export async function requireAuth(
   next: NextFunction
 ): Promise<void> {
   try {
-    // Extract token from header
+    // Extract token from header first, then fall back to query parameter
+    // (query param is used by sendBeacon which doesn't support custom headers)
     const authHeader = req.headers.authorization;
-    const token = extractBearerToken(authHeader);
+    let token = extractBearerToken(authHeader);
+
+    // Fall back to query parameter token (for sendBeacon support)
+    if (!token && req.query.token && typeof req.query.token === 'string') {
+      token = req.query.token;
+    }
 
     if (!token) {
       if (!authHeader) {

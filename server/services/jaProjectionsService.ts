@@ -1,11 +1,13 @@
 /**
  * JA Projections Service
  * Fetches player projections from JA Projections Google Sheet and normalizes them to internal format
+ *
+ * JA Projections are created by Jon Anderson at MLB Data Warehouse
  */
 
 import type { NormalizedProjection } from '../types/projections.js';
 
-// Google Sheets public URL for JA Projections
+// Google Sheets public URL for JA Projections (Jon Anderson, MLB Data Warehouse)
 const JA_SHEET_ID = '1c2aCJakeEMLXbxZ5MRPX3IfXFaIAOyntQHjSDzYRh3k';
 const HITTERS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${JA_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=hitters`;
 const PITCHERS_SHEET_URL = `https://docs.google.com/spreadsheets/d/${JA_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=pitchers`;

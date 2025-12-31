@@ -91,7 +91,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
               <h3 className="text-xl text-white mb-2">Steamer & JA Projections</h3>
               <p className="text-slate-400">
-                Professional projections from FanGraphs Steamer and JA Projections. Calculated auction values tuned to your league settings.
+                Professional projections from FanGraphs Steamer and JA Projections (Jon Anderson, MLB Data Warehouse). Calculated auction values tuned to your league settings.
               </p>
             </div>
           </div>

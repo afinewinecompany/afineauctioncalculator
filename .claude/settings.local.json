@@ -11,7 +11,17 @@
       "Bash(npm run build:backend:*)",
       "Bash(git push)",
       "Bash(npm run build:frontend:*)",
-      "Bash(npx prisma generate)"
+      "Bash(npx prisma generate)",
+      "Bash(npx prisma db push:*)",
+      "Bash(git commit:*)",
+      "Bash(bun:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(cat:*)",
+      "Bash(ls:*)"
     ]
   }
 }

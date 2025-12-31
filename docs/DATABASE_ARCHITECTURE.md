@@ -1,79 +1,93 @@
-# Fantasy Baseball Auction Tool - Database Architecture Plan
+# Fantasy Baseball Auction Tool - Database Architecture
+
+## Implementation Status: COMPLETE
+
+**Database**: PostgreSQL via Railway (production) / local Docker (development)
+**ORM**: Prisma Client
+**Schema**: `prisma/schema.prisma`
 
 ## Executive Summary
 
-This document outlines the database architecture needed to migrate the Fantasy Baseball Auction Tool from localStorage-based persistence to a production-ready database system.
+This document describes the database architecture for the Fantasy Baseball Auction Tool. The migration from localStorage to PostgreSQL has been **completed** using Prisma ORM.
 
 ---
 
-## Current State Analysis
+## Current State (Implemented)
 
-### Existing Data Model (localStorage)
+### Data Model Overview
 
-The application currently stores all data in browser localStorage under a single key (`fantasyBaseballUser`):
+The application uses PostgreSQL with Prisma ORM. Data is persisted in the database and synchronized across devices.
 
-```
-UserData
-├── username: string
-├── email: string
-├── authProvider: 'email' | 'google'
-├── profilePicture?: string
-└── leagues: SavedLeague[]
-    ├── id: string
-    ├── leagueName: string
-    ├── status: 'setup' | 'drafting' | 'complete'
-    ├── createdAt: string
-    ├── lastModified: string
-    ├── settings: LeagueSettings
-    │   ├── numTeams, budgetPerTeam
-    │   ├── scoringType, projectionSystem
-    │   ├── rosterSpots: {...}
-    │   ├── hittingCategories: {...}
-    │   ├── pitchingCategories: {...}
-    │   └── pointsSettings: {...}
-    └── players: Player[]
-        ├── id, name, team, positions[]
-        ├── projectedValue, adjustedValue
-        ├── projectedStats: {...}
-        ├── status, draftedPrice, draftedBy
-        └── tier
+```text
+Prisma Models (prisma/schema.prisma)
+├── User - User accounts and authentication
+│   ├── id, email, passwordHash, name
+│   ├── authProvider ('email' | 'google')
+│   ├── subscriptionTier ('free' | 'premium')
+│   └── Relations: ownedLeagues, refreshTokens
+├── RefreshToken - JWT refresh tokens
+│   ├── tokenHash (hashed), expiresAt
+│   └── Relations: user
+├── League - League configuration and state
+│   ├── name, numTeams, budgetPerTeam
+│   ├── scoringType, projectionSystem
+│   ├── rosterSpots (JSON), categories (JSON)
+│   ├── draftState (JSON) - cross-device sync
+│   ├── status ('setup' | 'drafting' | 'completed')
+│   └── Relations: owner, userLeagues, leaguePlayers
+├── UserLeague - Many-to-many user/league
+├── Player - Player master data
+├── PlayerProjection - Projection stats by system
+├── LeaguePlayer - Player state per league
+└── DraftPick - Draft history/audit trail
 ```
 
-### Limitations of Current Approach
-- Data lost when browser storage is cleared
-- No cross-device synchronization
-- No data backup/recovery
-- No multi-user support for shared leagues
-- No real-time collaboration capabilities
-- Limited storage capacity (~5MB per origin)
+### What's Implemented
+
+- User authentication with JWT access/refresh tokens
+- League CRUD with full settings persistence
+- Draft state sync (stored as JSON in League.draftState)
+- Cross-device sync via authenticated API calls
+- Google OAuth integration
+- Password reset flow
 
 ---
 
-## Recommended Technology Stack
+## Technology Stack (Implemented)
 
 ### Primary Database: PostgreSQL 15+
 
-**Rationale:**
+**Status**: IMPLEMENTED via Railway (production)
+
 - Strong ACID compliance for transaction integrity during drafts
 - Excellent JSON/JSONB support for flexible scoring configurations
 - Rich indexing options for player search
 - Mature ecosystem with proven scalability
-- Free and open source
 
-### Caching Layer: Redis
+### ORM: Prisma Client
 
-**Rationale:**
-- Real-time draft state synchronization
-- Session management
-- Rate limiting for API endpoints
-- Pub/Sub for live draft updates
+**Status**: IMPLEMENTED
 
-### Optional Search: Elasticsearch (Future)
+- Type-safe database queries
+- Auto-generated TypeScript types
+- Easy migrations with `prisma migrate`
+- Connection pooling via PrismaClient singleton
 
-**For Phase 2:**
-- Full-text player search
-- Faceted filtering by position, team, tier
-- Analytics and reporting
+### Authentication: JWT + Refresh Tokens
+
+**Status**: IMPLEMENTED
+
+- Access tokens (1h expiry) for API authentication
+- Refresh tokens (7d expiry) stored hashed in database
+- Automatic token refresh on 401 response
+- Timing-attack-safe password comparison
+
+### Future: WebSocket for Real-time
+
+**Status**: PLANNED
+
+- Replace 2-minute polling with live updates
+- Pub/Sub for draft room synchronization
 
 ---
 
@@ -732,13 +746,15 @@ FRONTEND_URL=http://localhost:3000
 
 ## Next Steps
 
-1. Review and approve this architecture plan
-2. Set up development database (Supabase recommended)
-3. Initialize Prisma and create migration files
-4. Build authentication endpoints first
-5. Incrementally migrate frontend to use API
+1. ~~Set up development database~~ - DONE (Railway PostgreSQL)
+2. ~~Initialize Prisma and create migration files~~ - DONE
+3. ~~Build authentication endpoints~~ - DONE
+4. ~~Incrementally migrate frontend to use API~~ - DONE
+5. Implement WebSocket for real-time draft updates
+6. Add player caching layer (Redis or in-memory)
+7. Implement Stripe payment integration
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: December 2024*
+*Document Version: 2.0*
+*Last Updated: December 2025*

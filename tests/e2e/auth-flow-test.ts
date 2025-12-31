@@ -8,8 +8,8 @@
  * Run with: npx tsx tests/e2e/auth-flow-test.ts
  */
 
-const BACKEND_URL = 'https://api.fantasy-auction.railway.app';
-const FRONTEND_URL = 'https://fantasy-auction.vercel.app';
+const BACKEND_URL = process.env.TEST_BACKEND_URL || 'https://api.fantasy-auction.railway.app';
+const FRONTEND_URL = process.env.TEST_FRONTEND_URL || 'https://fantasy-auction.vercel.app';
 
 // Test data
 const TEST_USER = {
@@ -644,11 +644,10 @@ async function testLogout(accessToken: string, refreshToken: string): Promise<Te
   const startTime = Date.now();
 
   try {
+    // Note: Logout does NOT require access token - it validates the refresh token directly
+    // This allows users to logout even if their access token has expired
     const { status, body, duration } = await apiRequest('/api/auth/logout', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      },
       body: JSON.stringify({ refreshToken })
     });
 
@@ -683,36 +682,80 @@ async function testLogout(accessToken: string, refreshToken: string): Promise<Te
   }
 }
 
-async function testLogoutWithoutAuth(): Promise<TestResult> {
+async function testLogoutWithInvalidRefreshToken(): Promise<TestResult> {
   const startTime = Date.now();
 
   try {
+    // Logout validates the refresh token, not access token
+    // Test with an invalid/non-existent refresh token
     const { status, body, duration } = await apiRequest('/api/auth/logout', {
       method: 'POST',
-      body: JSON.stringify({ refreshToken: 'some-token' })
+      body: JSON.stringify({ refreshToken: 'invalid-refresh-token-12345' })
     });
 
-    if (status === 401) {
+    // Logout should still return 200 even with invalid token (idempotent)
+    // The token simply won't be found in the database to revoke
+    if (status === 200) {
       return {
-        name: 'Logout (No Auth)',
+        name: 'Logout (Invalid Token)',
         status: 'PASS',
         duration,
-        details: 'Correctly requires authentication for logout',
+        details: 'Logout is idempotent - succeeds even with invalid token',
         response: { status, body }
       };
     }
 
     return {
-      name: 'Logout (No Auth)',
+      name: 'Logout (Invalid Token)',
       status: 'FAIL',
       duration,
-      details: 'Logout should require authentication',
+      details: 'Logout should be idempotent',
       response: { status, body },
-      issues: [`Expected 401, got ${status}`]
+      issues: [`Expected 200 (idempotent), got ${status}`]
     };
   } catch (error) {
     return {
-      name: 'Logout (No Auth)',
+      name: 'Logout (Invalid Token)',
+      status: 'FAIL',
+      duration: Date.now() - startTime,
+      details: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      issues: ['Request failed']
+    };
+  }
+}
+
+async function testLogoutWithoutRefreshToken(): Promise<TestResult> {
+  const startTime = Date.now();
+
+  try {
+    // Test logout without providing a refresh token
+    const { status, body, duration } = await apiRequest('/api/auth/logout', {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+
+    // Should return 400 for validation error (missing refreshToken)
+    if (status === 400) {
+      return {
+        name: 'Logout (No Refresh Token)',
+        status: 'PASS',
+        duration,
+        details: 'Correctly requires refresh token for logout',
+        response: { status, body }
+      };
+    }
+
+    return {
+      name: 'Logout (No Refresh Token)',
+      status: 'FAIL',
+      duration,
+      details: 'Logout should require refresh token',
+      response: { status, body },
+      issues: [`Expected 400 for missing refreshToken, got ${status}`]
+    };
+  } catch (error) {
+    return {
+      name: 'Logout (No Refresh Token)',
       status: 'FAIL',
       duration: Date.now() - startTime,
       details: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -1197,9 +1240,13 @@ async function runTests(): Promise<TestReport> {
   // Logout Tests
   console.log('\n--- Logout Tests ---');
 
-  const logoutNoAuthResult = await testLogoutWithoutAuth();
-  results.push(logoutNoAuthResult);
-  console.log(`[${logoutNoAuthResult.status}] ${logoutNoAuthResult.name}: ${logoutNoAuthResult.details}`);
+  const logoutInvalidTokenResult = await testLogoutWithInvalidRefreshToken();
+  results.push(logoutInvalidTokenResult);
+  console.log(`[${logoutInvalidTokenResult.status}] ${logoutInvalidTokenResult.name}: ${logoutInvalidTokenResult.details}`);
+
+  const logoutNoRefreshTokenResult = await testLogoutWithoutRefreshToken();
+  results.push(logoutNoRefreshTokenResult);
+  console.log(`[${logoutNoRefreshTokenResult.status}] ${logoutNoRefreshTokenResult.name}: ${logoutNoRefreshTokenResult.details}`);
 
   if (loginResult.tokens) {
     const logoutResult = await testLogout(

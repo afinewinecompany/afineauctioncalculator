@@ -196,42 +196,87 @@ export interface DraftPlayerState {
 }
 
 /**
- * Fetch the saved draft state for a league
- * Returns the list of drafted players from the server
+ * Result from fetching draft state
  */
-export async function fetchDraftState(leagueId: string): Promise<DraftPlayerState[]> {
+export interface FetchDraftStateResult {
+  players: DraftPlayerState[];
+  lastModified: string | null;
+}
+
+/**
+ * Fetch the saved draft state for a league
+ * Returns the list of drafted players and lastModified timestamp from the server
+ */
+export async function fetchDraftState(leagueId: string): Promise<FetchDraftStateResult> {
   try {
     const response = await authenticatedFetch(`${LEAGUES_BASE}/${leagueId}/draft-state`);
     const result = await handleResponse<{ leagueId: string; players: DraftPlayerState[]; lastModified: string }>(response);
-    return result.players;
+    return {
+      players: result.players,
+      lastModified: result.lastModified,
+    };
   } catch (error) {
     if (error instanceof AuthError) {
       throw error;
     }
     console.error('[leaguesApi] Failed to fetch draft state:', error);
-    // Return empty array on error - draft state may not exist yet
-    return [];
+    // Return empty result on error - draft state may not exist yet
+    return { players: [], lastModified: null };
   }
+}
+
+/**
+ * Response from saveDraftState including the new lastModified timestamp
+ */
+export interface SaveDraftStateResult {
+  success: boolean;
+  savedCount: number;
+  lastModified: string;
+  conflict?: boolean;
+  serverLastModified?: string;
 }
 
 /**
  * Save draft state to the server
  * Only non-available players are saved to minimize storage
+ * @param expectedLastModified - For optimistic locking: the lastModified timestamp from the last read
  */
-export async function saveDraftState(leagueId: string, players: DraftPlayerState[]): Promise<boolean> {
+export async function saveDraftState(
+  leagueId: string,
+  players: DraftPlayerState[],
+  expectedLastModified?: string
+): Promise<SaveDraftStateResult> {
   try {
     const response = await authenticatedFetch(`${LEAGUES_BASE}/${leagueId}/draft-state`, {
       method: 'PUT',
-      body: JSON.stringify({ players }),
+      body: JSON.stringify({ players, expectedLastModified }),
     });
-    const result = await handleResponse<{ success: boolean; savedCount: number }>(response);
-    return result.success;
+
+    // Check for conflict (409)
+    if (response.status === 409) {
+      const data = await response.json();
+      console.warn('[leaguesApi] Draft state conflict detected:', data);
+      return {
+        success: false,
+        savedCount: 0,
+        lastModified: data.serverLastModified || '',
+        conflict: true,
+        serverLastModified: data.serverLastModified,
+      };
+    }
+
+    const result = await handleResponse<{ success: boolean; savedCount: number; lastModified: string }>(response);
+    return {
+      success: result.success,
+      savedCount: result.savedCount,
+      lastModified: result.lastModified,
+    };
   } catch (error) {
     if (error instanceof AuthError) {
       throw error;
     }
     console.error('[leaguesApi] Failed to save draft state:', error);
-    return false;
+    return { success: false, savedCount: 0, lastModified: '' };
   }
 }
 

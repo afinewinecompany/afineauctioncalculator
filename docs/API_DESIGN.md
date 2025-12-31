@@ -9,8 +9,8 @@ This document defines the REST API design for the Fantasy Baseball Auction Tool 
 - Projections API - **IMPLEMENTED**
 - Auction Sync API - **IMPLEMENTED**
 - Dynasty Rankings API - **IMPLEMENTED**
-- Authentication - Planned (frontend only currently)
-- Leagues CRUD - Planned
+- Authentication - **IMPLEMENTED** (JWT + Google OAuth)
+- Leagues CRUD - **IMPLEMENTED** (with draft state persistence)
 - WebSocket - Planned
 
 ---
@@ -46,16 +46,20 @@ Content-Type: application/json
 
 ## API Endpoints
 
-### Authentication (`/auth`)
+### Authentication (`/auth`) - IMPLEMENTED
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | POST | `/auth/register` | Create new account | No |
 | POST | `/auth/login` | Email/password login | No |
-| POST | `/auth/google` | Google OAuth login | No |
+| GET | `/auth/google` | Redirect to Google OAuth | No |
+| POST | `/auth/google/callback` | Handle Google OAuth callback | No |
+| GET | `/auth/google/status` | Check if Google OAuth configured | No |
 | POST | `/auth/refresh` | Refresh access token | No (refresh token) |
-| POST | `/auth/logout` | Invalidate session | Yes |
+| POST | `/auth/logout` | Invalidate refresh token | No (refresh token) |
 | GET | `/auth/me` | Get current user | Yes |
+| POST | `/auth/forgot-password` | Request password reset | No |
+| POST | `/auth/reset-password` | Reset password with token | No |
 
 #### POST /auth/register
 
@@ -155,18 +159,17 @@ Content-Type: application/json
 
 ---
 
-### Leagues (`/leagues`)
+### Leagues (`/leagues`) - IMPLEMENTED
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | GET | `/leagues` | List user's leagues | Yes |
 | POST | `/leagues` | Create new league | Yes |
-| GET | `/leagues/:id` | Get league details | Yes (member) |
-| PATCH | `/leagues/:id` | Update league settings | Yes (owner) |
+| GET | `/leagues/:id` | Get league details | Yes (owner) |
+| PUT | `/leagues/:id` | Update league settings | Yes (owner) |
 | DELETE | `/leagues/:id` | Delete league | Yes (owner) |
-| POST | `/leagues/:id/start-draft` | Start draft | Yes (owner) |
-| POST | `/leagues/:id/complete-draft` | Complete draft | Yes (owner) |
-| GET | `/leagues/:id/analytics` | Get draft analytics | Yes (member) |
+| GET | `/leagues/:id/draft-state` | Get saved draft state | Yes (owner) |
+| PUT | `/leagues/:id/draft-state` | Save draft state | Yes (owner) |
 
 #### POST /leagues
 
@@ -381,7 +384,7 @@ Query parameters:
 | POST | `/projections/:system/refresh` | Force refresh from source | No |
 | POST | `/projections/calculate-values` | Calculate auction values for league | No |
 
-**Note**: Currently supported projection systems are `steamer` (FanGraphs) and `ja` (JA Projections from Google Sheets). BatX is currently unavailable.
+**Note**: Currently supported projection systems are `steamer` (FanGraphs) and `ja` (JA Projections by Jon Anderson at MLB Data Warehouse, from Google Sheets). BatX is currently unavailable.
 
 #### Category Validation
 
@@ -993,27 +996,28 @@ Breaking changes will increment the version number.
 3. ~~Value calculation~~ - Implemented
 4. ~~Inflation tracking~~ - Implemented
 
-### Phase 2 (Current)
+### Phase 2 - COMPLETE
 
-1. Authentication (register, login, me)
-2. Leagues CRUD with persistent storage
-3. League players list
-4. Draft player endpoint
+1. ~~Authentication (register, login, me)~~ - Implemented (JWT + refresh tokens)
+2. ~~Leagues CRUD with persistent storage~~ - Implemented (PostgreSQL via Prisma)
+3. ~~Draft state persistence~~ - Implemented (cross-device sync)
+4. ~~Google OAuth~~ - Implemented
 
-### Phase 3 (Enhanced)
+### Phase 3 (Next)
 
-1. Google OAuth
-2. Analytics endpoint
-3. Player search
+1. WebSocket draft room (replace polling)
+2. Live updates for multi-user sync
+3. Analytics endpoint
 4. Historical auction data
 
-### Phase 4 (Real-time)
+### Phase 4 (Future)
 
-1. WebSocket draft room
-2. Live updates (replace polling)
-3. Multi-user sync
+1. Stripe payment integration
+2. Player search API
+3. Draft history/replay
+4. League sharing/collaboration
 
 ---
 
-*Document Version: 3.1*
+*Document Version: 3.2*
 *Last Updated: December 2025*

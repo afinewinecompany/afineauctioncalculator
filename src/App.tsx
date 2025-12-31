@@ -36,6 +36,9 @@ function AppContent() {
   // Track if we've already shown the storage warning to prevent spamming
   const storageWarningShownRef = useRef(false);
 
+  // Track lastModified for optimistic locking of draft state
+  const draftLastModifiedRef = useRef<string | null>(null);
+
   // Track reset password token from URL
   const [resetToken, setResetToken] = useState<string>('');
 
@@ -451,9 +454,12 @@ function AppContent() {
       let serverDraftState: DraftPlayerState[] = [];
       if (!league.id.startsWith('league-')) {
         try {
-          serverDraftState = await fetchDraftState(league.id);
+          const draftResult = await fetchDraftState(league.id);
+          serverDraftState = draftResult.players;
+          // Store lastModified for optimistic locking on future saves
+          draftLastModifiedRef.current = draftResult.lastModified;
           if (import.meta.env.DEV) {
-            console.log('[App] Loaded draft state from server:', serverDraftState.length, 'drafted players');
+            console.log('[App] Loaded draft state from server:', serverDraftState.length, 'drafted players, lastModified:', draftResult.lastModified);
           }
         } catch (error) {
           console.error('[App] Failed to fetch draft state from server:', error);
@@ -681,11 +687,48 @@ function AppContent() {
     setCurrentScreen('analysis');
   };
 
-  const handleBackToLeagues = () => {
+  // Helper to save draft state immediately (used on navigation and beforeunload)
+  const saveDraftStateNow = useCallback(async () => {
+    if (!currentLeague || currentLeague.id.startsWith('league-') || players.length === 0) {
+      return;
+    }
+
+    const draftedPlayers: DraftPlayerState[] = players
+      .filter(p => p.status !== 'available')
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        status: p.status,
+        draftedPrice: p.draftedPrice,
+        draftedBy: p.draftedBy,
+      }));
+
+    if (draftedPlayers.length > 0) {
+      try {
+        const result = await saveDraftState(
+          currentLeague.id,
+          draftedPlayers,
+          draftLastModifiedRef.current || undefined
+        );
+        if (result.success) {
+          draftLastModifiedRef.current = result.lastModified;
+        }
+      } catch (error) {
+        console.error('[App] Failed to save draft state on navigation:', error);
+      }
+    }
+  }, [currentLeague, players]);
+
+  const handleBackToLeagues = async () => {
+    // Save draft state before leaving
+    if (currentScreen === 'draft') {
+      await saveDraftStateNow();
+    }
     setCurrentScreen('leagues');
     setCurrentLeague(null);
     setPlayers([]);
     setFinalRoster([]);
+    draftLastModifiedRef.current = null;
   };
 
   const handleSwitchLeague = async (league: SavedLeague) => {
@@ -727,9 +770,27 @@ function AppContent() {
             }));
 
           try {
-            await saveDraftState(currentLeague.id, draftedPlayers);
-            if (import.meta.env.DEV) {
-              console.log('[App] Draft state saved to server:', draftedPlayers.length, 'players');
+            // Use optimistic locking to detect conflicts
+            const result = await saveDraftState(
+              currentLeague.id,
+              draftedPlayers,
+              draftLastModifiedRef.current || undefined
+            );
+
+            if (result.conflict) {
+              // Another device modified the draft - show warning
+              toast.warning('Draft modified on another device', {
+                description: 'Your draft was updated elsewhere. Refresh to see the latest changes.',
+                duration: 10000,
+              });
+              // Update our lastModified to prevent repeated warnings
+              draftLastModifiedRef.current = result.serverLastModified || null;
+            } else if (result.success) {
+              // Update lastModified for next save
+              draftLastModifiedRef.current = result.lastModified;
+              if (import.meta.env.DEV) {
+                console.log('[App] Draft state saved to server:', draftedPlayers.length, 'players');
+              }
             }
           } catch (error) {
             console.error('[App] Failed to save draft state to server:', error);
@@ -740,6 +801,47 @@ function AppContent() {
       return () => clearInterval(interval);
     }
   }, [currentScreen, currentLeague, players, userData]);
+
+  // Save draft state when user leaves or refreshes the page
+  useEffect(() => {
+    if (currentScreen !== 'draft' || !currentLeague || currentLeague.id.startsWith('league-')) {
+      return;
+    }
+
+    const handleBeforeUnload = () => {
+      // Use sendBeacon for reliable save on page unload
+      // This is a fire-and-forget approach since we can't await in beforeunload
+      const draftedPlayers = players
+        .filter(p => p.status !== 'available')
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          status: p.status,
+          draftedPrice: p.draftedPrice,
+          draftedBy: p.draftedBy,
+        }));
+
+      if (draftedPlayers.length > 0) {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const url = `${apiUrl}/api/leagues/${currentLeague.id}/draft-state`;
+        const token = localStorage.getItem('auth_access_token');
+
+        if (token) {
+          // Use sendBeacon for reliable delivery during page unload
+          const blob = new Blob(
+            [JSON.stringify({ players: draftedPlayers })],
+            { type: 'application/json' }
+          );
+          // Note: sendBeacon doesn't support headers, so we append token as query param
+          // This is a backup save - the token in header is preferred
+          navigator.sendBeacon(url + `?token=${encodeURIComponent(token)}`, blob);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentScreen, currentLeague, players]);
 
   return (
     <ErrorBoundary>

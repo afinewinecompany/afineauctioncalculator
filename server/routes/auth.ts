@@ -393,8 +393,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
 /**
  * POST /api/auth/logout
  *
- * Logout the current user by revoking their refresh token.
- * Requires authentication.
+ * Logout by revoking a refresh token.
+ * Does NOT require authentication - validates the refresh token directly.
+ * This allows clients to logout even if the access token has expired.
  *
  * Request body:
  * - refreshToken: The refresh token to revoke
@@ -402,9 +403,8 @@ router.post('/refresh', async (req: Request, res: Response) => {
  * Response:
  * - 200: Logout successful
  * - 400: Validation error
- * - 401: Not authenticated
  */
-router.post('/logout', requireAuth, async (req: Request, res: Response) => {
+router.post('/logout', async (req: Request, res: Response) => {
   try {
     // Validate request body
     const validation = validateBody(refreshSchema, req.body);
@@ -418,11 +418,18 @@ router.post('/logout', requireAuth, async (req: Request, res: Response) => {
 
     const { refreshToken } = validation.data;
 
-    // Revoke the refresh token
+    // Revoke the refresh token - this validates the token exists in the database
     const revoked = await revokeRefreshToken(refreshToken);
 
     if (revoked) {
-      LoggerHelper.logAuth('user_logout', req.user?.id, { email: req.user?.email });
+      // Try to get user info from the token for logging (best effort)
+      try {
+        const payload = verifyRefreshToken(refreshToken);
+        LoggerHelper.logAuth('user_logout', payload.userId, {});
+      } catch {
+        // Token might be invalid/expired, just log without user context
+        LoggerHelper.logAuth('user_logout', 'unknown', {});
+      }
     }
 
     return res.status(200).json({
