@@ -908,8 +908,15 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                       }
                     }
 
+                    // Determine inline color to override any CSS inheritance issues
+                    const inlineColor = bidDiff > 0
+                      ? (bidDiff > maxDiff * 0.75 ? '#6ee7b7' : bidDiff > maxDiff * 0.5 ? '#34d399' : bidDiff > maxDiff * 0.25 ? '#10b981' : '#059669')
+                      : bidDiff < 0
+                      ? (Math.abs(bidDiff) > maxDiff * 0.75 ? '#fca5a5' : Math.abs(bidDiff) > maxDiff * 0.5 ? '#f87171' : Math.abs(bidDiff) > maxDiff * 0.25 ? '#ef4444' : '#dc2626')
+                      : '#ffffff'; // Neutral = white
+
                     return (
-                      <span className={`font-medium ${colorClass}`} title={title}>
+                      <span className={`font-medium ${colorClass}`} style={{ color: inlineColor }} title={title}>
                         ${actualCost}
                       </span>
                     );

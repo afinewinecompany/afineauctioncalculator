@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { LeagueSettings, Player, SyncState, AuctionSyncResult, MatchedPlayer, PositionalScarcity, EnhancedInflationStats } from '../lib/types';
+import { LeagueSettings, Player, SyncState, AuctionSyncResult, MatchedPlayer, PositionalScarcity, EnhancedInflationStats, ScrapedPlayer } from '../lib/types';
 import { calculateTierWeightedInflation, adjustPlayerValuesWithTiers, InflationResult } from '../lib/calculations';
 import { syncAuctionLite } from '../lib/auctionApi';
 import { DraftHeader } from './DraftHeader';
@@ -197,14 +197,19 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       // This is needed because Ohtani has separate hitter/pitcher projections with different IDs,
       // but the frontend combines them into a single player. The server may return a different
       // projectionPlayerId than what we use on the frontend.
+      // Also check unmatchedPlayers - Ohtani might fail normal matching due to position type issues.
       let ohtaniMatch: MatchedPlayer | null = null;
+      let ohtaniScrapedData: ScrapedPlayer | null = null;
+
+      // First check matchedPlayers
       result.matchedPlayers.forEach(mp => {
         const name = mp.scrapedPlayer.fullName.toLowerCase();
         if ((name.includes('ohtani') || name.includes('shohei')) &&
             (mp.scrapedPlayer.status === 'drafted' || mp.scrapedPlayer.status === 'on_block')) {
           ohtaniMatch = mp;
+          ohtaniScrapedData = mp.scrapedPlayer;
           if (import.meta.env.DEV) {
-            console.log('[DraftRoom] Found Ohtani in scraped data:', {
+            console.log('[DraftRoom] Found Ohtani in matchedPlayers:', {
               name: mp.scrapedPlayer.fullName,
               status: mp.scrapedPlayer.status,
               winningBid: mp.scrapedPlayer.winningBid,
@@ -213,6 +218,63 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
           }
         }
       });
+
+      // If not found in matchedPlayers, check unmatchedPlayers (scraped but couldn't match to projection)
+      if (!ohtaniScrapedData && result.unmatchedPlayers) {
+        result.unmatchedPlayers.forEach(up => {
+          const name = up.fullName.toLowerCase();
+          if ((name.includes('ohtani') || name.includes('shohei')) &&
+              (up.status === 'drafted' || up.status === 'on_block')) {
+            ohtaniScrapedData = up;
+            // Create a synthetic MatchedPlayer for Ohtani
+            ohtaniMatch = {
+              scrapedPlayer: up,
+              projectionPlayerId: null, // We'll match by name on frontend
+              projectedValue: 0, // Will be filled from frontend player
+              actualBid: up.winningBid ?? null,
+              inflationAmount: null,
+              inflationPercent: null,
+              matchConfidence: 'partial' as const,
+            };
+            if (import.meta.env.DEV) {
+              console.log('[DraftRoom] Found Ohtani in unmatchedPlayers (creating synthetic match):', {
+                name: up.fullName,
+                status: up.status,
+                winningBid: up.winningBid,
+                positions: up.positions,
+              });
+            }
+          }
+        });
+      }
+
+      // Also check the raw auctionData.players in case Ohtani wasn't even in matchedPlayers or unmatchedPlayers
+      if (!ohtaniScrapedData) {
+        result.auctionData.players.forEach(p => {
+          const name = p.fullName.toLowerCase();
+          if ((name.includes('ohtani') || name.includes('shohei')) &&
+              (p.status === 'drafted' || p.status === 'on_block')) {
+            ohtaniScrapedData = p;
+            ohtaniMatch = {
+              scrapedPlayer: p,
+              projectionPlayerId: null,
+              projectedValue: 0,
+              actualBid: p.winningBid ?? null,
+              inflationAmount: null,
+              inflationPercent: null,
+              matchConfidence: 'partial' as const,
+            };
+            if (import.meta.env.DEV) {
+              console.log('[DraftRoom] Found Ohtani in raw auctionData.players (creating synthetic match):', {
+                name: p.fullName,
+                status: p.status,
+                winningBid: p.winningBid,
+                positions: p.positions,
+              });
+            }
+          }
+        });
+      }
 
       // DEBUG: Log unmatched drafted players to diagnose sync issues
       if (import.meta.env.DEV) {
