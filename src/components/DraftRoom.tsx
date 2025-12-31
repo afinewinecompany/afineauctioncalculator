@@ -193,6 +193,27 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         }
       });
 
+      // OHTANI SPECIAL HANDLING: Find Ohtani specifically in the scraped players
+      // This is needed because Ohtani has separate hitter/pitcher projections with different IDs,
+      // but the frontend combines them into a single player. The server may return a different
+      // projectionPlayerId than what we use on the frontend.
+      let ohtaniMatch: MatchedPlayer | null = null;
+      result.matchedPlayers.forEach(mp => {
+        const name = mp.scrapedPlayer.fullName.toLowerCase();
+        if ((name.includes('ohtani') || name.includes('shohei')) &&
+            (mp.scrapedPlayer.status === 'drafted' || mp.scrapedPlayer.status === 'on_block')) {
+          ohtaniMatch = mp;
+          if (import.meta.env.DEV) {
+            console.log('[DraftRoom] Found Ohtani in scraped data:', {
+              name: mp.scrapedPlayer.fullName,
+              status: mp.scrapedPlayer.status,
+              winningBid: mp.scrapedPlayer.winningBid,
+              projectionPlayerId: mp.projectionPlayerId,
+            });
+          }
+        }
+      });
+
       // DEBUG: Log unmatched drafted players to diagnose sync issues
       if (import.meta.env.DEV) {
         const unmatchedDrafted = result.auctionData.players
@@ -232,9 +253,23 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
           // First try to match by projection ID
           let matched = matchedByProjectionId.get(p.id);
 
-          // Fallback: for two-way players, match by name+team if no projection ID match
-          // This handles cases where Ohtani's combined ID doesn't match the server's projection ID
-          if (!matched && p.isTwoWayPlayer) {
+          // OHTANI SPECIAL HANDLING: If this is Ohtani (two-way player), use the Ohtani match
+          // regardless of projection ID. This handles the case where the server matched
+          // a different projection ID (hitter vs pitcher) than the frontend's combined ID.
+          const isOhtani = p.name.toLowerCase().includes('ohtani') || p.name.toLowerCase().includes('shohei');
+          if (!matched && isOhtani && ohtaniMatch) {
+            matched = ohtaniMatch;
+            if (import.meta.env.DEV) {
+              console.log('[DraftRoom] OHTANI SPECIAL MATCH applied:', {
+                frontendPlayer: { name: p.name, id: p.id, isTwoWayPlayer: p.isTwoWayPlayer },
+                scrapedPlayer: { name: ohtaniMatch.scrapedPlayer.fullName, status: ohtaniMatch.scrapedPlayer.status },
+              });
+            }
+          }
+
+          // Fallback: for other two-way players, match by name+team if no projection ID match
+          // This handles cases where a player's combined ID doesn't match the server's projection ID
+          if (!matched && p.isTwoWayPlayer && !isOhtani) {
             const nameTeamKey = `${p.name.toLowerCase().trim()}|${p.team.toLowerCase().trim()}`;
             matched = matchedByNameTeam.get(nameTeamKey);
             if (matched && import.meta.env.DEV) {
@@ -359,15 +394,43 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       // Include ALL drafted players, even those not in initialPlayers (out-of-pool players)
       const draftedPlayers: Player[] = [];
       const missingFromPool: string[] = [];
+      const addedPlayerIds = new Set<string>(); // Track added players to avoid duplicates (especially for Ohtani)
 
       result.matchedPlayers.forEach(mp => {
         if (mp.scrapedPlayer.status === 'drafted') {
+          // OHTANI SPECIAL HANDLING: Check if this is Ohtani and find the combined frontend player by name
+          const scrapedName = mp.scrapedPlayer.fullName.toLowerCase();
+          const isOhtaniScraped = scrapedName.includes('ohtani') || scrapedName.includes('shohei');
+
           // Try to find the player from initialPlayers to get full player data
-          const basePlayer = mp.projectionPlayerId
+          let basePlayer = mp.projectionPlayerId
             ? initialPlayers.find(p => p.id === mp.projectionPlayerId)
             : null;
 
+          // For Ohtani: if not found by projectionPlayerId, find by name (combined two-way player)
+          if (!basePlayer && isOhtaniScraped) {
+            basePlayer = initialPlayers.find(p =>
+              p.name.toLowerCase().includes('ohtani') || p.name.toLowerCase().includes('shohei')
+            );
+            if (basePlayer && import.meta.env.DEV) {
+              console.log('[DraftRoom] OHTANI found in allDrafted via name lookup:', {
+                basePlayerId: basePlayer.id,
+                basePlayerName: basePlayer.name,
+                scrapedName: mp.scrapedPlayer.fullName,
+              });
+            }
+          }
+
           if (basePlayer) {
+            // Avoid duplicates (Ohtani may appear twice - once for hitter, once for pitcher match)
+            if (addedPlayerIds.has(basePlayer.id)) {
+              if (import.meta.env.DEV) {
+                console.log('[DraftRoom] Skipping duplicate player in allDrafted:', basePlayer.name);
+              }
+              return;
+            }
+            addedPlayerIds.add(basePlayer.id);
+
             draftedPlayers.push({
               ...basePlayer,
               status: 'drafted' as const,
@@ -377,9 +440,15 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
           } else {
             // Player was drafted but not in our projection pool - create a minimal player entry
             // This ensures we don't lose track of drafted players for inflation calculations
+            const playerId = mp.projectionPlayerId || `cm-${mp.scrapedPlayer.couchManagersId}`;
+            if (addedPlayerIds.has(playerId)) {
+              return; // Skip duplicate
+            }
+            addedPlayerIds.add(playerId);
+
             missingFromPool.push(`${mp.scrapedPlayer.fullName} ($${mp.scrapedPlayer.winningBid})`);
             draftedPlayers.push({
-              id: mp.projectionPlayerId || `cm-${mp.scrapedPlayer.couchManagersId}`,
+              id: playerId,
               name: mp.scrapedPlayer.fullName,
               team: mp.scrapedPlayer.mlbTeam,
               positions: mp.scrapedPlayer.positions,
