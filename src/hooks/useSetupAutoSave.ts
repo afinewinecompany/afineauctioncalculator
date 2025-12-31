@@ -87,6 +87,7 @@ export function useSetupAutoSave(
   const prevStepRef = useRef<number>(currentStep);
   const leagueIdRef = useRef<string | null>(leagueId);
   const isSavingRef = useRef(false);
+  const savePromiseRef = useRef<Promise<SavedLeague | null> | null>(null);
 
   // Update leagueIdRef when it changes
   useEffect(() => {
@@ -112,64 +113,81 @@ export function useSetupAutoSave(
 
   /**
    * Save to backend (slower, persistent)
+   * Returns a promise that resolves to the saved league, or null if save is skipped/fails
    */
   const saveToBackend = useCallback(async (): Promise<SavedLeague | null> => {
-    // Prevent concurrent saves
-    if (isSavingRef.current) return null;
+    // Prevent concurrent saves - if already saving, return existing promise
+    if (isSavingRef.current && savePromiseRef.current) {
+      console.log('[useSetupAutoSave] Save already in progress, returning existing promise');
+      return savePromiseRef.current;
+    }
     isSavingRef.current = true;
 
+    console.log('[useSetupAutoSave] saveToBackend starting, leagueIdRef:', leagueIdRef.current);
     setState(prev => ({ ...prev, isSaving: true, error: null }));
 
-    try {
-      const leagueData: SavedLeague = {
-        id: leagueIdRef.current || `draft-${Date.now()}`,
-        leagueName: settings.leagueName || 'Untitled League',
-        settings,
-        players: [],
-        createdAt: new Date().toISOString(),
-        lastModified: new Date().toISOString(),
-        status: 'setup',
-        setupStep: currentStep,
-      };
+    const saveOperation = async (): Promise<SavedLeague | null> => {
+      try {
+        const leagueData: SavedLeague = {
+          id: leagueIdRef.current || `draft-${Date.now()}`,
+          leagueName: settings.leagueName || 'Untitled League',
+          settings,
+          players: [],
+          createdAt: new Date().toISOString(),
+          lastModified: new Date().toISOString(),
+          status: 'setup',
+          setupStep: currentStep,
+        };
 
-      let savedLeague: SavedLeague;
+        let savedLeague: SavedLeague;
 
-      if (leagueIdRef.current && !leagueIdRef.current.startsWith('draft-')) {
-        // Update existing league
-        savedLeague = await updateLeague(leagueIdRef.current, leagueData);
-        onLeagueUpdated?.(savedLeague);
-      } else {
-        // Create new league
-        savedLeague = await createLeague(leagueData);
-        leagueIdRef.current = savedLeague.id;
+        if (leagueIdRef.current && !leagueIdRef.current.startsWith('draft-')) {
+          // Update existing league
+          console.log('[useSetupAutoSave] Updating existing league:', leagueIdRef.current);
+          savedLeague = await updateLeague(leagueIdRef.current, leagueData);
+          console.log('[useSetupAutoSave] Update complete, calling onLeagueUpdated');
+          onLeagueUpdated?.(savedLeague);
+        } else {
+          // Create new league
+          console.log('[useSetupAutoSave] Creating new league');
+          savedLeague = await createLeague(leagueData);
+          console.log('[useSetupAutoSave] League created with ID:', savedLeague.id);
+          leagueIdRef.current = savedLeague.id;
 
-        // Update localStorage with new ID
-        saveToLocalStorage();
+          // Update localStorage with new ID
+          saveToLocalStorage();
 
-        onLeagueCreated?.(savedLeague);
+          console.log('[useSetupAutoSave] Calling onLeagueCreated callback');
+          onLeagueCreated?.(savedLeague);
+          console.log('[useSetupAutoSave] onLeagueCreated callback completed');
+        }
+
+        setState({
+          isSaving: false,
+          lastSaved: new Date(),
+          error: null,
+        });
+
+        return savedLeague;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to save';
+        console.error('[useSetupAutoSave] Failed to save to backend:', error);
+
+        setState(prev => ({
+          ...prev,
+          isSaving: false,
+          error: message,
+        }));
+
+        return null;
+      } finally {
+        isSavingRef.current = false;
+        savePromiseRef.current = null;
       }
+    };
 
-      setState({
-        isSaving: false,
-        lastSaved: new Date(),
-        error: null,
-      });
-
-      return savedLeague;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save';
-      console.error('[useSetupAutoSave] Failed to save to backend:', error);
-
-      setState(prev => ({
-        ...prev,
-        isSaving: false,
-        error: message,
-      }));
-
-      return null;
-    } finally {
-      isSavingRef.current = false;
-    }
+    savePromiseRef.current = saveOperation();
+    return savePromiseRef.current;
   }, [settings, currentStep, saveToLocalStorage, onLeagueCreated, onLeagueUpdated]);
 
   /**

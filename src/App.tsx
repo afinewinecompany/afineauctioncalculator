@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast, Toaster } from 'sonner';
 import { LeagueSettings, Player, SavedLeague, UserData } from './lib/types';
 import { generateMockPlayers } from './lib/mockData';
@@ -241,36 +241,49 @@ function AppContent() {
   };
 
   const handleSaveAndExitSetup = () => {
+    if (import.meta.env.DEV) {
+      console.log('[App] handleSaveAndExitSetup called');
+      console.log('[App] userData.leagues before navigation:', userData?.leagues.map(l => ({ id: l.id, name: l.leagueName, status: l.status })));
+    }
     // Clear resuming state and go back to leagues list
     setResumingLeague(null);
     setCurrentScreen('leagues');
   };
 
   // Callback for when auto-save creates a new league during setup
-  const handleSetupLeagueCreated = (league: SavedLeague) => {
-    // Add the new league to userData
-    if (userData) {
-      const updatedUser = {
-        ...userData,
-        leagues: [...userData.leagues, league]
-      };
-      setUserData(updatedUser);
+  // Using functional update pattern to avoid stale closure issues
+  const handleSetupLeagueCreated = useCallback((league: SavedLeague) => {
+    if (import.meta.env.DEV) {
+      console.log('[App] handleSetupLeagueCreated called with league:', league.id, league.leagueName);
     }
+    // Add the new league to userData using functional update
+    setUserData(prev => {
+      if (!prev) return prev;
+      if (import.meta.env.DEV) {
+        console.log('[App] Current userData.leagues count:', prev.leagues.length);
+        console.log('[App] Adding league to userData');
+      }
+      return {
+        ...prev,
+        leagues: [...prev.leagues, league]
+      };
+    });
     // Update resumingLeague with the backend ID
     setResumingLeague(league);
-  };
+  }, []);
 
   // Callback for when auto-save updates an existing league during setup
-  const handleSetupLeagueUpdated = (league: SavedLeague) => {
-    // Update the league in userData
-    if (userData) {
-      const updatedUser = {
-        ...userData,
-        leagues: userData.leagues.map(l => l.id === league.id ? { ...l, ...league } : l)
+  // Using functional update pattern to avoid stale closure issues
+  const handleSetupLeagueUpdated = useCallback((league: SavedLeague) => {
+    // Update the league in userData using functional update
+    setUserData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        leagues: prev.leagues.map(l => l.id === league.id ? { ...l, ...league } : l)
       };
-      setUserData(updatedUser);
-    }
-  };
+    });
+  }, []);
 
   const handleSetupComplete = async (settings: LeagueSettings) => {
     if (import.meta.env.DEV) {

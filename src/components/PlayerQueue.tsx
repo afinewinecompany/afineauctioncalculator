@@ -609,22 +609,21 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                       const bidDiff = player.currentBid - player.adjustedValue;
                       const isGoodDeal = bidDiff < 0; // Bid less than Adj = good deal
                       const isOverpay = bidDiff > 0; // Bid more than Adj = overpay
+                      // Determine text color class with explicit color to avoid inheritance issues
+                      const bidValueColor = isGoodDeal ? 'text-emerald-300' :
+                        isOverpay ? 'text-red-300' : 'text-white';
+                      const bidLabelColor = isGoodDeal ? 'text-emerald-400' :
+                        isOverpay ? 'text-red-400' : 'text-amber-400';
                       return (
                         <div className={`text-right px-2 py-1 rounded-lg border ${
                           isGoodDeal ? 'bg-emerald-900/40 border-emerald-500/50' :
                           isOverpay ? 'bg-red-900/40 border-red-500/50' :
                           'bg-amber-900/40 border-amber-500/50'
                         }`}>
-                          <div className={`text-[9px] ${
-                            isGoodDeal ? 'text-emerald-400' :
-                            isOverpay ? 'text-red-400' :
-                            'text-amber-400'
-                          }`}>Bid</div>
-                          <div className={`text-base font-bold ${
-                            isGoodDeal ? 'text-emerald-300' :
-                            isOverpay ? 'text-red-300' :
-                            'text-amber-300'
-                          }`}>${player.currentBid}</div>
+                          <div className={`text-[9px] ${bidLabelColor}`}>Bid</div>
+                          <div className={`text-base font-bold ${bidValueColor}`} style={{ color: isOverpay ? '#fca5a5' : isGoodDeal ? '#6ee7b7' : '#ffffff' }}>
+                            ${player.currentBid}
+                          </div>
                         </div>
                       );
                     })()}

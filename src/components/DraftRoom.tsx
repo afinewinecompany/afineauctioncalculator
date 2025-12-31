@@ -179,6 +179,20 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         }
       });
 
+      // Build lookup map by normalized name+team for two-way player matching
+      // Two-way players like Ohtani may have different projection IDs for hitter/pitcher
+      // but we need to match them to the combined frontend player
+      const matchedByNameTeam = new Map<string, MatchedPlayer>();
+      result.matchedPlayers.forEach(mp => {
+        if (mp.scrapedPlayer.status === 'drafted' || mp.scrapedPlayer.status === 'on_block') {
+          const key = `${mp.scrapedPlayer.fullName.toLowerCase().trim()}|${mp.scrapedPlayer.mlbTeam.toLowerCase().trim()}`;
+          // Only add if not already present (prefer first match which has higher priority from sorting)
+          if (!matchedByNameTeam.has(key)) {
+            matchedByNameTeam.set(key, mp);
+          }
+        }
+      });
+
       // DEBUG: Log unmatched drafted players to diagnose sync issues
       if (import.meta.env.DEV) {
         const unmatchedDrafted = result.auctionData.players
@@ -215,12 +229,29 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         }
 
         const updatedPlayers = prevPlayers.map(p => {
-          const matched = matchedByProjectionId.get(p.id);
+          // First try to match by projection ID
+          let matched = matchedByProjectionId.get(p.id);
+
+          // Fallback: for two-way players, match by name+team if no projection ID match
+          // This handles cases where Ohtani's combined ID doesn't match the server's projection ID
+          if (!matched && p.isTwoWayPlayer) {
+            const nameTeamKey = `${p.name.toLowerCase().trim()}|${p.team.toLowerCase().trim()}`;
+            matched = matchedByNameTeam.get(nameTeamKey);
+            if (matched && import.meta.env.DEV) {
+              console.log('[DraftRoom] Two-way player matched by name+team fallback:', {
+                name: p.name,
+                id: p.id,
+                matchedProjectionId: matched.projectionPlayerId,
+                status: matched.scrapedPlayer.status,
+              });
+            }
+          }
+
           if (matched) {
             if (matched.scrapedPlayer.status === 'drafted') {
               // DEBUG: Log specific player updates
               if (import.meta.env.DEV) {
-                if (p.name.toLowerCase().includes('yordan') || p.name.toLowerCase().includes('alvarez')) {
+                if (p.name.toLowerCase().includes('yordan') || p.name.toLowerCase().includes('alvarez') || p.name.toLowerCase().includes('ohtani')) {
                   console.log('[DraftRoom] UPDATING player to drafted:', { name: p.name, id: p.id, matchedName: matched.scrapedPlayer.fullName });
                 }
               }
