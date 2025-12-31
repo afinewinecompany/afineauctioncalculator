@@ -522,13 +522,65 @@ export function convertToPlayers(
     console.log(`[convertToPlayers] Total players: ${calculatedValues.players.length}, In draft pool: ${draftablePlayersOnly.length}`);
   }
 
-  // Group players by externalId to identify two-way players
+  // Group players by mlbamId (if available) OR externalId to identify two-way players
+  // Two-way players like Ohtani have separate hitter/pitcher entries with different externalIds
+  // but may share the same mlbamId. If mlbamId is not available (0), fall back to name+team matching.
   const playerMap = new Map<string, CalculatedValuesResponse['players']>();
 
+  // First pass: group by mlbamId if available, else by externalId
   draftablePlayersOnly.forEach((p) => {
-    const existing = playerMap.get(p.externalId) || [];
+    // Use mlbamId for grouping if available (consistent across hitter/pitcher entries)
+    // Otherwise fall back to externalId
+    const groupKey = p.mlbamId && p.mlbamId > 0
+      ? `mlbam-${p.mlbamId}`
+      : p.externalId;
+
+    const existing = playerMap.get(groupKey) || [];
     existing.push(p);
-    playerMap.set(p.externalId, existing);
+    playerMap.set(groupKey, existing);
+  });
+
+  // Second pass: find two-way players that weren't grouped by mlbamId
+  // (e.g., if pitcher entry has mlbamId=0 but hitter has the real mlbamId)
+  // Group by normalized name+team for players with different entry types
+  const nameTeamGroups = new Map<string, { key: string; entries: CalculatedValuesResponse['players'] }[]>();
+
+  playerMap.forEach((entries, key) => {
+    if (entries.length === 1) {
+      const p = entries[0];
+      const nameTeamKey = `${p.name.toLowerCase().trim()}|${p.team.toLowerCase().trim()}`;
+      const existing = nameTeamGroups.get(nameTeamKey) || [];
+      existing.push({ key, entries });
+      nameTeamGroups.set(nameTeamKey, existing);
+    }
+  });
+
+  // Merge entries that have the same name+team but different externalIds (two-way players)
+  nameTeamGroups.forEach((groups) => {
+    if (groups.length > 1) {
+      // Found a player with multiple entries (likely two-way player like Ohtani)
+      const hitterGroup = groups.find(g => g.entries.some(e => e.playerType === 'hitter'));
+      const pitcherGroup = groups.find(g => g.entries.some(e => e.playerType === 'pitcher'));
+
+      if (hitterGroup && pitcherGroup && hitterGroup.key !== pitcherGroup.key) {
+        // Merge pitcher entries into hitter group
+        const hitterEntries = playerMap.get(hitterGroup.key) || [];
+        const pitcherEntries = playerMap.get(pitcherGroup.key) || [];
+
+        // Combine into one group under the hitter's key
+        playerMap.set(hitterGroup.key, [...hitterEntries, ...pitcherEntries]);
+        // Remove the pitcher's separate entry
+        playerMap.delete(pitcherGroup.key);
+
+        if (import.meta.env.DEV) {
+          console.log('[convertToPlayers] Merged two-way player entries:', {
+            name: hitterEntries[0]?.name,
+            hitterKey: hitterGroup.key,
+            pitcherKey: pitcherGroup.key,
+          });
+        }
+      }
+    }
   });
 
   const players: Player[] = [];
