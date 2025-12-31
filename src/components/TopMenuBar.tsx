@@ -1,5 +1,6 @@
 import { LayoutDashboard, ChevronDown, Settings } from 'lucide-react';
 import { SavedLeague } from '../lib/types';
+import { useIsMobile } from './ui/use-mobile';
 
 interface TopMenuBarProps {
   currentLeague: SavedLeague | null;
@@ -9,42 +10,45 @@ interface TopMenuBarProps {
   showLeagueSelector?: boolean;
 }
 
-export function TopMenuBar({ 
-  currentLeague, 
-  allLeagues, 
+export function TopMenuBar({
+  currentLeague,
+  allLeagues,
   onGoToDashboard,
   onSwitchLeague,
   showLeagueSelector = true
 }: TopMenuBarProps) {
   const otherLeagues = allLeagues.filter(l => l.id !== currentLeague?.id);
+  const isMobile = useIsMobile();
 
   return (
     <div className="bg-slate-900 border-b border-slate-700/50 shadow-lg">
-      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex items-center justify-between">
+      <div className={`max-w-full mx-auto py-2 ${isMobile ? 'px-2' : 'px-4 sm:px-6 lg:px-8 py-3'}`}>
+        <div className="flex items-center justify-between gap-2">
           {/* Left Side - Current League Info */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             {currentLeague && (
-              <div className="flex items-center gap-3">
-                <div className="px-3 py-1 bg-emerald-900/30 border border-emerald-500/30 rounded-lg">
-                  <span className="text-emerald-400">{currentLeague.leagueName}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={`bg-emerald-900/30 border border-emerald-500/30 rounded-lg truncate ${isMobile ? 'px-2 py-0.5' : 'px-3 py-1'}`}>
+                  <span className={`text-emerald-400 truncate ${isMobile ? 'text-xs' : ''}`}>{currentLeague.leagueName}</span>
                 </div>
-                <div className="text-slate-500 text-sm">
-                  {currentLeague.settings.numTeams} Teams • ${currentLeague.settings.budgetPerTeam} Budget
-                </div>
+                {!isMobile && (
+                  <div className="text-slate-500 text-sm">
+                    {currentLeague.settings.numTeams} Teams • ${currentLeague.settings.budgetPerTeam} Budget
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           {/* Right Side - Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {/* League Selector Dropdown */}
             {showLeagueSelector && otherLeagues.length > 0 && (
               <div className="relative group">
-                <button className="px-4 py-2 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-700 hover:border-slate-600 transition-all flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  Switch League
-                  <ChevronDown className="w-4 h-4" />
+                <button className={`bg-slate-800 text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-700 hover:border-slate-600 transition-all flex items-center ${isMobile ? 'px-2 py-1.5 gap-1' : 'px-4 py-2 gap-2'}`}>
+                  <Settings className={isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                  {!isMobile && <span>Switch League</span>}
+                  <ChevronDown className={isMobile ? 'w-3 h-3' : 'w-4 h-4'} />
                 </button>
                 
                 {/* Dropdown Menu */}
@@ -93,10 +97,10 @@ export function TopMenuBar({
             {/* Dashboard Button */}
             <button
               onClick={onGoToDashboard}
-              className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white border border-red-500 rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/20 hover:shadow-red-500/40 flex items-center gap-2"
+              className={`bg-gradient-to-r from-red-600 to-red-700 text-white border border-red-500 rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/20 hover:shadow-red-500/40 flex items-center ${isMobile ? 'px-2 py-1.5 gap-1' : 'px-4 py-2 gap-2'}`}
             >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
+              <LayoutDashboard className={isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+              {!isMobile && <span>Dashboard</span>}
             </button>
           </div>
         </div>

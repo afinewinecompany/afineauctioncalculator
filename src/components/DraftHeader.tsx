@@ -48,73 +48,54 @@ export function DraftHeader({
     <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/50 shadow-lg">
       <div className="px-3 py-2 md:px-6 md:py-4">
         {isMobile ? (
-          /* MOBILE: Compact 2x2 grid layout */
-          <div className="flex flex-col gap-2">
-            {/* Top row: 4 key metrics in 2x2 grid */}
-            <div className="grid grid-cols-4 gap-2">
-              {/* Budget */}
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-2 py-1.5 rounded-lg border border-slate-700/50">
-                <div className="p-1 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded">
-                  <DollarSign className="w-3 h-3 text-white" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-slate-500 text-[10px]">Budget</span>
-                  <span className="text-emerald-400 text-xs font-medium">${moneyRemaining}</span>
-                </div>
+          /* MOBILE: Stacked 2x2 grid layout - no position breakdown */
+          <div className="grid grid-cols-2 gap-2">
+            {/* Budget */}
+            <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-2 rounded-lg border border-slate-700/50">
+              <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded">
+                <DollarSign className="w-4 h-4 text-white" />
               </div>
-
-              {/* Roster Spots */}
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-2 py-1.5 rounded-lg border border-slate-700/50">
-                <div className="p-1 bg-gradient-to-br from-blue-600 to-blue-700 rounded">
-                  <Users className="w-3 h-3 text-white" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-slate-500 text-[10px]">Spots</span>
-                  <span className="text-blue-400 text-xs font-medium">{spotsRemaining}/{totalRosterSpots}</span>
-                </div>
-              </div>
-
-              {/* Draft Progress */}
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-2 py-1.5 rounded-lg border border-slate-700/50">
-                <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-slate-500 text-[10px]">Drafted</span>
-                  <span className="text-white text-xs font-medium">{totalDrafted}/{totalPlayersNeeded}</span>
-                </div>
-                <div className="w-8 bg-slate-700 rounded-full h-1">
-                  <div
-                    className="bg-gradient-to-r from-blue-600 to-emerald-600 h-1 rounded-full"
-                    style={{ width: `${(totalDrafted / totalPlayersNeeded) * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Inflation Rate */}
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-2 py-1.5 rounded-lg border border-slate-700/50">
-                <div className={`p-1 rounded bg-gradient-to-br ${inflationGradient}`}>
-                  <TrendingUp className="w-3 h-3 text-white" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-slate-500 text-[10px]">Inflation</span>
-                  <span className={`text-xs font-medium ${inflationTextColor}`}>
-                    {displayInflationRate >= 0 ? '+' : ''}{displayInflationRate.toFixed(0)}%
-                  </span>
-                </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-slate-500 text-[10px]">Budget</span>
+                <span className="text-emerald-400 text-sm font-semibold">${moneyRemaining}</span>
               </div>
             </div>
 
-            {/* Position Breakdown - Horizontal scroll */}
-            <div className="overflow-x-auto -mx-3 px-3 pb-1">
-              <div className="flex items-center gap-1 min-w-max">
-                {Object.entries(rosterNeedsRemaining).map(([pos, count]) => (
-                  count > 0 && (
-                    <div
-                      key={pos}
-                      className="px-1.5 py-0.5 bg-slate-800/70 border border-slate-600 rounded text-slate-300 text-[10px] whitespace-nowrap"
-                    >
-                      {pos}: <span className="text-white">{count}</span>
-                    </div>
-                  )
-                ))}
+            {/* Roster Spots */}
+            <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-2 rounded-lg border border-slate-700/50">
+              <div className="p-1.5 bg-gradient-to-br from-blue-600 to-blue-700 rounded">
+                <Users className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-slate-500 text-[10px]">Spots</span>
+                <span className="text-blue-400 text-sm font-semibold">{spotsRemaining}/{totalRosterSpots}</span>
+              </div>
+            </div>
+
+            {/* Draft Progress */}
+            <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-2 rounded-lg border border-slate-700/50">
+              <div className="flex flex-col flex-1 min-w-0">
+                <span className="text-slate-500 text-[10px]">Drafted</span>
+                <span className="text-white text-sm font-semibold">{totalDrafted}/{totalPlayersNeeded}</span>
+              </div>
+              <div className="w-12 bg-slate-700 rounded-full h-1.5">
+                <div
+                  className="bg-gradient-to-r from-blue-600 to-emerald-600 h-1.5 rounded-full"
+                  style={{ width: `${(totalDrafted / totalPlayersNeeded) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Inflation Rate */}
+            <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-2 rounded-lg border border-slate-700/50">
+              <div className={`p-1.5 rounded bg-gradient-to-br ${inflationGradient}`}>
+                <TrendingUp className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-slate-500 text-[10px]">Inflation</span>
+                <span className={`text-sm font-semibold ${inflationTextColor}`}>
+                  {displayInflationRate >= 0 ? '+' : ''}{displayInflationRate.toFixed(0)}%
+                </span>
               </div>
             </div>
           </div>
