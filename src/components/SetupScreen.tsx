@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { LeagueSettings, SavedLeague } from '../lib/types';
 import { defaultLeagueSettings } from '../lib/mockData';
-import { ChevronRight, ChevronLeft, Zap, Database, Crown, RefreshCw, Upload, X, FileSpreadsheet, Save, LogOut, Check, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Zap, Database, Crown, RefreshCw, Upload, X, FileSpreadsheet, Save, LogOut, Check, Loader2, AlertTriangle, Link } from 'lucide-react';
 import { ScoringConfig } from './ScoringConfig';
 import { parseCSV } from '../lib/csvParser';
 import { useSetupAutoSave, clearDraftSetup } from '../hooks/useSetupAutoSave';
@@ -236,53 +236,76 @@ export function SetupScreen({
 
             {/* Step 1: League Format */}
             {currentStep === 1 && (
-              <div className={`space-y-${isMobile ? '4' : '6'} animate-fadeIn`}>
-                <h2 className={`text-white flex items-center gap-2 ${isMobile ? 'text-lg' : ''}`}>
-                  <Zap className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-red-500`} />
+              <div className={`space-y-${isMobile ? '5' : '8'} animate-fadeIn`}>
+                <h2 className={`flex items-center gap-2 ${isMobile ? 'text-lg' : 'text-xl'}`} style={{ color: 'white', fontWeight: 600 }}>
+                  <Zap className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} style={{ color: '#f97316' }} />
                   League Format
                 </h2>
 
-                <div>
-                  <label className={`block text-slate-300 ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`}>League Name</label>
-                  <input
-                    type="text"
-                    value={settings.leagueName}
-                    onChange={(e) => setSettings({ ...settings, leagueName: e.target.value })}
-                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all`}
-                    placeholder="Enter your league name"
-                    required
-                  />
-                </div>
-
-                {/* League Type Selection */}
-                <div>
-                  <label className={`block text-slate-300 ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`}>League Type</label>
+                {/* IMPORTANT: League Type Selection - First and Most Prominent */}
+                <div className="rounded-xl" style={{ backgroundColor: 'rgba(249, 115, 22, 0.08)', border: '2px solid rgba(249, 115, 22, 0.3)', padding: isMobile ? '16px' : '24px' }}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Crown className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} style={{ color: '#fbbf24' }} />
+                    <label className={`${isMobile ? 'text-base' : 'text-lg'}`} style={{ color: 'white', fontWeight: 600 }}>
+                      League Type
+                    </label>
+                    <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(249, 115, 22, 0.3)', color: '#fbbf24' }}>Required</span>
+                  </div>
+                  <p className={`${isMobile ? 'text-sm mb-3' : 'mb-4'}`} style={{ color: 'rgba(255,255,255,0.7)' }}>
+                    Choose whether this is a single-season redraft or a multi-year dynasty league.
+                  </p>
                   <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'}`}>
                     {leagueTypes.map((type) => (
                       <button
                         key={type.value}
                         onClick={() => setSettings({ ...settings, leagueType: type.value })}
-                        className={`${isMobile ? 'p-3' : 'p-5'} rounded-xl border-2 transition-all duration-200 text-left ${
-                          settings.leagueType === type.value
-                            ? 'border-red-500 bg-gradient-to-br from-red-600/20 to-red-700/20 shadow-lg shadow-red-500/20'
-                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                        }`}
+                        className={`${isMobile ? 'p-4' : 'p-5'} rounded-xl transition-all duration-200 text-left`}
+                        style={{
+                          border: settings.leagueType === type.value
+                            ? '2px solid #f97316'
+                            : '2px solid rgba(255,255,255,0.1)',
+                          backgroundColor: settings.leagueType === type.value
+                            ? 'rgba(249, 115, 22, 0.15)'
+                            : 'rgba(255,255,255,0.03)',
+                          boxShadow: settings.leagueType === type.value
+                            ? '0 10px 30px rgba(249, 115, 22, 0.2)'
+                            : 'none',
+                        }}
                       >
-                        <div className="flex items-center gap-3 mb-1">
-                          <div className={settings.leagueType === type.value ? 'text-red-400' : 'text-slate-400'}>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div style={{ color: settings.leagueType === type.value ? '#fbbf24' : 'rgba(255,255,255,0.5)' }}>
                             {isMobile ? <type.icon.type className="w-5 h-5" /> : type.icon}
                           </div>
-                          <div className={`${isMobile ? 'text-base' : 'text-lg'} ${settings.leagueType === type.value ? 'text-red-400' : 'text-slate-300'}`}>
+                          <div className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`} style={{ color: settings.leagueType === type.value ? '#fbbf24' : 'white' }}>
                             {type.label}
                           </div>
                           {settings.leagueType === type.value && (
-                            <span className="ml-auto text-emerald-400 text-sm">✓</span>
+                            <span className="ml-auto" style={{ color: '#22c55e' }}>✓</span>
                           )}
                         </div>
-                        <div className={`text-slate-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>{type.description}</div>
+                        <div className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255,255,255,0.6)' }}>{type.description}</div>
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* League Name */}
+                <div>
+                  <label className={`block ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`} style={{ color: 'white', fontWeight: 500 }}>League Name</label>
+                  <input
+                    type="text"
+                    value={settings.leagueName}
+                    onChange={(e) => setSettings({ ...settings, leagueName: e.target.value })}
+                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} rounded-xl transition-all`}
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'white',
+                      outline: 'none',
+                    }}
+                    placeholder="Enter your league name"
+                    required
+                  />
                 </div>
 
                 {/* Dynasty Settings (shown when dynasty is selected) */}
@@ -487,61 +510,124 @@ export function SetupScreen({
                   </div>
                 )}
 
-                <div>
-                  <label className={`block text-slate-300 ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`}>Couch Managers Room ID</label>
+                {/* IMPORTANT: Couch Managers Room ID - Second Most Important */}
+                <div className="rounded-xl" style={{
+                  backgroundColor: settings.couchManagerRoomId ? 'rgba(34, 197, 94, 0.08)' : 'rgba(251, 191, 36, 0.08)',
+                  border: settings.couchManagerRoomId ? '2px solid rgba(34, 197, 94, 0.3)' : '2px solid rgba(251, 191, 36, 0.3)',
+                  padding: isMobile ? '16px' : '24px'
+                }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Link className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} style={{ color: settings.couchManagerRoomId ? '#22c55e' : '#fbbf24' }} />
+                    <label className={`${isMobile ? 'text-base' : 'text-lg'}`} style={{ color: 'white', fontWeight: 600 }}>
+                      Couch Managers Room ID
+                    </label>
+                    <span className="px-2 py-0.5 rounded text-xs" style={{
+                      backgroundColor: settings.couchManagerRoomId ? 'rgba(34, 197, 94, 0.3)' : 'rgba(251, 191, 36, 0.3)',
+                      color: settings.couchManagerRoomId ? '#22c55e' : '#fbbf24'
+                    }}>
+                      {settings.couchManagerRoomId ? 'Connected' : 'Recommended'}
+                    </span>
+                  </div>
+
+                  <p className={`${isMobile ? 'text-sm mb-3' : 'mb-4'}`} style={{ color: 'rgba(255,255,255,0.7)' }}>
+                    Connect to your Couch Managers auction room for live draft syncing and real-time inflation updates.
+                  </p>
+
                   <input
                     type="text"
                     value={settings.couchManagerRoomId}
                     onChange={(e) => setSettings({ ...settings, couchManagerRoomId: e.target.value })}
-                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all`}
-                    placeholder={isMobile ? "Room ID (optional)" : "Enter Couch Managers auction room ID (optional)"}
+                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} rounded-xl transition-all`}
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      border: settings.couchManagerRoomId
+                        ? '2px solid rgba(34, 197, 94, 0.5)'
+                        : '2px solid rgba(255,255,255,0.15)',
+                      color: 'white',
+                      outline: 'none',
+                    }}
+                    placeholder={isMobile ? "Enter Room ID" : "Enter your Couch Managers auction room ID"}
                   />
-                  <p className={`text-slate-500 mt-2 ${isMobile ? 'text-xs' : ''}`}>
+
+                  <p className={`mt-3 ${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255,255,255,0.5)' }}>
                     {isMobile ? (
-                      <>From URL: couchmanagers.com/auction/<span className="text-emerald-400">[ID]</span></>
+                      <>Find in URL: couchmanagers.com/auction/<span style={{ color: '#22c55e', fontFamily: 'monospace' }}>[ROOM_ID]</span></>
                     ) : (
-                      <>Find this in your Couch Managers URL: <span className="text-slate-400 font-mono">couchmanagers.com/auction/<span className="text-emerald-400">[ROOM_ID]</span></span></>
+                      <>Find this in your Couch Managers URL: <span style={{ fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)' }}>couchmanagers.com/auction/<span style={{ color: '#22c55e' }}>[ROOM_ID]</span></span></>
                     )}
                   </p>
+
+                  {/* Warning when no Room ID is entered */}
+                  {!settings.couchManagerRoomId && (
+                    <div className={`flex items-start gap-3 ${isMobile ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-lg`} style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
+                      <AlertTriangle className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} flex-shrink-0 mt-0.5`} style={{ color: '#fbbf24' }} />
+                      <div>
+                        <p className={`${isMobile ? 'text-sm' : ''} font-medium`} style={{ color: '#fbbf24' }}>
+                          No Room ID entered
+                        </p>
+                        <p className={`${isMobile ? 'text-xs mt-1' : 'text-sm mt-1'}`} style={{ color: 'rgba(255,255,255,0.6)' }}>
+                          Without a Room ID, you won't have automatic draft syncing. You'll need to manually track picks and the calculator won't update in real-time.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Success message when Room ID is entered */}
+                  {settings.couchManagerRoomId && (
+                    <div className={`flex items-center gap-2 ${isMobile ? 'mt-3' : 'mt-4'}`}>
+                      <Check className="w-4 h-4" style={{ color: '#22c55e' }} />
+                      <span className={`${isMobile ? 'text-sm' : ''}`} style={{ color: '#22c55e' }}>Room ID configured - live syncing enabled</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Teams and Budget - side by side on mobile */}
-                <div className={isMobile ? 'grid grid-cols-2 gap-3' : 'space-y-6'}>
+                <div className={isMobile ? 'grid grid-cols-2 gap-3' : 'grid grid-cols-2 gap-6'}>
                   <div>
-                    <label className={`block text-slate-300 ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`}>{isMobile ? 'Teams' : 'Number of Teams'}</label>
+                    <label className={`block ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`} style={{ color: 'white', fontWeight: 500 }}>{isMobile ? 'Teams' : 'Number of Teams'}</label>
                     <input
                       type="number"
                       value={settings.numTeams}
                       onChange={(e) => setSettings({ ...settings, numTeams: Math.min(30, Math.max(2, Number(e.target.value))) })}
-                      className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all`}
+                      className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} rounded-xl transition-all`}
+                      style={{
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        color: 'white',
+                        outline: 'none',
+                      }}
                       min={2}
                       max={30}
                       placeholder="2-30"
                     />
-                    {!isMobile && (
-                      <p className="text-slate-500 mt-2">Total league budget: <span className="text-emerald-400">${totalBudget.toLocaleString()}</span></p>
-                    )}
                   </div>
 
                   <div>
-                    <label className={`block text-slate-300 ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`}>{isMobile ? 'Budget' : 'Budget Per Team'}</label>
+                    <label className={`block ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`} style={{ color: 'white', fontWeight: 500 }}>{isMobile ? 'Budget' : 'Budget Per Team'}</label>
                     <input
                       type="number"
                       value={settings.budgetPerTeam}
                       onChange={(e) => setSettings({ ...settings, budgetPerTeam: Number(e.target.value) })}
-                      className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all`}
+                      className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} rounded-xl transition-all`}
+                      style={{
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        color: 'white',
+                        outline: 'none',
+                      }}
                       min={100}
                       max={500}
                     />
                   </div>
                 </div>
 
-                {/* Total budget summary on mobile */}
-                {isMobile && (
-                  <p className="text-slate-500 text-xs">
-                    Total budget: <span className="text-emerald-400">${totalBudget.toLocaleString()}</span>
+                {/* Total budget summary */}
+                <div className={`rounded-lg ${isMobile ? 'p-3' : 'p-4'}`} style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                  <p className={`${isMobile ? 'text-sm' : ''}`} style={{ color: 'rgba(255,255,255,0.7)' }}>
+                    Total league budget: <span style={{ color: '#22c55e', fontWeight: 600, fontSize: isMobile ? '1rem' : '1.125rem' }}>${totalBudget.toLocaleString()}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.5)' }}> ({settings.numTeams} teams × ${settings.budgetPerTeam})</span>
                   </p>
-                )}
+                </div>
               </div>
             )}
 
