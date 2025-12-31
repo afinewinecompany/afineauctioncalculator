@@ -180,6 +180,65 @@ export async function deleteLeague(id: string): Promise<void> {
   }
 }
 
+// =============================================================================
+// DRAFT STATE PERSISTENCE
+// =============================================================================
+
+/**
+ * Draft player state for persistence (lightweight structure)
+ */
+export interface DraftPlayerState {
+  id: string;
+  name: string;
+  status: 'available' | 'drafted' | 'onMyTeam' | 'on_block';
+  draftedPrice?: number;
+  draftedBy?: string;
+}
+
+/**
+ * Fetch the saved draft state for a league
+ * Returns the list of drafted players from the server
+ */
+export async function fetchDraftState(leagueId: string): Promise<DraftPlayerState[]> {
+  try {
+    const response = await authenticatedFetch(`${LEAGUES_BASE}/${leagueId}/draft-state`);
+    const result = await handleResponse<{ leagueId: string; players: DraftPlayerState[]; lastModified: string }>(response);
+    return result.players;
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+    console.error('[leaguesApi] Failed to fetch draft state:', error);
+    // Return empty array on error - draft state may not exist yet
+    return [];
+  }
+}
+
+/**
+ * Save draft state to the server
+ * Only non-available players are saved to minimize storage
+ */
+export async function saveDraftState(leagueId: string, players: DraftPlayerState[]): Promise<boolean> {
+  try {
+    const response = await authenticatedFetch(`${LEAGUES_BASE}/${leagueId}/draft-state`, {
+      method: 'PUT',
+      body: JSON.stringify({ players }),
+    });
+    const result = await handleResponse<{ success: boolean; savedCount: number }>(response);
+    return result.success;
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+    console.error('[leaguesApi] Failed to save draft state:', error);
+    return false;
+  }
+}
+
+// =============================================================================
+// LEAGUE SYNC
+// =============================================================================
+
 /**
  * Sync local leagues to the backend
  * Used when user has leagues in localStorage that need to be persisted

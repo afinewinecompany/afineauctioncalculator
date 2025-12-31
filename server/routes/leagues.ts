@@ -394,6 +394,156 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// =============================================================================
+// DRAFT STATE PERSISTENCE
+// =============================================================================
+
+/**
+ * Schema for draft player state - lightweight structure for persistence
+ */
+const draftPlayerSchema = z.object({
+  id: z.string(),                    // Player ID (external ID from projections)
+  name: z.string(),
+  status: z.enum(['available', 'drafted', 'onMyTeam', 'on_block']),
+  draftedPrice: z.number().optional(),
+  draftedBy: z.string().optional(),  // Team name that drafted this player
+});
+
+const saveDraftStateSchema = z.object({
+  players: z.array(draftPlayerSchema),
+});
+
+/**
+ * GET /api/leagues/:id/draft-state
+ * Get the saved draft state (drafted players) for a league
+ */
+router.get('/:id/draft-state', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = getAuthUser(req);
+    const { id } = req.params;
+
+    // Verify league exists and belongs to user
+    const league = await prisma.league.findFirst({
+      where: {
+        id,
+        ownerId: user.id,
+      },
+    });
+
+    if (!league) {
+      res.status(404).json({
+        error: 'League not found',
+        code: 'LEAGUE_NOT_FOUND',
+        message: 'The requested league does not exist or you do not have access to it',
+      });
+      return;
+    }
+
+    // Fetch draft state from draftState JSON column
+    const draftState = league.draftState as { players: Array<{
+      id: string;
+      name: string;
+      status: string;
+      draftedPrice?: number;
+      draftedBy?: string;
+    }> } | null;
+
+    logger.info(
+      { userId: user.id, leagueId: id, playerCount: draftState?.players?.length ?? 0 },
+      'Draft state fetched'
+    );
+
+    res.json({
+      leagueId: id,
+      players: draftState?.players ?? [],
+      lastModified: league.updatedAt.toISOString(),
+    });
+  } catch (error) {
+    logger.error({ error, leagueId: req.params.id }, 'Failed to fetch draft state');
+    res.status(500).json({
+      error: 'Failed to fetch draft state',
+      code: 'DRAFT_STATE_FETCH_ERROR',
+      message: 'An error occurred while fetching draft state',
+    });
+  }
+});
+
+/**
+ * PUT /api/leagues/:id/draft-state
+ * Save the draft state (drafted players) for a league
+ * Only saves players that have been drafted (status !== 'available')
+ */
+router.put('/:id/draft-state', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = getAuthUser(req);
+    const { id } = req.params;
+
+    // Verify league exists and belongs to user
+    const existingLeague = await prisma.league.findFirst({
+      where: {
+        id,
+        ownerId: user.id,
+      },
+    });
+
+    if (!existingLeague) {
+      res.status(404).json({
+        error: 'League not found',
+        code: 'LEAGUE_NOT_FOUND',
+        message: 'The requested league does not exist or you do not have access to it',
+      });
+      return;
+    }
+
+    // Validate request body
+    const validationResult = saveDraftStateSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      logger.warn({ errors: validationResult.error.errors }, 'Invalid draft state data');
+      res.status(400).json({
+        error: 'Invalid draft state data',
+        code: 'VALIDATION_ERROR',
+        details: validationResult.error.errors,
+      });
+      return;
+    }
+
+    const { players } = validationResult.data;
+
+    // Only store drafted players (not available ones) to keep storage minimal
+    const draftedPlayers = players.filter(p => p.status !== 'available');
+
+    logger.info(
+      { userId: user.id, leagueId: id, draftedCount: draftedPlayers.length },
+      'Saving draft state'
+    );
+
+    // Store draft state as JSON in the league record
+    await prisma.league.update({
+      where: { id },
+      data: {
+        draftState: { players: draftedPlayers },
+        updatedAt: new Date(),
+      },
+    });
+
+    logger.info({ userId: user.id, leagueId: id }, 'Draft state saved successfully');
+
+    res.json({
+      success: true,
+      leagueId: id,
+      savedCount: draftedPlayers.length,
+      message: 'Draft state saved successfully',
+    });
+  } catch (error) {
+    logger.error({ error, leagueId: req.params.id }, 'Failed to save draft state');
+    res.status(500).json({
+      error: 'Failed to save draft state',
+      code: 'DRAFT_STATE_SAVE_ERROR',
+      message: 'An error occurred while saving draft state',
+    });
+  }
+});
+
 /**
  * DELETE /api/leagues/:id
  * Delete a league

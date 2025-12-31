@@ -3,7 +3,7 @@ import { toast, Toaster } from 'sonner';
 import { LeagueSettings, Player, SavedLeague, UserData } from './lib/types';
 import { generateMockPlayers } from './lib/mockData';
 import { calculateLeagueAuctionValues, convertToPlayers } from './lib/auctionApi';
-import { fetchLeagues, createLeague as createLeagueApi, updateLeague as updateLeagueApi, deleteLeague as deleteLeagueApi } from './lib/leaguesApi';
+import { fetchLeagues, createLeague as createLeagueApi, updateLeague as updateLeagueApi, deleteLeague as deleteLeagueApi, fetchDraftState, saveDraftState, DraftPlayerState } from './lib/leaguesApi';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
@@ -439,64 +439,91 @@ function AppContent() {
 
   const handleContinueDraft = async (league: SavedLeague) => {
     setCurrentLeague(league);
+    setIsLoadingProjections(true);
 
-    // Check if we need to reload full player data
-    // Saved leagues may only have drafted player summaries to save localStorage space
-    const hasFullPlayerData = league.players.length > 50 && league.players[0]?.projectedStats !== undefined;
+    try {
+      // Always reload full player projections from API
+      const calculatedValues = await calculateLeagueAuctionValues(league.settings);
+      const projectedPlayers = convertToPlayers(calculatedValues);
 
-    if (hasFullPlayerData) {
-      setPlayers(league.players);
-    } else {
-      // Need to reload full player data from API
-      setIsLoadingProjections(true);
-      try {
-        const calculatedValues = await calculateLeagueAuctionValues(league.settings);
-        const projectedPlayers = convertToPlayers(calculatedValues);
-
-        // Merge draft status from saved lightweight data
-        const draftedMap = new Map(league.players.map(p => [p.id, p]));
-        const mergedPlayers = projectedPlayers.map(p => {
-          const savedPlayer = draftedMap.get(p.id);
-          if (savedPlayer && (savedPlayer.status === 'drafted' || savedPlayer.status === 'onMyTeam')) {
-            return {
-              ...p,
-              status: savedPlayer.status,
-              draftedPrice: savedPlayer.draftedPrice,
-              draftedBy: savedPlayer.draftedBy,
-            };
+      // Fetch draft state from server (primary source for cross-device sync)
+      // Only if league has a backend ID (not a local-only league)
+      let serverDraftState: DraftPlayerState[] = [];
+      if (!league.id.startsWith('league-')) {
+        try {
+          serverDraftState = await fetchDraftState(league.id);
+          if (import.meta.env.DEV) {
+            console.log('[App] Loaded draft state from server:', serverDraftState.length, 'drafted players');
           }
-          return p;
-        });
-
-        setPlayers(mergedPlayers);
-
-        // Update the league in userData with full player data
-        if (userData) {
-          const updatedLeague = { ...league, players: mergedPlayers };
-          const updatedUser = {
-            ...userData,
-            leagues: userData.leagues.map(l => l.id === league.id ? updatedLeague : l)
-          };
-          setUserData(updatedUser);
-          setCurrentLeague(updatedLeague);
+        } catch (error) {
+          console.error('[App] Failed to fetch draft state from server:', error);
         }
-      } catch (error) {
-        if (import.meta.env.DEV) {
-          console.error('Failed to reload player data:', error);
-        }
-        // Fall back to saved data even if incomplete
-        setPlayers(league.players);
-      } finally {
-        setIsLoadingProjections(false);
       }
-    }
 
-    if (league.status === 'complete') {
-      const myTeam = league.players.filter(p => p.status === 'onMyTeam');
-      setFinalRoster(myTeam as any);
-      setCurrentScreen('analysis');
-    } else {
+      // Use server draft state if available, otherwise fall back to localStorage data
+      const draftedMap = new Map<string, DraftPlayerState>();
+
+      // First, add localStorage draft data as fallback
+      league.players.forEach(p => {
+        if (p.status === 'drafted' || p.status === 'onMyTeam') {
+          draftedMap.set(p.id, {
+            id: p.id,
+            name: p.name,
+            status: p.status,
+            draftedPrice: p.draftedPrice,
+            draftedBy: p.draftedBy,
+          });
+        }
+      });
+
+      // Then override with server data (takes precedence)
+      serverDraftState.forEach(p => {
+        draftedMap.set(p.id, p);
+      });
+
+      // Merge draft status with full player projections
+      const mergedPlayers = projectedPlayers.map(p => {
+        const savedPlayer = draftedMap.get(p.id);
+        if (savedPlayer && (savedPlayer.status === 'drafted' || savedPlayer.status === 'onMyTeam')) {
+          return {
+            ...p,
+            status: savedPlayer.status,
+            draftedPrice: savedPlayer.draftedPrice,
+            draftedBy: savedPlayer.draftedBy,
+          };
+        }
+        return p;
+      });
+
+      setPlayers(mergedPlayers);
+
+      // Update the league in userData with full player data
+      if (userData) {
+        const updatedLeague = { ...league, players: mergedPlayers };
+        const updatedUser = {
+          ...userData,
+          leagues: userData.leagues.map(l => l.id === league.id ? updatedLeague : l)
+        };
+        setUserData(updatedUser);
+        setCurrentLeague(updatedLeague);
+      }
+
+      if (league.status === 'complete') {
+        const myTeam = mergedPlayers.filter(p => p.status === 'onMyTeam');
+        setFinalRoster(myTeam as any);
+        setCurrentScreen('analysis');
+      } else {
+        setCurrentScreen('draft');
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error('Failed to reload player data:', error);
+      }
+      // Fall back to saved data even if incomplete
+      setPlayers(league.players);
       setCurrentScreen('draft');
+    } finally {
+      setIsLoadingProjections(false);
     }
   };
 
@@ -666,10 +693,10 @@ function AppContent() {
     await handleContinueDraft(league);
   };
 
-  // Save draft progress periodically
+  // Save draft progress periodically (to localStorage and server)
   useEffect(() => {
     if (currentScreen === 'draft' && currentLeague && userData) {
-      const interval = setInterval(() => {
+      const interval = setInterval(async () => {
         const updatedLeague: SavedLeague = {
           ...currentLeague,
           players,
@@ -678,12 +705,36 @@ function AppContent() {
 
         const updatedUser = {
           ...userData,
-          leagues: userData.leagues.map(l => 
+          leagues: userData.leagues.map(l =>
             l.id === currentLeague.id ? updatedLeague : l
           )
         };
 
+        // Update localStorage (handled by setUserData effect)
         setUserData(updatedUser);
+
+        // Also save draft state to server for cross-device sync
+        // Only save if league has a backend ID (not a local-only league)
+        if (!currentLeague.id.startsWith('league-')) {
+          const draftedPlayers: DraftPlayerState[] = players
+            .filter(p => p.status !== 'available')
+            .map(p => ({
+              id: p.id,
+              name: p.name,
+              status: p.status,
+              draftedPrice: p.draftedPrice,
+              draftedBy: p.draftedBy,
+            }));
+
+          try {
+            await saveDraftState(currentLeague.id, draftedPlayers);
+            if (import.meta.env.DEV) {
+              console.log('[App] Draft state saved to server:', draftedPlayers.length, 'players');
+            }
+          } catch (error) {
+            console.error('[App] Failed to save draft state to server:', error);
+          }
+        }
       }, 30000); // Save every 30 seconds
 
       return () => clearInterval(interval);

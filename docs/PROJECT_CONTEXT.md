@@ -8,7 +8,7 @@
 | **Purpose** | Optimize draft budgeting during fantasy baseball salary cap auctions |
 | **Tech Stack** | React 18 + TypeScript + Vite + Framer Motion (Frontend) + Node.js/Express (Backend) |
 | **UI Framework** | Radix UI + Tailwind CSS (shadcn/ui) |
-| **Data Sources** | FanGraphs (Steamer), JA Projections, Harry Knows Ball (Dynasty), Couch Managers Live Sync |
+| **Data Sources** | FanGraphs (Steamer), JA Projections (Jon Anderson, MLB Data Warehouse), Harry Knows Ball (Dynasty), Couch Managers Live Sync |
 | **Backend Status** | Implemented - Projections API, Auction Sync, Value Calculator, Dynasty Rankings |
 | **Status** | Full-Stack MVP with Dynasty League Support & Market Correction |
 
@@ -24,7 +24,7 @@ This is a **React single-page application** that helps fantasy baseball team man
 2. **Dynasty League Support** - Dynasty rankings integration (Harry Knows Ball or custom CSV), configurable dynasty weight
 3. **Live Auction Sync** - Real-time integration with Couch Managers draft rooms
 4. **Manual Draft Mode** - Offline drafting with manual price entry when not using Couch Managers
-5. **Projections Engine** - FanGraphs (Steamer) and JA Projections with SGP-based value calculation
+5. **Projections Engine** - FanGraphs (Steamer) and JA Projections (Jon Anderson, MLB Data Warehouse) with SGP-based value calculation
 6. **Category Validation** - 100+ scoring categories with accuracy classification (direct/calculated/estimated)
 7. **Market Inflation Correction** - Tier-based and position-based adjustments from historical auction analysis
 8. **Tier-Weighted Inflation** - Sophisticated inflation tracking with historical baselines and positional scarcity
@@ -68,7 +68,7 @@ afineauctioncalculator/
 │   │   ├── projectionsService.ts      # FanGraphs projections fetcher
 │   │   ├── projectionsCacheService.ts # 24-hour projection cache
 │   │   ├── auctionCacheService.ts     # File-based auction cache (5-min TTL)
-│   │   ├── jaProjectionsService.ts    # JA Projections from Google Sheets
+│   │   ├── jaProjectionsService.ts    # JA Projections (Jon Anderson, MLB Data Warehouse) from Google Sheets
 │   │   ├── dynastyRankingsScraper.ts  # Harry Knows Ball dynasty rankings
 │   │   ├── valueCalculator.ts         # SGP-based value calculation
 │   │   ├── inflationCalculator.ts     # Tier-weighted inflation

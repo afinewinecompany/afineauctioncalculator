@@ -86,6 +86,10 @@ model League {
   // Dynasty-specific settings (stored as JSON, nullable)
   dynastySettings     Json?    // { dynastyWeight: 0.5, includeMinors: false, rankingsSource: "harryknowsball", customRankings: [...] }
 
+  // Draft state - stores drafted players for cross-device sync
+  // { players: [{ id, name, status, draftedPrice?, draftedBy? }] }
+  draftState          Json?
+
   // Draft status
   status              String   @default("setup") // "setup" | "drafting" | "completed"
   setupStep           Int?     // Current setup wizard step (1-5), null when not in setup
