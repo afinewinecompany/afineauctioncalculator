@@ -145,8 +145,10 @@ export function calculateTierWeightedInflation(
   const moneySpent = allDrafted.reduce((sum, p) => sum + (p.draftedPrice || 0), 0);
   const remainingBudget = totalBudget - moneySpent;
 
+  // Include both 'available' and 'on_block' players in remaining value
+  // on_block players haven't been drafted yet, so their value is still "remaining"
   const remainingProjectedValue = allPlayers
-    .filter(p => p.status === 'available')
+    .filter(p => p.status === 'available' || p.status === 'on_block')
     .reduce((sum, p) => sum + (p.projectedValue || 0), 0);
 
   return {
