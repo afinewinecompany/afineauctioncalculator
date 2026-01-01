@@ -407,6 +407,7 @@ const draftPlayerSchema = z.object({
   status: z.enum(['available', 'drafted', 'onMyTeam', 'on_block']),
   draftedPrice: z.number().optional(),
   draftedBy: z.string().optional(),  // Team name that drafted this player
+  isTargeted: z.boolean().optional(), // Whether player is marked as a target/watchlist
 });
 
 const saveDraftStateSchema = z.object({
@@ -448,6 +449,7 @@ router.get('/:id/draft-state', requireAuth, async (req: Request, res: Response) 
       status: string;
       draftedPrice?: number;
       draftedBy?: string;
+      isTargeted?: boolean;
     }> } | null;
 
     logger.info(
@@ -532,11 +534,12 @@ router.put('/:id/draft-state', requireAuth, async (req: Request, res: Response) 
       }
     }
 
-    // Only store drafted players (not available ones) to keep storage minimal
-    const draftedPlayers = players.filter(p => p.status !== 'available');
+    // Store players that are either drafted/on_block OR targeted (even if available)
+    // This allows us to persist watchlist/target selections across sessions
+    const playersToSave = players.filter(p => p.status !== 'available' || p.isTargeted === true);
 
     logger.info(
-      { userId: user.id, leagueId: id, draftedCount: draftedPlayers.length },
+      { userId: user.id, leagueId: id, savedCount: playersToSave.length },
       'Saving draft state'
     );
 
@@ -545,7 +548,7 @@ router.put('/:id/draft-state', requireAuth, async (req: Request, res: Response) 
     await prisma.league.update({
       where: { id },
       data: {
-        draftState: { players: draftedPlayers },
+        draftState: { players: playersToSave },
         updatedAt: newUpdatedAt,
       },
     });
@@ -555,7 +558,7 @@ router.put('/:id/draft-state', requireAuth, async (req: Request, res: Response) 
     res.json({
       success: true,
       leagueId: id,
-      savedCount: draftedPlayers.length,
+      savedCount: playersToSave.length,
       lastModified: newUpdatedAt.toISOString(),
       message: 'Draft state saved successfully',
     });

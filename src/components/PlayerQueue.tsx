@@ -31,6 +31,11 @@ interface PlayerQueueProps {
   onManualDraft?: (player: Player, price: number, toMyTeam: boolean) => void;
   isMobile?: boolean;
   /**
+   * Callback to toggle a player's targeted status.
+   * If not provided, targets are managed locally and won't persist.
+   */
+  onToggleTarget?: (playerId: string) => void;
+  /**
    * Maximum number of players to show in the queue.
    * Players are sorted by projected value and only the top N are shown.
    * This prevents MiLB prospects from appearing - they won't be in top projections.
@@ -46,14 +51,22 @@ const MOBILE_ROW_HEIGHT = 64;
 // This is a safety filter in case more players somehow get through
 const DEFAULT_MAX_PLAYERS = 1200;
 
-export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, positionalScarcity, isManualMode, onManualDraft, isMobile, maxPlayers = DEFAULT_MAX_PLAYERS }: PlayerQueueProps) {
+export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, positionalScarcity, isManualMode, onManualDraft, isMobile, onToggleTarget, maxPlayers = DEFAULT_MAX_PLAYERS }: PlayerQueueProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPosition, setFilterPosition] = useState<string>('all');
   // Track which player has manual entry input open, and the current input value
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [manualPriceInput, setManualPriceInput] = useState<string>('');
-  // Track targeted players (players marked with star for watchlist)
-  const [targetedPlayerIds, setTargetedPlayerIds] = useState<Set<string>>(new Set());
+  // Derive targeted player IDs from player data (persisted via isTargeted field)
+  // Local state is only used as fallback when onToggleTarget is not provided
+  const [localTargetedIds, setLocalTargetedIds] = useState<Set<string>>(new Set());
+
+  // Use player.isTargeted if available, otherwise fall back to local state
+  const targetedPlayerIds = useMemo(() => {
+    const fromPlayers = new Set(players.filter(p => p.isTargeted).map(p => p.id));
+    // If we have targets from player data, use those; otherwise use local state
+    return fromPlayers.size > 0 || onToggleTarget ? fromPlayers : localTargetedIds;
+  }, [players, localTargetedIds, onToggleTarget]);
 
   // Virtualization state
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -297,16 +310,22 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
   // Toggle player as target (watchlist)
   const handleToggleTarget = useCallback((playerId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering player click
-    setTargetedPlayerIds(prev => {
-      const next = new Set(prev);
-      if (next.has(playerId)) {
-        next.delete(playerId);
-      } else {
-        next.add(playerId);
-      }
-      return next;
-    });
-  }, []);
+    if (onToggleTarget) {
+      // Use callback to update player state (persisted)
+      onToggleTarget(playerId);
+    } else {
+      // Fall back to local state (not persisted)
+      setLocalTargetedIds(prev => {
+        const next = new Set(prev);
+        if (next.has(playerId)) {
+          next.delete(playerId);
+        } else {
+          next.add(playerId);
+        }
+        return next;
+      });
+    }
+  }, [onToggleTarget]);
 
   const positions = ['all', 'C', '1B', '2B', '3B', 'SS', 'OF', 'CI', 'MI', 'UTIL', 'SP', 'RP', 'P'];
 

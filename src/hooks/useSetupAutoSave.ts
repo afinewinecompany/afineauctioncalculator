@@ -148,8 +148,13 @@ export function useSetupAutoSave(
 
         let savedLeague: SavedLeague;
 
-        if (leagueIdRef.current && !leagueIdRef.current.startsWith('draft-')) {
-          // Update existing league
+        // Check if this is a local-only ID (draft-* or league-*) or a real backend ID
+        const isLocalId = !leagueIdRef.current ||
+          leagueIdRef.current.startsWith('draft-') ||
+          leagueIdRef.current.startsWith('league-');
+
+        if (!isLocalId) {
+          // Update existing league (has a real backend ID)
           console.log('[useSetupAutoSave] Updating existing league:', leagueIdRef.current);
           savedLeague = await updateLeague(leagueIdRef.current, leagueData);
           console.log('[useSetupAutoSave] Update complete, calling onLeagueUpdated');

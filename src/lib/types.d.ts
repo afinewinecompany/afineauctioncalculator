@@ -110,6 +110,7 @@ export interface Player {
     tier?: number;
     isInDraftPool?: boolean;
     isTwoWayPlayer?: boolean;
+    isTargeted?: boolean;
 }
 export interface DraftedPlayer extends Player {
     status: 'drafted' | 'onMyTeam';

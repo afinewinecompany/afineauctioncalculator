@@ -193,6 +193,7 @@ export interface DraftPlayerState {
   status: 'available' | 'drafted' | 'onMyTeam' | 'on_block';
   draftedPrice?: number;
   draftedBy?: string;
+  isTargeted?: boolean; // Whether the player is marked as a target/watchlist player
 }
 
 /**

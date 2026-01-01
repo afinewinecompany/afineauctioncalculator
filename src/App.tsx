@@ -472,13 +472,14 @@ function AppContent() {
 
       // First, add localStorage draft data as fallback
       league.players.forEach(p => {
-        if (p.status === 'drafted' || p.status === 'onMyTeam') {
+        if (p.status === 'drafted' || p.status === 'onMyTeam' || p.isTargeted) {
           draftedMap.set(p.id, {
             id: p.id,
             name: p.name,
             status: p.status,
             draftedPrice: p.draftedPrice,
             draftedBy: p.draftedBy,
+            isTargeted: p.isTargeted,
           });
         }
       });
@@ -488,16 +489,23 @@ function AppContent() {
         draftedMap.set(p.id, p);
       });
 
-      // Merge draft status with full player projections
+      // Merge draft status and isTargeted with full player projections
       const mergedPlayers = projectedPlayers.map(p => {
         const savedPlayer = draftedMap.get(p.id);
-        if (savedPlayer && (savedPlayer.status === 'drafted' || savedPlayer.status === 'onMyTeam')) {
-          return {
-            ...p,
-            status: savedPlayer.status,
-            draftedPrice: savedPlayer.draftedPrice,
-            draftedBy: savedPlayer.draftedBy,
-          };
+        if (savedPlayer) {
+          // Apply both draft status and isTargeted
+          const updates: Partial<Player> = {};
+          if (savedPlayer.status === 'drafted' || savedPlayer.status === 'onMyTeam') {
+            updates.status = savedPlayer.status;
+            updates.draftedPrice = savedPlayer.draftedPrice;
+            updates.draftedBy = savedPlayer.draftedBy;
+          }
+          if (savedPlayer.isTargeted) {
+            updates.isTargeted = true;
+          }
+          if (Object.keys(updates).length > 0) {
+            return { ...p, ...updates };
+          }
         }
         return p;
       });
@@ -694,21 +702,23 @@ function AppContent() {
       return;
     }
 
-    const draftedPlayers: DraftPlayerState[] = players
-      .filter(p => p.status !== 'available')
+    // Save players that are either drafted/on_block OR targeted (even if available)
+    const playersToSave: DraftPlayerState[] = players
+      .filter(p => p.status !== 'available' || p.isTargeted === true)
       .map(p => ({
         id: p.id,
         name: p.name,
         status: p.status,
         draftedPrice: p.draftedPrice,
         draftedBy: p.draftedBy,
+        isTargeted: p.isTargeted,
       }));
 
-    if (draftedPlayers.length > 0) {
+    if (playersToSave.length > 0) {
       try {
         const result = await saveDraftState(
           currentLeague.id,
-          draftedPlayers,
+          playersToSave,
           draftLastModifiedRef.current || undefined
         );
         if (result.success) {
@@ -760,21 +770,23 @@ function AppContent() {
         // Also save draft state to server for cross-device sync
         // Only save if league has a backend ID (not a local-only league)
         if (!currentLeague.id.startsWith('league-')) {
-          const draftedPlayers: DraftPlayerState[] = players
-            .filter(p => p.status !== 'available')
+          // Save players that are either drafted/on_block OR targeted (even if available)
+          const playersToSave: DraftPlayerState[] = players
+            .filter(p => p.status !== 'available' || p.isTargeted === true)
             .map(p => ({
               id: p.id,
               name: p.name,
               status: p.status,
               draftedPrice: p.draftedPrice,
               draftedBy: p.draftedBy,
+              isTargeted: p.isTargeted,
             }));
 
           try {
             // Use optimistic locking to detect conflicts
             const result = await saveDraftState(
               currentLeague.id,
-              draftedPlayers,
+              playersToSave,
               draftLastModifiedRef.current || undefined
             );
 
@@ -790,7 +802,7 @@ function AppContent() {
               // Update lastModified for next save
               draftLastModifiedRef.current = result.lastModified;
               if (import.meta.env.DEV) {
-                console.log('[App] Draft state saved to server:', draftedPlayers.length, 'players');
+                console.log('[App] Draft state saved to server:', playersToSave.length, 'players');
               }
             }
           } catch (error) {

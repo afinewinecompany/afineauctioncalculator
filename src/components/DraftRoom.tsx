@@ -703,6 +703,17 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
     }
   }, [settings.couchManagerRoomId]);
 
+  // Handler for toggling player target status (watchlist)
+  const handleToggleTarget = useCallback((playerId: string) => {
+    setPlayers(prevPlayers =>
+      prevPlayers.map(p =>
+        p.id === playerId
+          ? { ...p, isTargeted: !p.isTargeted }
+          : p
+      )
+    );
+  }, []);
+
   // Memoized handler for drafting a player
   const handleDraftPlayer = useCallback((player: Player, price: number, draftedBy: 'me' | 'other') => {
     const draftedPlayer: Player = {
@@ -803,6 +814,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                     positionalScarcity={inflationResult.positionalScarcity}
                     isManualMode={isManualMode}
                     onManualDraft={handleManualDraft}
+                    onToggleTarget={handleToggleTarget}
                     isMobile={true}
                     maxPlayers={maxPlayersInQueue}
                   />
@@ -833,6 +845,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                   positionalScarcity={inflationResult.positionalScarcity}
                   isManualMode={isManualMode}
                   onManualDraft={handleManualDraft}
+                  onToggleTarget={handleToggleTarget}
                   maxPlayers={maxPlayersInQueue}
                 />
               </div>
