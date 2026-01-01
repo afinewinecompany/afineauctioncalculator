@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { reportComponentError } from '../lib/errorReporter';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -42,6 +43,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     this.setState({ errorInfo });
+
+    // Report error to backend for admin diagnostics
+    reportComponentError(error, errorInfo.componentStack, this.props.screenName);
   }
 
   handleRetry = (): void => {

@@ -17,6 +17,7 @@ export interface AuthUser {
   profilePictureUrl: string | null;
   authProvider: string;
   subscriptionTier: string;
+  role: string; // "user" | "admin"
   createdAt: Date;
   lastLoginAt: Date | null;
 }
@@ -82,6 +83,7 @@ export interface UserResponse {
   profilePictureUrl: string | null;
   authProvider: string;
   subscriptionTier: string;
+  role: string; // "user" | "admin"
   createdAt: string;
   lastLoginAt: string | null;
 }
@@ -113,6 +115,7 @@ export function toUserResponse(user: User): UserResponse {
     profilePictureUrl: user.profilePictureUrl,
     authProvider: user.authProvider,
     subscriptionTier: user.subscriptionTier,
+    role: user.role,
     createdAt: user.createdAt.toISOString(),
     lastLoginAt: user.lastLoginAt?.toISOString() || null,
   };
@@ -129,6 +132,7 @@ export function toAuthUser(user: User): AuthUser {
     profilePictureUrl: user.profilePictureUrl,
     authProvider: user.authProvider,
     subscriptionTier: user.subscriptionTier,
+    role: user.role,
     createdAt: user.createdAt,
     lastLoginAt: user.lastLoginAt,
   };

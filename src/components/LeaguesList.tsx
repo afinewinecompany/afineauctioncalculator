@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SavedLeague, LeagueSettings, SubscriptionInfo, ScrapedAuctionData } from '../lib/types';
-import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle, Settings, User, Crown, Loader2, Pencil } from 'lucide-react';
+import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle, Settings, User, Crown, Loader2, Pencil, Shield } from 'lucide-react';
 import { EditLeagueModal } from './EditLeagueModal';
 import { fetchAuctionData } from '../lib/auctionApi';
 import { useIsMobile } from './ui/use-mobile';
@@ -16,6 +16,7 @@ interface LeaguesListProps {
   onReloadProjections: (league: SavedLeague, newProjectionSystem?: LeagueSettings['projectionSystem']) => Promise<void>;
   onLogout: () => void;
   onAccount: () => void;
+  onAdmin?: () => void;
   profilePicture?: string;
   subscription?: SubscriptionInfo;
 }
@@ -40,6 +41,7 @@ export function LeaguesList({
   onReloadProjections,
   onLogout,
   onAccount,
+  onAdmin,
   profilePicture,
   subscription
 }: LeaguesListProps) {
@@ -174,6 +176,16 @@ export function LeaguesList({
             </div>
           </div>
           <div className={`flex items-center gap-2 ${isMobile ? 'self-end' : 'gap-3'}`}>
+            {onAdmin && (
+              <button
+                onClick={onAdmin}
+                className={`${isMobile ? 'p-2' : 'px-4 py-2'} bg-gradient-to-r from-purple-900/50 to-indigo-900/50 text-purple-300 border border-purple-500/30 rounded-lg hover:from-purple-800/50 hover:to-indigo-800/50 hover:border-purple-400/50 transition-all flex items-center gap-2`}
+                title="Admin Dashboard"
+              >
+                <Shield className="w-4 h-4" />
+                {!isMobile && 'Admin'}
+              </button>
+            )}
             <button
               onClick={onAccount}
               className={`${isMobile ? 'p-2' : 'px-4 py-2'} bg-slate-800 text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-700 transition-all flex items-center gap-2`}

@@ -22,7 +22,8 @@
       "Bash(timeout /t 2 /nobreak)",
       "Bash(cat:*)",
       "Bash(ls:*)",
-      "Bash(npx playwright:*)"
+      "Bash(npx playwright:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

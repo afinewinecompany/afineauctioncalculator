@@ -667,3 +667,101 @@ export interface CustomDynastyRanking {
   rank: number;           // Dynasty rank
   playerId?: string;      // Optional player ID (FanGraphs, MLB, etc.)
 }
+
+// =============================================================================
+// ADMIN DASHBOARD TYPES
+// =============================================================================
+
+/**
+ * Platform statistics for admin dashboard
+ */
+export interface AdminStats {
+  users: {
+    total: number;
+    thisMonth: number;
+    thisWeek: number;
+  };
+  leagues: {
+    total: number;
+    activelyDrafting: number;
+    completed: number;
+  };
+  draftRooms: {
+    currentlyActive: number;
+  };
+  errors: {
+    total: number;
+    unresolvedCount: number;
+    last24Hours: number;
+  };
+}
+
+/**
+ * User entry in admin user list
+ */
+export interface AdminUserEntry {
+  id: string;
+  email: string;
+  name: string | null;
+  role: 'user' | 'admin';
+  subscriptionTier: string;
+  authProvider: string;
+  createdAt: string;
+  lastLoginAt: string | null;
+  leagueCount: number;
+}
+
+/**
+ * Detailed user info for admin view
+ */
+export interface AdminUserDetail extends AdminUserEntry {
+  profilePictureUrl: string | null;
+  leagues: {
+    id: string;
+    name: string;
+    status: string;
+    createdAt: string;
+  }[];
+  errorCount: number;
+}
+
+/**
+ * Error log entry for admin dashboard
+ */
+export interface ErrorLogEntry {
+  id: string;
+  userId: string | null;
+  userName: string | null;
+  userEmail: string | null;
+  errorCode: string | null;
+  errorMessage: string;
+  source: 'frontend' | 'backend';
+  severity: 'error' | 'warning' | 'info';
+  context?: Record<string, unknown>;
+  stackTrace?: string;
+  resolved: boolean;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  createdAt: string;
+}
+
+/**
+ * Pagination info for admin lists
+ */
+export interface AdminPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+/**
+ * Filters for error log queries
+ */
+export interface ErrorLogFilters {
+  source?: 'frontend' | 'backend' | 'all';
+  severity?: 'error' | 'warning' | 'info' | 'all';
+  resolved?: 'true' | 'false' | 'all';
+  startDate?: string;
+  endDate?: string;
+}

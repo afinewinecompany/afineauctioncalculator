@@ -17,9 +17,10 @@ import { PostDraftAnalysis } from './components/PostDraftAnalysis';
 import { TopMenuBar } from './components/TopMenuBar';
 import { ProjectionsLoadingScreen } from './components/ProjectionsLoadingScreen';
 import { AccountScreen } from './components/AccountScreen';
+import { AdminDashboard } from './components/AdminDashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-type AppScreen = 'landing' | 'login' | 'forgot-password' | 'reset-password' | 'google-callback' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account';
+type AppScreen = 'landing' | 'login' | 'forgot-password' | 'reset-password' | 'google-callback' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account' | 'admin';
 
 // Inner app component that uses auth context
 function AppContent() {
@@ -898,6 +899,7 @@ function AppContent() {
             onReloadProjections={handleReloadProjections}
             onLogout={handleLogout}
             onAccount={() => setCurrentScreen('account')}
+            onAdmin={user?.role === 'admin' ? () => setCurrentScreen('admin') : undefined}
             profilePicture={userData.profilePicture}
             subscription={userData.subscription}
           />
@@ -988,6 +990,15 @@ function AppContent() {
             onUpdateUser={setUserData}
             onBack={handleBackToLeagues}
           />
+        </ErrorBoundary>
+      )}
+
+      {currentScreen === 'admin' && user?.role === 'admin' && (
+        <ErrorBoundary
+          screenName="Admin Dashboard"
+          onReset={handleBackToLeagues}
+        >
+          <AdminDashboard onBack={handleBackToLeagues} />
         </ErrorBoundary>
       )}
 

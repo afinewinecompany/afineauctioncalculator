@@ -22,6 +22,7 @@ model User {
   profilePictureUrl String?
   authProvider     String    @default("email") // "email" | "google"
   subscriptionTier String    @default("free") // "free" | "premium"
+  role             String    @default("user") // "user" | "admin"
 
   // Password reset fields
   passwordResetTokenHash String?   // Hashed reset token
@@ -37,9 +38,11 @@ model User {
   userLeagues      UserLeague[]
   refreshTokens    RefreshToken[]
   draftPicks       DraftPick[]    @relation("DraftedBy")
+  errorLogs        ErrorLog[]
 
   @@index([email])
   @@index([passwordResetTokenHash])
+  @@index([role])
   @@map("users")
 }
 
@@ -248,4 +251,35 @@ model DraftPick {
   @@index([draftedByUserId])
   @@index([draftedAt])
   @@map("draft_picks")
+}
+
+// ==========================================
+// ERROR LOGGING (Admin Dashboard)
+// ==========================================
+
+model ErrorLog {
+  id           String   @id @default(uuid())
+  userId       String?  // Nullable for unauthenticated errors
+  errorCode    String?  // Machine-readable error code (e.g., "AUTH_001")
+  errorMessage String   // Human-readable error message
+  stackTrace   String?  // Full stack trace if available
+  context      Json?    // Additional context: { component, url, userAgent, action, etc. }
+  source       String   @default("backend") // "frontend" | "backend"
+  severity     String   @default("error") // "error" | "warning" | "info"
+  resolved     Boolean  @default(false)
+  resolvedAt   DateTime?
+  resolvedBy   String?  // Admin user ID who resolved it
+
+  // Timestamps
+  createdAt    DateTime @default(now())
+
+  // Relations
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([source])
+  @@index([severity])
+  @@index([createdAt])
+  @@index([resolved])
+  @@map("error_logs")
 }

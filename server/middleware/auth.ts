@@ -263,3 +263,73 @@ export function requireTier(allowedTiers: string[]) {
     next();
   };
 }
+
+/**
+ * Require admin role middleware
+ *
+ * Must be used AFTER requireAuth middleware.
+ * Returns 403 Forbidden if user is not an admin.
+ *
+ * @example
+ * ```typescript
+ * router.get('/admin/users', requireAuth, requireAdmin, (req, res) => {
+ *   // Only accessible by admin users
+ * });
+ * ```
+ */
+export function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  if (!req.user) {
+    res.status(401).json(AUTH_ERRORS.NO_TOKEN);
+    return;
+  }
+
+  if (req.user.role !== 'admin') {
+    res.status(403).json({
+      error: 'Admin access required',
+      code: 'ADMIN_REQUIRED',
+      message: 'This endpoint requires administrator privileges',
+    });
+    return;
+  }
+
+  next();
+}
+
+/**
+ * Middleware factory to require specific roles
+ *
+ * @param allowedRoles - Array of roles that can access the route
+ * @returns Middleware function
+ *
+ * @example
+ * ```typescript
+ * router.get('/moderator-panel', requireAuth, requireRole(['admin', 'moderator']), (req, res) => {
+ *   // Accessible by admins and moderators
+ * });
+ * ```
+ */
+export function requireRole(allowedRoles: string[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json(AUTH_ERRORS.NO_TOKEN);
+      return;
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      res.status(403).json({
+        error: 'Insufficient permissions',
+        code: 'ROLE_REQUIRED',
+        message: `This endpoint requires one of the following roles: ${allowedRoles.join(', ')}`,
+        requiredRoles: allowedRoles,
+        currentRole: req.user.role,
+      });
+      return;
+    }
+
+    next();
+  };
+}

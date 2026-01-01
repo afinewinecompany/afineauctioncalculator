@@ -24,6 +24,8 @@ import authRoutes from './routes/auth.js';
 import auctionRoutes, { cleanupAuctionRoutes } from './routes/auction.js';
 import projectionsRoutes from './routes/projections.js';
 import leaguesRoutes from './routes/leagues.js';
+import adminRoutes from './routes/admin.js';
+import errorsRoutes from './routes/errors.js';
 import { closeBrowser, prewarmBrowser } from './services/couchManagersScraper.js';
 import { apiLimiter, authLimiter, scrapingLimiter } from './middleware/rateLimiter.js';
 import { sanitizeBody } from './middleware/sanitize.js';
@@ -161,6 +163,12 @@ export function createServer(): Express {
 
   // Leagues routes (CRUD for user leagues)
   app.use('/api/leagues', leaguesRoutes);
+
+  // Admin routes (admin dashboard - requires admin role)
+  app.use('/api/admin', adminRoutes);
+
+  // Error reporting routes (frontend error capture)
+  app.use('/api/errors', errorsRoutes);
 
   // ==========================================================================
   // STATIC FILE SERVING (Production only - serves built frontend if present)
