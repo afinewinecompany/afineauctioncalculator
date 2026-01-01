@@ -321,7 +321,15 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     // Validate request body
     const validationResult = createLeagueSchema.safeParse(req.body);
     if (!validationResult.success) {
-      logger.warn({ errors: validationResult.error.errors }, 'Invalid league data');
+      logger.warn({
+        errors: validationResult.error.errors,
+        receivedBody: {
+          leagueName: req.body.leagueName,
+          status: req.body.status,
+          hasSettings: !!req.body.settings,
+          settingsKeys: req.body.settings ? Object.keys(req.body.settings) : [],
+        },
+      }, 'Invalid league data - validation failed');
       res.status(400).json({
         error: 'Invalid league data',
         code: 'VALIDATION_ERROR',

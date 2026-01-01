@@ -24,11 +24,10 @@ interface DraftRoomProps {
   settings: LeagueSettings;
   players: Player[];
   onComplete: () => void;
-  onPlayersUpdate?: (players: Player[]) => void; // Callback to sync players back to App.tsx
 }
 
 
-export function DraftRoom({ settings, players: initialPlayers, onComplete, onPlayersUpdate }: DraftRoomProps) {
+export function DraftRoom({ settings, players: initialPlayers, onComplete }: DraftRoomProps) {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [myRoster, setMyRoster] = useState<Player[]>([]);
   const [allDrafted, setAllDrafted] = useState<Player[]>([]);
@@ -652,14 +651,6 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete, onPla
   useEffect(() => {
     setInflationRate(inflationResult.overallInflationRate);
   }, [inflationResult.overallInflationRate]);
-
-  // Sync players state back to App.tsx when players change
-  // This ensures that reset phantom drafted players are persisted
-  useEffect(() => {
-    if (onPlayersUpdate && players !== initialPlayers) {
-      onPlayersUpdate(players);
-    }
-  }, [players, onPlayersUpdate, initialPlayers]);
 
   // Adjust player values based on inflation and status
   // Key change: drafted players get their actual price, available players get inflation-adjusted values

@@ -133,15 +133,28 @@ export async function createLeague(league: SavedLeague): Promise<SavedLeague> {
  */
 export async function updateLeague(id: string, league: Partial<SavedLeague>): Promise<SavedLeague> {
   try {
+    const payload = {
+      leagueName: league.leagueName,
+      settings: league.settings,
+      status: league.status,
+      setupStep: league.setupStep,
+      lastModified: new Date().toISOString(),
+    };
+
+    // Debug logging for update requests
+    if (import.meta.env.DEV) {
+      console.log('[leaguesApi] Updating league with payload:', {
+        leagueName: payload.leagueName,
+        status: payload.status,
+        hasSettings: !!payload.settings,
+        settingsLeagueName: payload.settings?.leagueName,
+        numTeams: payload.settings?.numTeams,
+      });
+    }
+
     const response = await authenticatedFetch(`${LEAGUES_BASE}/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({
-        leagueName: league.leagueName,
-        settings: league.settings,
-        status: league.status,
-        setupStep: league.setupStep,
-        lastModified: new Date().toISOString(),
-      }),
+      body: JSON.stringify(payload),
     });
     const result = await handleResponse<{ league: SavedLeague }>(response);
     return result.league;
