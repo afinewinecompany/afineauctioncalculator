@@ -980,8 +980,10 @@ export function SetupScreen({
                       {isMobile && system.disabled && (
                         <div className="text-slate-600 text-xs mt-1">{system.disabledReason}</div>
                       )}
-                      {isMobile && system.author && !system.disabled && (
-                        <div className="text-slate-400 text-xs">by {system.author}</div>
+                      {isMobile && !system.disabled && (
+                        <div className="text-slate-400 text-xs">
+                          {system.author ? `by ${system.author}` : system.description}
+                        </div>
                       )}
                     </button>
                   ))}
