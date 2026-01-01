@@ -82,7 +82,7 @@ const createLeagueSchema = z.object({
   settings: leagueSettingsSchema,
   players: z.array(z.any()).optional(), // Player data is complex, store as JSON
   status: z.enum(['setup', 'drafting', 'complete']).default('setup'),
-  setupStep: z.number().int().min(1).max(5).optional(), // Current step in setup wizard
+  setupStep: z.number().int().min(1).max(5).nullish(), // Current step in setup wizard (null when not in setup)
   createdAt: z.string().optional(),
   lastModified: z.string().optional(),
 });
@@ -321,15 +321,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     // Validate request body
     const validationResult = createLeagueSchema.safeParse(req.body);
     if (!validationResult.success) {
-      logger.warn({
-        errors: validationResult.error.errors,
-        receivedBody: {
-          leagueName: req.body.leagueName,
-          status: req.body.status,
-          hasSettings: !!req.body.settings,
-          settingsKeys: req.body.settings ? Object.keys(req.body.settings) : [],
-        },
-      }, 'Invalid league data - validation failed');
+      logger.warn({ errors: validationResult.error.errors }, `League validation failed for ${id}`);
+
       res.status(400).json({
         error: 'Invalid league data',
         code: 'VALIDATION_ERROR',
