@@ -4,7 +4,8 @@ import { Player, LeagueSettings, DraftedPlayer, PositionalScarcity, TeamBudgetCo
 type DraftedPlayerLike = Pick<Player, 'draftedPrice' | 'projectedValue' | 'tier'>;
 
 // Type for all players (needed for tier-weighted calculation)
-type PlayerLike = Pick<Player, 'projectedValue' | 'tier' | 'status'>;
+// Includes currentBid for on_block players to count them in inflation
+type PlayerLike = Pick<Player, 'projectedValue' | 'tier' | 'status'> & { currentBid?: number };
 
 /**
  * Historical inflation baselines from Couch Managers auction analysis
@@ -119,6 +120,18 @@ export function calculateTierWeightedInflation(
     data.totalActualSpent += player.draftedPrice || 0;
   });
 
+  // Also include on_block players in inflation calculation
+  // Their currentBid represents the likely final cost, so treat them as "virtually drafted"
+  allPlayers.forEach(player => {
+    if (player.status === 'on_block' && player.currentBid !== undefined) {
+      const tier = player.tier || 10;
+      const data = tierData.get(tier)!;
+      data.draftedCount++;
+      data.totalProjectedValue += player.projectedValue || 0;
+      data.totalActualSpent += player.currentBid;
+    }
+  });
+
   // Calculate inflation rate for each tier
   tierData.forEach(data => {
     if (data.totalProjectedValue > 0) {
@@ -142,13 +155,18 @@ export function calculateTierWeightedInflation(
   const overallInflationRate = totalWeight > 0 ? weightedInflationSum / totalWeight : 0;
 
   // Calculate remaining budget and projected value
-  const moneySpent = allDrafted.reduce((sum, p) => sum + (p.draftedPrice || 0), 0);
+  // Include on_block players' currentBid as money that's "virtually spent"
+  const draftedMoneySpent = allDrafted.reduce((sum, p) => sum + (p.draftedPrice || 0), 0);
+  const onBlockMoneyCommitted = allPlayers
+    .filter(p => p.status === 'on_block' && p.currentBid !== undefined)
+    .reduce((sum, p) => sum + (p.currentBid || 0), 0);
+  const moneySpent = draftedMoneySpent + onBlockMoneyCommitted;
   const remainingBudget = totalBudget - moneySpent;
 
-  // Include both 'available' and 'on_block' players in remaining value
-  // on_block players haven't been drafted yet, so their value is still "remaining"
+  // Only 'available' players are truly remaining
+  // on_block players are "virtually drafted" at their current bid
   const remainingProjectedValue = allPlayers
-    .filter(p => p.status === 'available' || p.status === 'on_block')
+    .filter(p => p.status === 'available')
     .reduce((sum, p) => sum + (p.projectedValue || 0), 0);
 
   return {

@@ -620,38 +620,39 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
     };
   }, [settings.couchManagerRoomId, performSync]);
 
-  // Create a stable fingerprint of player statuses to detect when status actually changes
+  // Extract on_block players with their current bids for inflation calculation
   // This avoids circular dependency: inflationResult -> setPlayers -> players -> inflationResult
-  // Only recalculate when actual statuses change, not when adjustedValue changes
-  const playerStatusFingerprint = useMemo(() => {
-    // Create a fingerprint string of all on_block player IDs (sorted for stability)
-    const onBlockIds = players
+  // Only recalculate when on_block statuses or bids change, not when adjustedValue changes
+  const onBlockPlayersData = useMemo(() => {
+    // Return on_block players with their IDs and current bids for inflation calculation
+    return players
       .filter(p => p.status === 'on_block')
-      .map(p => p.id)
-      .sort()
-      .join(',');
-    return onBlockIds;
+      .map(p => ({ id: p.id, currentBid: p.currentBid }));
   }, [players]);
 
   // Recalculate tier-weighted inflation whenever players are drafted or go on_block
-  // We use initialPlayers with status overlay to include on_block players
-  // The playerStatusFingerprint ensures we only recalculate when statuses actually change
+  // We use initialPlayers with status/bid overlay to include on_block players
+  // on_block players are treated as "virtually drafted" at their current bid for inflation calc
   // Merge server-side enhanced data (positional scarcity, team constraints) when available
   const inflationResult: InflationResult = useMemo(() => {
-    // Build a set of on_block player IDs from the fingerprint
-    const onBlockIds = new Set(playerStatusFingerprint ? playerStatusFingerprint.split(',') : []);
+    // Build a map of on_block player IDs to their current bids
+    const onBlockBids = new Map(onBlockPlayersData.map(p => [p.id, p.currentBid]));
     const draftedIds = new Set(allDrafted.map(p => p.id));
 
-    // Create a view of players with current status from sync
-    // This includes on_block status that the original code was missing
-    const playersWithStatus = initialPlayers.map(p => ({
-      ...p,
-      status: draftedIds.has(p.id)
-        ? ('drafted' as const)
-        : onBlockIds.has(p.id)
-          ? ('on_block' as const)
-          : ('available' as const),
-    }));
+    // Create a view of players with current status and currentBid from sync
+    // This includes on_block status and bid info for inflation calculation
+    const playersWithStatus = initialPlayers.map(p => {
+      const onBlockBid = onBlockBids.get(p.id);
+      return {
+        ...p,
+        status: draftedIds.has(p.id)
+          ? ('drafted' as const)
+          : onBlockBid !== undefined
+            ? ('on_block' as const)
+            : ('available' as const),
+        currentBid: onBlockBid,
+      };
+    });
     const baseResult = calculateTierWeightedInflation(settings, allDrafted, playersWithStatus);
 
     // Merge in server-side enhanced data if available
@@ -666,7 +667,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
     }
 
     return baseResult;
-  }, [allDrafted, initialPlayers, playerStatusFingerprint, settings, liveInflationStats]);
+  }, [allDrafted, initialPlayers, onBlockPlayersData, settings, liveInflationStats]);
 
   // Update inflation rate state only when it changes
   useEffect(() => {
