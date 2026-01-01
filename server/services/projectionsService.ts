@@ -133,6 +133,51 @@ export async function fetchSteamerProjections(): Promise<NormalizedProjection[]>
 }
 
 /**
+ * Fetches BatX projections for hitters and THE BAT projections for pitchers from FanGraphs
+ * BatX (Derek Carty) uses 'thebatx' for hitters and 'thebat' for pitchers
+ */
+export async function fetchBatXProjections(): Promise<NormalizedProjection[]> {
+  logger.info('Fetching BatX projections from FanGraphs');
+
+  // Fetch both batting (thebatx) and pitching (thebat) in parallel
+  const [hittersResponse, pitchersResponse] = await Promise.all([
+    fetch(`${FANGRAPHS_BASE_URL}?type=thebatx&stats=bat&pos=all&team=0&players=0&lg=all`),
+    fetch(`${FANGRAPHS_BASE_URL}?type=thebat&stats=pit&pos=all&team=0&players=0&lg=all`),
+  ]);
+
+  if (!hittersResponse.ok) {
+    throw new Error(`Failed to fetch BatX hitter projections: ${hittersResponse.status}`);
+  }
+  if (!pitchersResponse.ok) {
+    throw new Error(`Failed to fetch THE BAT pitcher projections: ${pitchersResponse.status}`);
+  }
+
+  const hitters: FanGraphsHitter[] = await hittersResponse.json();
+  const pitchers: FanGraphsPitcher[] = await pitchersResponse.json();
+
+  logger.info({ hitters: hitters.length, pitchers: pitchers.length }, 'Fetched BatX projections from FanGraphs');
+
+  // Normalize all projections
+  const normalizedHitters = hitters.map(normalizeHitter);
+  const normalizedPitchers = pitchers.map(normalizePitcher);
+
+  // Validate projections to filter out bad data
+  const validHitters = normalizedHitters.filter(validateProjection);
+  const validPitchers = normalizedPitchers.filter(validateProjection);
+
+  const filteredHitters = normalizedHitters.length - validHitters.length;
+  const filteredPitchers = normalizedPitchers.length - validPitchers.length;
+
+  if (filteredHitters > 0 || filteredPitchers > 0) {
+    logger.info({ filteredHitters, filteredPitchers }, 'Filtered out invalid BatX projections');
+  }
+
+  logger.info({ validHitters: validHitters.length, validPitchers: validPitchers.length }, 'Returning valid BatX projections');
+
+  return [...validHitters, ...validPitchers];
+}
+
+/**
  * Normalizes a FanGraphs hitter to internal format
  */
 function normalizeHitter(raw: FanGraphsHitter): NormalizedProjection {

@@ -111,9 +111,9 @@ export function SetupScreen({
     { value: 'h2h-points', label: 'H2H Points', description: 'Weekly matchups with point totals' },
   ];
 
-  const projectionSystems: Array<{ value: LeagueSettings['projectionSystem']; label: string; description: string; disabled?: boolean; disabledReason?: string }> = [
+  const projectionSystems: Array<{ value: LeagueSettings['projectionSystem']; label: string; description: string; author?: string; disabled?: boolean; disabledReason?: string }> = [
     { value: 'steamer', label: 'Steamer', description: 'Popular projection system with conservative estimates' },
-    { value: 'batx', label: 'BatX', description: 'Advanced metrics-based projections', disabled: true, disabledReason: 'Currently unavailable' },
+    { value: 'batx', label: 'THE BAT X', description: 'Advanced metrics-based projections', author: 'Derek Carty' },
     { value: 'ja', label: 'JA Projections', description: 'Jon Anderson (MLB Data Warehouse)' },
   ];
 
@@ -938,12 +938,20 @@ export function SetupScreen({
                         )}
                       </div>
                       {!isMobile && (
-                        <div className={system.disabled ? 'text-slate-600' : 'text-slate-500'}>
-                          {system.disabled ? system.disabledReason : system.description}
+                        <div className="text-center">
+                          <div className={system.disabled ? 'text-slate-600' : 'text-slate-500'}>
+                            {system.disabled ? system.disabledReason : system.description}
+                          </div>
+                          {system.author && !system.disabled && (
+                            <div className="text-slate-400 text-xs mt-1">by {system.author}</div>
+                          )}
                         </div>
                       )}
                       {isMobile && system.disabled && (
                         <div className="text-slate-600 text-xs mt-1">{system.disabledReason}</div>
+                      )}
+                      {isMobile && system.author && !system.disabled && (
+                        <div className="text-slate-400 text-xs">by {system.author}</div>
                       )}
                     </button>
                   ))}

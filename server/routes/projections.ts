@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { fetchSteamerProjections } from '../services/projectionsService.js';
+import { fetchSteamerProjections, fetchBatXProjections } from '../services/projectionsService.js';
 import { fetchJAProjections } from '../services/jaProjectionsService.js';
 import {
   getCachedProjections,
@@ -65,10 +65,8 @@ router.get('/:system', async (req: Request, res: Response) => {
         projections = await fetchJAProjections();
         break;
       case 'batx':
-        // BatX is currently unavailable
-        return res.status(503).json({
-          error: 'BatX projections are currently unavailable. Please use Steamer or JA Projections.',
-        });
+        projections = await fetchBatXProjections();
+        break;
       default:
         return res.status(400).json({ error: 'Invalid projection system' });
     }
@@ -155,9 +153,8 @@ router.post('/:system/refresh', refreshLimiter, async (req: Request, res: Respon
         projections = await fetchJAProjections();
         break;
       case 'batx':
-        return res.status(503).json({
-          error: 'BatX projections are currently unavailable. Please use Steamer or JA Projections.',
-        });
+        projections = await fetchBatXProjections();
+        break;
       default:
         return res.status(400).json({ error: 'Invalid projection system' });
     }
@@ -248,9 +245,8 @@ router.post('/calculate-values', async (req: Request, res: Response) => {
           projections = await fetchJAProjections();
           break;
         case 'batx':
-          return res.status(503).json({
-            error: 'BatX projections are currently unavailable. Please use Steamer or JA Projections.',
-          });
+          projections = await fetchBatXProjections();
+          break;
         default:
           return res.status(400).json({ error: 'Invalid projection system' });
       }
