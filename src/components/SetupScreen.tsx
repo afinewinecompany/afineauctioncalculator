@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { LeagueSettings, SavedLeague } from '../lib/types';
 import { defaultLeagueSettings } from '../lib/mockData';
-import { ChevronRight, ChevronLeft, Zap, Database, Crown, RefreshCw, Upload, X, FileSpreadsheet, Save, LogOut, Check, Loader2, AlertTriangle, Link } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Zap, Database, Crown, RefreshCw, Upload, X, FileSpreadsheet, Save, LogOut, Check, Loader2, AlertTriangle, Link, HelpCircle } from 'lucide-react';
 import { ScoringConfig } from './ScoringConfig';
 import { parseCSV } from '../lib/csvParser';
 import { useSetupAutoSave, clearDraftSetup } from '../hooks/useSetupAutoSave';
 import { useIsMobile } from './ui/use-mobile';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 interface SetupScreenProps {
   onComplete: (settings: LeagueSettings) => void;
@@ -242,7 +243,26 @@ export function SetupScreen({
                   League Format
                 </h2>
 
-                {/* IMPORTANT: League Type Selection - First and Most Prominent */}
+                {/* League Name - First */}
+                <div>
+                  <label className={`block ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`} style={{ color: 'white', fontWeight: 500 }}>League Name</label>
+                  <input
+                    type="text"
+                    value={settings.leagueName}
+                    onChange={(e) => setSettings({ ...settings, leagueName: e.target.value })}
+                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} rounded-xl transition-all`}
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'white',
+                      outline: 'none',
+                    }}
+                    placeholder="Enter your league name"
+                    required
+                  />
+                </div>
+
+                {/* League Type Selection */}
                 <div className="rounded-xl" style={{ backgroundColor: 'rgba(249, 115, 22, 0.08)', border: '2px solid rgba(249, 115, 22, 0.3)', padding: isMobile ? '16px' : '24px' }}>
                   <div className="flex items-center gap-2 mb-4">
                     <Crown className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} style={{ color: '#fbbf24' }} />
@@ -251,9 +271,6 @@ export function SetupScreen({
                     </label>
                     <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: 'rgba(249, 115, 22, 0.3)', color: '#fbbf24' }}>Required</span>
                   </div>
-                  <p className={`${isMobile ? 'text-sm mb-3' : 'mb-4'}`} style={{ color: 'rgba(255,255,255,0.7)' }}>
-                    Choose whether this is a single-season redraft or a multi-year dynasty league.
-                  </p>
                   <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'}`}>
                     {leagueTypes.map((type) => (
                       <button
@@ -274,7 +291,7 @@ export function SetupScreen({
                       >
                         <div className="flex items-center gap-3 mb-2">
                           <div style={{ color: settings.leagueType === type.value ? '#fbbf24' : 'rgba(255,255,255,0.5)' }}>
-                            {isMobile ? <type.icon.type className="w-5 h-5" /> : type.icon}
+                            {type.icon}
                           </div>
                           <div className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`} style={{ color: settings.leagueType === type.value ? '#fbbf24' : 'white' }}>
                             {type.label}
@@ -287,25 +304,6 @@ export function SetupScreen({
                       </button>
                     ))}
                   </div>
-                </div>
-
-                {/* League Name */}
-                <div>
-                  <label className={`block ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`} style={{ color: 'white', fontWeight: 500 }}>League Name</label>
-                  <input
-                    type="text"
-                    value={settings.leagueName}
-                    onChange={(e) => setSettings({ ...settings, leagueName: e.target.value })}
-                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} rounded-xl transition-all`}
-                    style={{
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      color: 'white',
-                      outline: 'none',
-                    }}
-                    placeholder="Enter your league name"
-                    required
-                  />
                 </div>
 
                 {/* Dynasty Settings (shown when dynasty is selected) */}
@@ -359,24 +357,6 @@ export function SetupScreen({
                         </span>
                       </div>
 
-                      {/* Prompt message when nothing selected */}
-                      {!settings.dynastySettings?.rankingsSource && (
-                        <div
-                          className={`flex items-center gap-2 ${isMobile ? 'mb-3 p-2' : 'mb-4 p-3'} rounded-lg`}
-                          style={{
-                            backgroundColor: 'rgba(251, 191, 36, 0.1)',
-                            border: '1px solid rgba(251, 191, 36, 0.3)'
-                          }}
-                        >
-                          <div
-                            className="w-2 h-2 rounded-full animate-pulse"
-                            style={{ backgroundColor: '#fbbf24' }}
-                          />
-                          <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: '#fbbf24' }}>
-                            Choose one option below to set your dynasty rankings source
-                          </p>
-                        </div>
-                      )}
 
                       <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'}`}>
                         {/* Harry Knows Ball Option */}
@@ -422,11 +402,6 @@ export function SetupScreen({
                           <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                             Crowd-sourced dynasty rankings from the community
                           </p>
-                          {!settings.dynastySettings?.rankingsSource && (
-                            <p className={`mt-2 ${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: '#fbbf24' }}>
-                              Click to select
-                            </p>
-                          )}
                         </button>
 
                         {/* Upload Custom Option */}
@@ -466,11 +441,6 @@ export function SetupScreen({
                           <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                             Upload your own CSV file with custom rankings
                           </p>
-                          {!settings.dynastySettings?.rankingsSource && (
-                            <p className={`mt-2 ${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: '#fbbf24' }}>
-                              Click to select
-                            </p>
-                          )}
                         </button>
                       </div>
 
@@ -484,10 +454,33 @@ export function SetupScreen({
                         tabIndex={-1}
                       />
 
-                      {/* File Format Help */}
-                      <p className={`${isMobile ? 'text-xs mt-2' : 'text-sm mt-3'}`} style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                        CSV format: name column (name, player, fullname, or first+last) and rank column (rank, ranking, overall, etc.). Any column with "id" in the name is used for matching.
-                      </p>
+                      {/* File Format Help - Tooltip */}
+                      <div className={`flex items-center gap-2 ${isMobile ? 'mt-2' : 'mt-3'}`}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="flex items-center gap-1.5 text-xs transition-colors"
+                              style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+                            >
+                              <HelpCircle className="w-3.5 h-3.5" />
+                              <span>CSV format requirements</span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="bottom"
+                            className="max-w-xs p-3"
+                            style={{ backgroundColor: '#1e1e1e', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                          >
+                            <p className="text-xs leading-relaxed">
+                              <strong>Required columns:</strong><br />
+                              • Name: "name", "player", "fullname", or "first" + "last"<br />
+                              • Rank: "rank", "ranking", "overall", etc.<br />
+                              • Optional: Any column with "id" for player matching
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
 
                     {/* Custom Rankings Status */}
@@ -550,6 +543,12 @@ export function SetupScreen({
                       </div>
                     )}
 
+                    {/* Divider between Rankings Source and Weight Settings */}
+                    <div
+                      className={`${isMobile ? 'my-4' : 'my-6'}`}
+                      style={{ borderTop: '1px solid rgba(217, 70, 239, 0.2)' }}
+                    />
+
                     {/* Dynasty Weight Slider */}
                     <div
                       className={`rounded-xl ${isMobile ? 'p-3' : 'p-4'}`}
@@ -558,9 +557,27 @@ export function SetupScreen({
                         border: '1px solid rgba(255, 255, 255, 0.1)'
                       }}
                     >
-                      <label className={`block font-medium ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`} style={{ color: 'white' }}>
-                        Dynasty Weight
-                      </label>
+                      <div className={`flex items-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                        <label className={`font-medium ${isMobile ? 'text-sm' : ''}`} style={{ color: 'white' }}>
+                          Dynasty Weight
+                        </label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-slate-300">
+                              <HelpCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            className="max-w-xs p-3"
+                            style={{ backgroundColor: '#1e1e1e', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                          >
+                            <p className="text-xs leading-relaxed">
+                              Controls how player values are calculated. Higher % means dynasty rankings have more weight vs. current season projections.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <div className="flex items-center gap-4">
                         <input
                           type="range"
@@ -600,13 +617,26 @@ export function SetupScreen({
                         border: '1px solid rgba(255, 255, 255, 0.1)'
                       }}
                     >
-                      <div>
+                      <div className="flex items-center gap-2">
                         <label className={`font-medium ${isMobile ? 'text-sm' : ''}`} style={{ color: 'white' }}>
                           Include Minor Leaguers
                         </label>
-                        <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-                          Include prospects in dynasty rankings
-                        </p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-slate-300">
+                              <HelpCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            className="max-w-xs p-3"
+                            style={{ backgroundColor: '#1e1e1e', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+                          >
+                            <p className="text-xs leading-relaxed">
+                              Include prospects and minor leaguers in the dynasty rankings for deeper league formats.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                       <div className="flex items-center gap-3">
                         <span
