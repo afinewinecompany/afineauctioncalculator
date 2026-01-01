@@ -38,7 +38,7 @@ const RosterSlotsSchema = z.object({
 }).partial();
 
 const LeagueConfigSchema = z.object({
-  numTeams: z.number().min(2).max(20),
+  numTeams: z.number().min(2).max(30),
   budgetPerTeam: z.number().min(1).max(10000),
   totalRosterSpots: z.number().min(1).max(50).optional(),
   rosterSpots: RosterSlotsSchema.optional(),

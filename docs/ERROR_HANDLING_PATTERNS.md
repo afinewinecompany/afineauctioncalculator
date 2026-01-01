@@ -61,7 +61,7 @@ import { z } from 'zod';
 
 const createLeagueSchema = z.object({
   name: z.string().min(3).max(50),
-  maxTeams: z.number().int().min(8).max(20),
+  maxTeams: z.number().int().min(2).max(30),
   budget: z.number().int().positive(),
 });
 
