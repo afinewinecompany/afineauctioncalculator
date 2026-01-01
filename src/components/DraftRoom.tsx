@@ -285,6 +285,22 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
           console.warn('[DraftRoom] WARNING: Drafted players not matched to projections:',
             unmatchedDrafted.map(p => ({ name: p.fullName, team: p.mlbTeam, cmId: p.couchManagersId })));
         }
+
+        // DEBUG: Log on_block players from scrape
+        const onBlockScraped = result.auctionData.players.filter(p => p.status === 'on_block');
+        const onBlockMatched = result.matchedPlayers.filter(mp => mp.scrapedPlayer.status === 'on_block');
+        console.log('[DraftRoom] ON_BLOCK DEBUG from sync:', {
+          scrapedOnBlockCount: onBlockScraped.length,
+          scrapedOnBlock: onBlockScraped.map(p => ({ name: p.fullName, cmId: p.couchManagersId })),
+          matchedOnBlockCount: onBlockMatched.length,
+          matchedOnBlock: onBlockMatched.map(mp => ({
+            scrapedName: mp.scrapedPlayer.fullName,
+            projectionId: mp.projectionPlayerId,
+            currentBid: mp.scrapedPlayer.winningBid
+          })),
+          activeAuctions: result.auctionData.activeAuctions,
+          currentAuction: result.auctionData.currentAuction,
+        });
       }
 
       // Update players state with drafted info and build drafted list
@@ -625,9 +641,10 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   // Only recalculate when on_block statuses or bids change, not when adjustedValue changes
   const onBlockPlayersData = useMemo(() => {
     // Return on_block players with their IDs and current bids for inflation calculation
+    // Use a default bid of 1 if currentBid is undefined (player just went on block)
     return players
       .filter(p => p.status === 'on_block')
-      .map(p => ({ id: p.id, currentBid: p.currentBid }));
+      .map(p => ({ id: p.id, currentBid: p.currentBid ?? 1, isOnBlock: true }));
   }, [players]);
 
   // Recalculate tier-weighted inflation whenever players are drafted or go on_block
@@ -635,25 +652,47 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   // on_block players are treated as "virtually drafted" at their current bid for inflation calc
   // Merge server-side enhanced data (positional scarcity, team constraints) when available
   const inflationResult: InflationResult = useMemo(() => {
-    // Build a map of on_block player IDs to their current bids
-    const onBlockBids = new Map(onBlockPlayersData.map(p => [p.id, p.currentBid]));
+    // Build a map of on_block player IDs to their data (bid + isOnBlock flag)
+    const onBlockMap = new Map(onBlockPlayersData.map(p => [p.id, p]));
     const draftedIds = new Set(allDrafted.map(p => p.id));
 
     // Create a view of players with current status and currentBid from sync
     // This includes on_block status and bid info for inflation calculation
     const playersWithStatus = initialPlayers.map(p => {
-      const onBlockBid = onBlockBids.get(p.id);
+      const onBlockData = onBlockMap.get(p.id);
       return {
         ...p,
         status: draftedIds.has(p.id)
           ? ('drafted' as const)
-          : onBlockBid !== undefined
+          : onBlockData?.isOnBlock
             ? ('on_block' as const)
             : ('available' as const),
-        currentBid: onBlockBid,
+        currentBid: onBlockData?.currentBid,
       };
     });
+
+    // DEBUG: Log inflation calculation inputs
+    if (import.meta.env.DEV) {
+      const onBlockPlayers = playersWithStatus.filter(p => p.status === 'on_block');
+      console.log('[DraftRoom] INFLATION DEBUG:', {
+        onBlockPlayersCount: onBlockPlayers.length,
+        onBlockPlayers: onBlockPlayers.map(p => ({ name: (p as any).name, id: p.id, currentBid: p.currentBid, projectedValue: p.projectedValue, tier: p.tier })),
+        allDraftedCount: allDrafted.length,
+        initialPlayersCount: initialPlayers.length,
+      });
+    }
+
     const baseResult = calculateTierWeightedInflation(settings, allDrafted, playersWithStatus);
+
+    // DEBUG: Log inflation result
+    if (import.meta.env.DEV) {
+      console.log('[DraftRoom] INFLATION RESULT:', {
+        overallInflationRate: baseResult.overallInflationRate,
+        remainingBudget: baseResult.remainingBudget,
+        remainingProjectedValue: baseResult.remainingProjectedValue,
+        tierInflation: baseResult.tierInflation.filter(t => t.draftedCount > 0),
+      });
+    }
 
     // Merge in server-side enhanced data if available
     if (liveInflationStats) {

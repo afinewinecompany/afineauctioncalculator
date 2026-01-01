@@ -41,8 +41,17 @@ export function InflationTracker({
 
   const inflationIndicator = getInflationIndicator(inflationRate);
 
-  const displayInflationRate = liveInflationStats?.overallInflationRate ?? (inflationRate * 100);
-  const displayMoneySpent = liveInflationStats?.totalActualSpent ?? moneySpent;
+  // Use client-side inflationRate (which includes on_block players) as primary source
+  // The server-side liveInflationStats only counts drafted players, not on_block
+  // inflationRate from DraftRoom is already a decimal (0.15 = 15%), so multiply by 100 for display
+  const displayInflationRate = inflationRate * 100;
+
+  // Calculate money spent including on_block players from inflationResult
+  // inflationResult.remainingBudget = totalBudget - (draftedSpent + onBlockBids)
+  const moneySpentIncludingOnBlock = inflationResult
+    ? totalBudget - inflationResult.remainingBudget
+    : moneySpent;
+  const displayMoneySpent = moneySpentIncludingOnBlock;
   const displayDraftedCount = liveInflationStats?.draftedPlayersCount ?? allDrafted.length;
 
   const inflationMultiplier = inflationResult && inflationResult.remainingProjectedValue > 0
