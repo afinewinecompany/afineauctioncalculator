@@ -668,6 +668,20 @@ function AppContent() {
     }
   };
 
+  // Handle player updates from DraftRoom (e.g., when phantom drafted players are reset)
+  const handlePlayersUpdate = useCallback((updatedPlayers: Player[]) => {
+    setPlayers(updatedPlayers);
+    // Also update the current league's players
+    if (currentLeague && userData) {
+      const updatedLeague = { ...currentLeague, players: updatedPlayers };
+      setCurrentLeague(updatedLeague);
+      setUserData(prev => prev ? {
+        ...prev,
+        leagues: prev.leagues.map(l => l.id === currentLeague.id ? updatedLeague : l)
+      } : null);
+    }
+  }, [currentLeague, userData]);
+
   const handleDraftComplete = () => {
     // Get the drafted players from the draft room
     const myTeam = players.filter(p => p.status === 'onMyTeam');
@@ -969,6 +983,7 @@ function AppContent() {
             settings={currentLeague.settings}
             players={players}
             onComplete={handleDraftComplete}
+            onPlayersUpdate={handlePlayersUpdate}
           />
         </ErrorBoundary>
       )}

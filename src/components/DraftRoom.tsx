@@ -24,10 +24,11 @@ interface DraftRoomProps {
   settings: LeagueSettings;
   players: Player[];
   onComplete: () => void;
+  onPlayersUpdate?: (players: Player[]) => void; // Callback to sync players back to App.tsx
 }
 
 
-export function DraftRoom({ settings, players: initialPlayers, onComplete }: DraftRoomProps) {
+export function DraftRoom({ settings, players: initialPlayers, onComplete, onPlayersUpdate }: DraftRoomProps) {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [myRoster, setMyRoster] = useState<Player[]>([]);
   const [allDrafted, setAllDrafted] = useState<Player[]>([]);
@@ -392,18 +393,27 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
               };
             }
           }
-          // No match found - if player was on_block, reset to available
-          // (the player might have been on_block but is no longer in the scraped data)
+          // No match found - reset to available if player was previously on_block or drafted
+          // This handles:
+          // 1. Players who were on_block but are no longer in the scraped data
+          // 2. Players who were drafted from saved state but the room was reset/cleared
           // DEBUG: Log when Yordan/Alvarez is NOT matched
           if (import.meta.env.DEV) {
             if (p.name.toLowerCase().includes('yordan') || p.name.toLowerCase().includes('alvarez')) {
               console.warn('[DraftRoom] NOT MATCHED:', { name: p.name, id: p.id, currentStatus: p.status });
             }
           }
-          if (p.status === 'on_block') {
+          if (p.status === 'on_block' || p.status === 'drafted') {
+            // Player was on_block or drafted but no longer appears in Couch Managers data
+            // Reset to available - the room may have been cleared/reset
+            if (import.meta.env.DEV && p.status === 'drafted') {
+              console.log('[DraftRoom] Resetting phantom drafted player to available:', { name: p.name, id: p.id });
+            }
             return {
               ...p,
               status: 'available' as const,
+              draftedPrice: undefined,
+              draftedBy: undefined,
               currentBid: undefined,
               currentBidder: undefined,
               timeRemaining: undefined,
@@ -642,6 +652,14 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   useEffect(() => {
     setInflationRate(inflationResult.overallInflationRate);
   }, [inflationResult.overallInflationRate]);
+
+  // Sync players state back to App.tsx when players change
+  // This ensures that reset phantom drafted players are persisted
+  useEffect(() => {
+    if (onPlayersUpdate && players !== initialPlayers) {
+      onPlayersUpdate(players);
+    }
+  }, [players, onPlayersUpdate, initialPlayers]);
 
   // Adjust player values based on inflation and status
   // Key change: drafted players get their actual price, available players get inflation-adjusted values
