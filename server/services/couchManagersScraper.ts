@@ -385,9 +385,29 @@ export async function scrapeAuction(roomId: string): Promise<ScrapedAuctionData>
         const positions = [p.position || p.position1 || p[3], p.position2 || p[4], p.position3 || p[5], p.position4 || p[6]]
           .filter((pos: string) => pos && pos !== '');
         const mlbTeam = p.team || p[7] || '';
-        const isDrafted = p.drafted === true || p.drafted === 1 || p.drafted === '1';
+        const draftedFlag = p.drafted === true || p.drafted === 1 || p.drafted === '1';
         const isOpen = p.open === 1 || p.open === '1' || activeAuctionPlayerIds.has(Number(id));
         const isPassed = passedArray.includes(Number(id));
+
+        const fullName = `${firstName} ${lastName}`.trim();
+
+        // Get winning bid - prefer price from playerArray, fallback to auction map
+        const winningBidFromPlayer = Number(p.price) || Number(p.winningBid) || 0;
+        const winningBidFromAuction = playerHighestBidMap[Number(id)]?.amount || 0;
+        const potentialWinningBid = winningBidFromPlayer || winningBidFromAuction || 0;
+
+        // Get winning team - PRIMARY SOURCE: playerToTeam from rosterArray (most complete)
+        // FALLBACK 1: auctionArray highest bid (only has recent bids)
+        // FALLBACK 2: player object properties
+        const winningTeamFromRoster = playerToTeam[Number(id)];
+        const winningTeamFromAuction = playerHighestBidMap[Number(id)]?.teamname;
+        const winningTeamFromPlayer = cleanTeamName(p.teamname || p.winningTeam || '');
+        const potentialWinningTeam = winningTeamFromRoster || winningTeamFromAuction || winningTeamFromPlayer || '';
+
+        // A player is only truly drafted if they have the drafted flag AND
+        // have valid draft data (team assignment OR winning bid > 0)
+        // This prevents phantom drafts from Couch Managers stale data
+        const isDrafted = draftedFlag && (potentialWinningTeam || potentialWinningBid > 0);
 
         // Determine status
         // Priority: on_block > drafted > passed > available
@@ -404,20 +424,8 @@ export async function scrapeAuction(roomId: string): Promise<ScrapedAuctionData>
           status = 'available';
         }
 
-        const fullName = `${firstName} ${lastName}`.trim();
-
-        // Get winning bid - prefer price from playerArray, fallback to auction map
-        const winningBidFromPlayer = Number(p.price) || Number(p.winningBid) || 0;
-        const winningBidFromAuction = playerHighestBidMap[Number(id)]?.amount || 0;
-        const winningBid = isDrafted ? (winningBidFromPlayer || winningBidFromAuction || undefined) : undefined;
-
-        // Get winning team - PRIMARY SOURCE: playerToTeam from rosterArray (most complete)
-        // FALLBACK 1: auctionArray highest bid (only has recent bids)
-        // FALLBACK 2: player object properties
-        const winningTeamFromRoster = playerToTeam[Number(id)];
-        const winningTeamFromAuction = playerHighestBidMap[Number(id)]?.teamname;
-        const winningTeamFromPlayer = cleanTeamName(p.teamname || p.winningTeam || '');
-        const winningTeam = isDrafted ? (winningTeamFromRoster || winningTeamFromAuction || winningTeamFromPlayer || undefined) : undefined;
+        const winningBid = isDrafted ? (potentialWinningBid || undefined) : undefined;
+        const winningTeam = isDrafted ? (potentialWinningTeam || undefined) : undefined;
 
         players.push({
           couchManagersId: Number(id),
