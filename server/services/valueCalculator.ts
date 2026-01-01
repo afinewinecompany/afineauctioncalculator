@@ -2106,7 +2106,7 @@ function calculateDynastyAdjustedValuesDollarBased(
 
     // Blend Steamer value with Dynasty dollar value based on dynastyWeight
     // dynastyWeight of 0.65 means: 35% Steamer value + 65% dynasty dollar value
-    let adjustedValue = (1 - dynastyWeight) * steamerValue + dynastyWeight * dynastyDollarValue;
+    const adjustedValue = (1 - dynastyWeight) * steamerValue + dynastyWeight * dynastyDollarValue;
 
     return {
       ...player,

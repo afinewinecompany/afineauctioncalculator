@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import { Player, PositionalScarcity } from '../lib/types';
 import { getDraftSurplus } from '../lib/calculations';
 import { getPlayerPhotoUrl } from '../lib/auctionApi';
-import { ArrowUpDown, Filter, TrendingUp, TrendingDown, User, Check, X, UserPlus, Info, AlertTriangle } from 'lucide-react';
+import { ArrowUpDown, Filter, TrendingUp, TrendingDown, User, Check, X, UserPlus, Info, AlertTriangle, Star } from 'lucide-react';
 
 /**
  * Check if a player is a minor league player (has MiLB position marker)
@@ -52,6 +52,8 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
   // Track which player has manual entry input open, and the current input value
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [manualPriceInput, setManualPriceInput] = useState<string>('');
+  // Track targeted players (players marked with star for watchlist)
+  const [targetedPlayerIds, setTargetedPlayerIds] = useState<Set<string>>(new Set());
 
   // Virtualization state
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -76,7 +78,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     });
     return highestScarcity;
   }, [scarcityByPosition]);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'on_block' | 'drafted'>('available');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'on_block' | 'drafted' | 'targets'>('available');
   const [hideMiLB, setHideMiLB] = useState<boolean>(true); // Hide minor league players by default
   const [sortBy, setSortBy] = useState<'name' | 'projectedValue' | 'adjustedValue'>('adjustedValue');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -119,6 +121,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
       // - 'available' filter: show only available players (NOT on_block, NOT drafted)
       // - 'on_block' filter: show only players currently being auctioned
       // - 'drafted' filter: show only drafted players (drafted or onMyTeam)
+      // - 'targets' filter: show only targeted players that are still available (not drafted/gone)
       // - 'all' filter: show everything
       if (filterStatus === 'available') {
         if (p.status !== 'available') return false;
@@ -126,6 +129,10 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
         if (p.status !== 'on_block') return false;
       } else if (filterStatus === 'drafted') {
         if (p.status !== 'drafted' && p.status !== 'onMyTeam') return false;
+      } else if (filterStatus === 'targets') {
+        // Only show targeted players that are still available (not drafted or on my team)
+        if (!targetedPlayerIds.has(p.id)) return false;
+        if (p.status === 'drafted' || p.status === 'onMyTeam') return false;
       }
       // 'all' filter shows everything - no status filtering
 
@@ -176,8 +183,8 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
       }
 
       // Then apply normal sorting
-      let aVal: string | number = a[sortBy];
-      let bVal: string | number = b[sortBy];
+      const aVal: string | number = a[sortBy];
+      const bVal: string | number = b[sortBy];
 
       if (sortBy === 'name') {
         return sortOrder === 'asc'
@@ -191,7 +198,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     });
 
     return filtered;
-  }, [topPlayers, filterStatus, filterPosition, searchQuery, sortBy, sortOrder, hideMiLB]);
+  }, [topPlayers, filterStatus, filterPosition, searchQuery, sortBy, sortOrder, hideMiLB, targetedPlayerIds]);
 
   // Determine if virtualization should be used
   const useVirtualization = filteredPlayers.length > VIRTUALIZATION_THRESHOLD;
@@ -263,7 +270,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
     setFilterPosition(newFilter);
   }, []);
 
-  const handleStatusFilterChange = useCallback((status: 'all' | 'available' | 'on_block' | 'drafted') => {
+  const handleStatusFilterChange = useCallback((status: 'all' | 'available' | 'on_block' | 'drafted' | 'targets') => {
     setFilterStatus(status);
   }, []);
 
@@ -285,6 +292,20 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
   const handleManualDraftCancel = useCallback(() => {
     setEditingPlayerId(null);
     setManualPriceInput('');
+  }, []);
+
+  // Toggle player as target (watchlist)
+  const handleToggleTarget = useCallback((playerId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering player click
+    setTargetedPlayerIds(prev => {
+      const next = new Set(prev);
+      if (next.has(playerId)) {
+        next.delete(playerId);
+      } else {
+        next.add(playerId);
+      }
+      return next;
+    });
   }, []);
 
   const positions = ['all', 'C', '1B', '2B', '3B', 'SS', 'OF', 'CI', 'MI', 'UTIL', 'SP', 'RP', 'P'];
@@ -320,11 +341,11 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
 
           {/* Status filters - scrollable on mobile */}
           <div className={`flex items-center gap-1 ${isMobile ? 'overflow-x-auto pb-1 -mx-2 px-2' : ''}`}>
-            {(['all', 'available', 'on_block', 'drafted'] as const).map(status => (
+            {(['all', 'available', 'targets', 'on_block', 'drafted'] as const).map(status => (
               <button
                 key={status}
                 onClick={() => handleStatusFilterChange(status)}
-                className={`rounded-lg transition-all whitespace-nowrap ${
+                className={`rounded-lg transition-all whitespace-nowrap flex items-center gap-1 ${
                   isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'
                 } ${
                   filterStatus === status
@@ -332,14 +353,22 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                       ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/30'
                       : status === 'drafted'
                       ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg shadow-slate-500/30'
+                      : status === 'targets'
+                      ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30'
                       : 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/30'
                     : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
                 }`}
               >
+                {status === 'targets' && <Star className={`w-3 h-3 ${filterStatus === 'targets' ? 'fill-current' : ''}`} />}
                 {isMobile
-                  ? (status === 'all' ? 'All' : status === 'available' ? 'Avail' : status === 'on_block' ? 'Live' : 'Gone')
-                  : (status === 'all' ? 'All' : status === 'available' ? 'Available' : status === 'on_block' ? 'On Block' : 'Drafted')
+                  ? (status === 'all' ? 'All' : status === 'available' ? 'Avail' : status === 'targets' ? '' : status === 'on_block' ? 'Live' : 'Gone')
+                  : (status === 'all' ? 'All' : status === 'available' ? 'Available' : status === 'targets' ? 'Targets' : status === 'on_block' ? 'On Block' : 'Drafted')
                 }
+                {status === 'targets' && targetedPlayerIds.size > 0 && (
+                  <span className={`text-xs ${filterStatus === 'targets' ? 'text-white/80' : 'text-slate-500'}`}>
+                    ({targetedPlayerIds.size})
+                  </span>
+                )}
               </button>
             ))}
 
@@ -513,8 +542,21 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                     : 'bg-slate-800/80 border-slate-700 active:border-emerald-500/50'
                 }`}
               >
-                {/* Single row: Photo, Name/Position, Values */}
+                {/* Single row: Star, Photo, Name/Position, Values */}
                 <div className="flex items-center gap-2">
+                  {/* Target Star Toggle */}
+                  <button
+                    onClick={(e) => handleToggleTarget(player.id, e)}
+                    className={`flex-shrink-0 p-0.5 rounded transition-all ${
+                      targetedPlayerIds.has(player.id)
+                        ? 'text-yellow-400'
+                        : 'text-slate-600 hover:text-slate-400'
+                    }`}
+                    title={targetedPlayerIds.has(player.id) ? 'Remove from targets' : 'Add to targets'}
+                  >
+                    <Star className={`w-4 h-4 ${targetedPlayerIds.has(player.id) ? 'fill-current' : ''}`} />
+                  </button>
+
                   {/* Photo - explicit dimensions to prevent sizing issues */}
                   <div
                     className="rounded-full overflow-hidden bg-slate-700 flex-shrink-0 flex items-center justify-center"
@@ -667,6 +709,19 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
             >
               <div className="col-span-3">
                 <div className="flex items-center gap-2">
+                  {/* Target Star Toggle */}
+                  <button
+                    onClick={(e) => handleToggleTarget(player.id, e)}
+                    className={`flex-shrink-0 p-1 rounded transition-all hover:scale-110 ${
+                      targetedPlayerIds.has(player.id)
+                        ? 'text-yellow-400'
+                        : 'text-slate-600 hover:text-slate-400'
+                    }`}
+                    title={targetedPlayerIds.has(player.id) ? 'Remove from targets' : 'Add to targets'}
+                  >
+                    <Star className={`w-4 h-4 ${targetedPlayerIds.has(player.id) ? 'fill-current' : ''}`} />
+                  </button>
+
                   {/* Player Photo */}
                   <div
                     className="flex-shrink-0 rounded-full overflow-hidden bg-slate-700 flex items-center justify-center"
