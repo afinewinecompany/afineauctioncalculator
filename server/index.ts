@@ -26,6 +26,7 @@ import projectionsRoutes from './routes/projections.js';
 import leaguesRoutes from './routes/leagues.js';
 import adminRoutes from './routes/admin.js';
 import errorsRoutes from './routes/errors.js';
+import notificationsRoutes from './routes/notifications.js';
 import { closeBrowser, prewarmBrowser } from './services/couchManagersScraper.js';
 import { apiLimiter, authLimiter, scrapingLimiter } from './middleware/rateLimiter.js';
 import { sanitizeBody } from './middleware/sanitize.js';
@@ -169,6 +170,9 @@ export function createServer(): Express {
 
   // Error reporting routes (frontend error capture)
   app.use('/api/errors', errorsRoutes);
+
+  // Notifications routes (SMS settings and team selection)
+  app.use('/api/notifications', notificationsRoutes);
 
   // ==========================================================================
   // STATIC FILE SERVING (Production only - serves built frontend if present)

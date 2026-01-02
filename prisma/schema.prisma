@@ -28,6 +28,12 @@ model User {
   passwordResetTokenHash String?   // Hashed reset token
   passwordResetExpires   DateTime? // Token expiration time
 
+  // SMS Notification fields
+  phoneNumber            String?   // User's phone number for SMS notifications
+  selectedTeamName       String?   // Team name from Couch Managers they're watching
+  selectedRoomId         String?   // Which room they're watching for notifications
+  smsNotificationsEnabled Boolean  @default(false) // Whether SMS notifications are enabled
+
   // Timestamps
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -39,10 +45,12 @@ model User {
   refreshTokens    RefreshToken[]
   draftPicks       DraftPick[]    @relation("DraftedBy")
   errorLogs        ErrorLog[]
+  notificationLogs NotificationLog[]
 
   @@index([email])
   @@index([passwordResetTokenHash])
   @@index([role])
+  @@index([selectedRoomId])
   @@map("users")
 }
 
@@ -282,4 +290,25 @@ model ErrorLog {
   @@index([createdAt])
   @@index([resolved])
   @@map("error_logs")
+}
+
+// ==========================================
+// NOTIFICATION LOGS (SMS Notifications)
+// ==========================================
+
+model NotificationLog {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // 'player_bid' | 'outbid'
+  message   String
+  status    String   // 'sent' | 'failed'
+  metadata  Json?    // Additional context (player name, bid amount, etc.)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("notification_logs")
 }

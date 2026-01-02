@@ -1,5 +1,14 @@
+import { useState, useEffect } from 'react';
 import { UserData, SubscriptionInfo } from '../lib/types';
-import { User, Mail, Lock, CreditCard, CheckCircle, Crown, ArrowLeft, Clock } from 'lucide-react';
+import { User, Mail, Lock, CreditCard, CheckCircle, Crown, ArrowLeft, Clock, MessageSquare, Phone, Bell, Send, Loader2 } from 'lucide-react';
+import {
+  getNotificationSettings,
+  updatePhoneNumber,
+  removePhoneNumber,
+  updateSMSPreferences,
+  sendTestSMS,
+  NotificationSettings,
+} from '../lib/notificationsApi';
 
 interface AccountScreenProps {
   userData: UserData;
@@ -10,6 +19,94 @@ interface AccountScreenProps {
 export function AccountScreen({ userData, onBack }: AccountScreenProps) {
   const isGoogleUser = userData.authProvider === 'google';
   const subscription = userData.subscription || { tier: 'free', status: 'active' } as SubscriptionInfo;
+
+  // SMS Notification state
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(null);
+  const [phoneInput, setPhoneInput] = useState('');
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
+  const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Load notification settings on mount
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const settings = await getNotificationSettings();
+        setNotificationSettings(settings);
+        setPhoneInput(settings.phoneNumber || '');
+      } catch (error) {
+        console.error('Failed to load notification settings:', error);
+      } finally {
+        setIsLoadingNotifications(false);
+      }
+    }
+    loadSettings();
+  }, []);
+
+  // Handle phone number save
+  const handleSavePhone = async () => {
+    if (!phoneInput.trim()) return;
+    setIsSavingPhone(true);
+    setNotificationMessage(null);
+    try {
+      await updatePhoneNumber(phoneInput.trim());
+      setNotificationSettings(prev => prev ? { ...prev, phoneNumber: phoneInput.trim() } : null);
+      setNotificationMessage({ type: 'success', text: 'Phone number saved!' });
+    } catch (error) {
+      setNotificationMessage({ type: 'error', text: 'Failed to save phone number' });
+    } finally {
+      setIsSavingPhone(false);
+    }
+  };
+
+  // Handle phone number removal
+  const handleRemovePhone = async () => {
+    setIsSavingPhone(true);
+    setNotificationMessage(null);
+    try {
+      await removePhoneNumber();
+      setPhoneInput('');
+      setNotificationSettings(prev => prev ? { ...prev, phoneNumber: null, smsNotificationsEnabled: false } : null);
+      setNotificationMessage({ type: 'success', text: 'Phone number removed' });
+    } catch (error) {
+      setNotificationMessage({ type: 'error', text: 'Failed to remove phone number' });
+    } finally {
+      setIsSavingPhone(false);
+    }
+  };
+
+  // Handle SMS notifications toggle
+  const handleToggleNotifications = async () => {
+    if (!notificationSettings) return;
+    setIsTogglingNotifications(true);
+    setNotificationMessage(null);
+    try {
+      const newValue = !notificationSettings.smsNotificationsEnabled;
+      await updateSMSPreferences(newValue);
+      setNotificationSettings(prev => prev ? { ...prev, smsNotificationsEnabled: newValue } : null);
+      setNotificationMessage({ type: 'success', text: `SMS notifications ${newValue ? 'enabled' : 'disabled'}` });
+    } catch (error: any) {
+      setNotificationMessage({ type: 'error', text: error.message || 'Failed to update preferences' });
+    } finally {
+      setIsTogglingNotifications(false);
+    }
+  };
+
+  // Handle test SMS
+  const handleSendTest = async () => {
+    setIsSendingTest(true);
+    setNotificationMessage(null);
+    try {
+      const result = await sendTestSMS();
+      setNotificationMessage({ type: 'success', text: result.message });
+    } catch (error: any) {
+      setNotificationMessage({ type: 'error', text: error.message || 'Failed to send test SMS' });
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -247,6 +344,150 @@ export function AccountScreen({ userData, onBack }: AccountScreenProps) {
                 <p className="text-slate-400 text-sm">
                   Subscription management is not yet available. This feature will be added when payment processing is implemented.
                 </p>
+              </div>
+            )}
+          </div>
+
+          {/* SMS Notifications Section */}
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-6 shadow-xl backdrop-blur-sm animate-slideInLeft" style={{ animationDelay: '0.3s' }}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-emerald-600/20 rounded-lg flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-emerald-400" />
+              </div>
+              <h2 className="text-xl text-white">SMS Notifications</h2>
+            </div>
+
+            {isLoadingNotifications ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Notification Message */}
+                {notificationMessage && (
+                  <div className={`p-3 rounded-lg flex items-center gap-2 ${
+                    notificationMessage.type === 'success'
+                      ? 'bg-emerald-900/20 border border-emerald-500/30 text-emerald-300'
+                      : 'bg-red-900/20 border border-red-500/30 text-red-300'
+                  }`}>
+                    {notificationMessage.type === 'success' ? (
+                      <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                    ) : (
+                      <Clock className="w-4 h-4 flex-shrink-0" />
+                    )}
+                    <span className="text-sm">{notificationMessage.text}</span>
+                  </div>
+                )}
+
+                {/* Phone Number Input */}
+                <div>
+                  <label className="block text-slate-300 mb-2 flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Phone Number
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(e.target.value)}
+                      placeholder="(555) 123-4567"
+                      className="flex-1 px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none transition-colors"
+                    />
+                    {notificationSettings?.phoneNumber ? (
+                      <button
+                        onClick={handleRemovePhone}
+                        disabled={isSavingPhone}
+                        className="px-4 py-2 bg-red-600/20 border border-red-500/30 text-red-300 rounded-lg hover:bg-red-600/30 transition-colors disabled:opacity-50"
+                      >
+                        {isSavingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Remove'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSavePhone}
+                        disabled={isSavingPhone || !phoneInput.trim()}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                      >
+                        {isSavingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-slate-500 text-xs mt-2">
+                    Used for auction notifications when players are bid on or you're outbid
+                  </p>
+                </div>
+
+                {/* Current Team Selection */}
+                {notificationSettings?.selectedTeamName && (
+                  <div className="p-4 bg-slate-900/50 border border-slate-700 rounded-lg">
+                    <div className="text-slate-400 text-sm mb-1">Watching Team</div>
+                    <div className="text-white font-medium">{notificationSettings.selectedTeamName}</div>
+                    {notificationSettings.selectedRoomId && (
+                      <div className="text-slate-500 text-xs mt-1">Room ID: {notificationSettings.selectedRoomId}</div>
+                    )}
+                    <p className="text-slate-500 text-xs mt-2">
+                      Team selection is managed in the Draft Room
+                    </p>
+                  </div>
+                )}
+
+                {/* SMS Toggle */}
+                {notificationSettings?.phoneNumber && (
+                  <div className="flex items-center justify-between p-4 bg-slate-900/50 border border-slate-700 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Bell className="w-5 h-5 text-slate-400" />
+                      <div>
+                        <div className="text-white">Enable SMS Notifications</div>
+                        <div className="text-slate-500 text-xs">Get notified when you're outbid</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleToggleNotifications}
+                      disabled={isTogglingNotifications}
+                      className={`relative w-12 h-6 rounded-full transition-colors ${
+                        notificationSettings.smsNotificationsEnabled
+                          ? 'bg-emerald-600'
+                          : 'bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                          notificationSettings.smsNotificationsEnabled
+                            ? 'translate-x-7'
+                            : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+
+                {/* Test SMS Button */}
+                {notificationSettings?.phoneNumber && notificationSettings.smsServiceAvailable && (
+                  <button
+                    onClick={handleSendTest}
+                    disabled={isSendingTest}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-700 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50"
+                  >
+                    {isSendingTest ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    Send Test SMS
+                  </button>
+                )}
+
+                {/* SMS Service Unavailable Notice */}
+                {notificationSettings && !notificationSettings.smsServiceAvailable && (
+                  <div className="flex items-center gap-3 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                    <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                    <div>
+                      <p className="text-amber-300 font-medium">SMS Service Not Configured</p>
+                      <p className="text-slate-400 text-sm">
+                        SMS notifications are not yet available on this server. Contact the administrator.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

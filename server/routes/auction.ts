@@ -17,6 +17,7 @@ import {
 } from '../services/auctionCacheService.js';
 import { getRedisClient, isRedisHealthy } from '../services/redisClient.js';
 import { logger } from '../services/logger.js';
+import { checkAndSendNotifications } from '../services/auctionNotificationService.js';
 import type { AuctionSyncResult, ScrapedAuctionData } from '../types/auction.js';
 import type { LeagueSettings } from '../../src/lib/types.js';
 
@@ -297,6 +298,11 @@ async function getAuctionDataWithCache(
     // Cache the result if valid
     if (data.status !== 'not_found') {
       await setCachedAuctionData(roomId, data);
+
+      // Check for bid changes and send SMS notifications (non-blocking)
+      checkAndSendNotifications(roomId, data).catch(err => {
+        logger.error({ error: err, roomId }, 'Notification check failed');
+      });
     }
 
     return data;

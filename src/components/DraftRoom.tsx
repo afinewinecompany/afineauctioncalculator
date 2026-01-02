@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { LeagueSettings, Player, SyncState, AuctionSyncResult, MatchedPlayer, PositionalScarcity, EnhancedInflationStats, ScrapedPlayer } from '../lib/types';
 import { calculateTierWeightedInflation, adjustPlayerValuesWithTiers, InflationResult, normalizeName } from '../lib/calculations';
 import { syncAuctionLite } from '../lib/auctionApi';
+import { selectTeam as apiSelectTeam, getNotificationSettings } from '../lib/notificationsApi';
 import { DraftHeader } from './DraftHeader';
 import { PlayerQueue } from './PlayerQueue';
 import { RosterPanel } from './RosterPanel';
@@ -9,6 +10,7 @@ import { InflationTracker } from './InflationTracker';
 import { PlayerDetailModal } from './PlayerDetailModal';
 import { DraftRoomLoadingScreen } from './DraftRoomLoadingScreen';
 import { useIsMobile } from './ui/use-mobile';
+import { useAuth } from '../contexts/AuthContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Users, ListFilter } from 'lucide-react';
 
@@ -28,6 +30,7 @@ interface DraftRoomProps {
 
 
 export function DraftRoom({ settings, players: initialPlayers, onComplete }: DraftRoomProps) {
+  const { isAuthenticated } = useAuth();
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [myRoster, setMyRoster] = useState<Player[]>([]);
   const [allDrafted, setAllDrafted] = useState<Player[]>([]);
@@ -910,21 +913,61 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   }, [selectedTeam, allDrafted]);
 
   // Handler for team selection
-  const handleTeamSelect = useCallback((teamName: string) => {
+  const handleTeamSelect = useCallback(async (teamName: string) => {
     setSelectedTeam(teamName);
-    // Save to localStorage for persistence
+    // Save to localStorage for persistence (immediate feedback)
     localStorage.setItem(`selectedTeam-${settings.couchManagerRoomId}`, teamName);
-  }, [settings.couchManagerRoomId]);
+
+    // Also save to user account for SMS notifications (if authenticated)
+    if (isAuthenticated && settings.couchManagerRoomId) {
+      try {
+        await apiSelectTeam(teamName, settings.couchManagerRoomId);
+        if (import.meta.env.DEV) {
+          console.log('[DraftRoom] Team selection saved to account:', teamName);
+        }
+      } catch (error) {
+        // Non-blocking - localStorage still has the selection
+        console.warn('[DraftRoom] Failed to save team selection to account:', error);
+      }
+    }
+  }, [settings.couchManagerRoomId, isAuthenticated]);
 
   // Load saved team selection on mount
+  // Priority: 1. User account (if authenticated), 2. localStorage
   useEffect(() => {
-    if (settings.couchManagerRoomId) {
+    async function loadSavedTeam() {
+      if (!settings.couchManagerRoomId) return;
+
+      // If authenticated, try to load from account first
+      if (isAuthenticated) {
+        try {
+          const notificationSettings = await getNotificationSettings();
+          // Only use account setting if it matches current room
+          if (notificationSettings.selectedRoomId === settings.couchManagerRoomId &&
+              notificationSettings.selectedTeamName) {
+            setSelectedTeam(notificationSettings.selectedTeamName);
+            // Also sync to localStorage
+            localStorage.setItem(`selectedTeam-${settings.couchManagerRoomId}`, notificationSettings.selectedTeamName);
+            if (import.meta.env.DEV) {
+              console.log('[DraftRoom] Loaded team from account:', notificationSettings.selectedTeamName);
+            }
+            return;
+          }
+        } catch (error) {
+          // Fall through to localStorage
+          console.warn('[DraftRoom] Failed to load team from account:', error);
+        }
+      }
+
+      // Fallback to localStorage
       const savedTeam = localStorage.getItem(`selectedTeam-${settings.couchManagerRoomId}`);
       if (savedTeam) {
         setSelectedTeam(savedTeam);
       }
     }
-  }, [settings.couchManagerRoomId]);
+
+    loadSavedTeam();
+  }, [settings.couchManagerRoomId, isAuthenticated]);
 
   // Handler for toggling player target status (watchlist)
   const handleToggleTarget = useCallback((playerId: string) => {
@@ -1008,7 +1051,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
             /* MOBILE: Tab-based layout */
             <Tabs
               value={mobileActiveTab}
-              onValueChange={(v) => setMobileActiveTab(v as 'players' | 'roster')}
+              onValueChange={(v: string) => setMobileActiveTab(v as 'players' | 'roster')}
               className="flex flex-col flex-1"
             >
               <TabsList className="w-full grid grid-cols-2 bg-slate-900 border-2 border-slate-600 rounded-xl p-1.5 shadow-lg">
