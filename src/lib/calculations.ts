@@ -3,6 +3,24 @@ import { Player, LeagueSettings, DraftedPlayer, PositionalScarcity, TeamBudgetCo
 // Type for players that have been drafted (with price information)
 type DraftedPlayerLike = Pick<Player, 'draftedPrice' | 'projectedValue' | 'tier'>;
 
+/**
+ * Normalizes a player name by removing diacritics, punctuation, and converting to lowercase.
+ * This ensures matching works correctly for names like:
+ * - "Félix Bautista" → "felix bautista"
+ * - "Ronald Acuña Jr." → "ronald acuna jr"
+ * - "J.T. Realmuto" → "jt realmuto"
+ */
+export function normalizeName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics (accents)
+    .toLowerCase()
+    .replace(/\./g, '') // Remove periods (J.T. → JT)
+    .replace(/[^a-z\s]/g, '') // Remove other punctuation
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+}
+
 // Type for all players (needed for tier-weighted calculation)
 // Includes currentBid for on_block players to count them in inflation
 type PlayerLike = Pick<Player, 'projectedValue' | 'tier' | 'status'> & { currentBid?: number };

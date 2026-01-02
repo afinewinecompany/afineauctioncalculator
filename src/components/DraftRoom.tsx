@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { LeagueSettings, Player, SyncState, AuctionSyncResult, MatchedPlayer, PositionalScarcity, EnhancedInflationStats, ScrapedPlayer } from '../lib/types';
-import { calculateTierWeightedInflation, adjustPlayerValuesWithTiers, InflationResult } from '../lib/calculations';
+import { calculateTierWeightedInflation, adjustPlayerValuesWithTiers, InflationResult, normalizeName } from '../lib/calculations';
 import { syncAuctionLite } from '../lib/auctionApi';
 import { DraftHeader } from './DraftHeader';
 import { PlayerQueue } from './PlayerQueue';
@@ -182,10 +182,11 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       // Build lookup map by normalized name+team for two-way player matching
       // Two-way players like Ohtani may have different projection IDs for hitter/pitcher
       // but we need to match them to the combined frontend player
+      // Use normalizeName to handle diacritics (e.g., "Félix" → "felix")
       const matchedByNameTeam = new Map<string, MatchedPlayer>();
       result.matchedPlayers.forEach(mp => {
         if (mp.scrapedPlayer.status === 'drafted' || mp.scrapedPlayer.status === 'on_block') {
-          const key = `${mp.scrapedPlayer.fullName.toLowerCase().trim()}|${mp.scrapedPlayer.mlbTeam.toLowerCase().trim()}`;
+          const key = `${normalizeName(mp.scrapedPlayer.fullName)}|${mp.scrapedPlayer.mlbTeam.toLowerCase().trim()}`;
           // Only add if not already present (prefer first match which has higher priority from sorting)
           if (!matchedByNameTeam.has(key)) {
             matchedByNameTeam.set(key, mp);
@@ -347,14 +348,31 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
 
           // Fallback: for other two-way players, match by name+team if no projection ID match
           // This handles cases where a player's combined ID doesn't match the server's projection ID
+          // Use normalizeName to handle diacritics (e.g., "Félix" → "felix")
           if (!matched && p.isTwoWayPlayer && !isOhtani) {
-            const nameTeamKey = `${p.name.toLowerCase().trim()}|${p.team.toLowerCase().trim()}`;
+            const nameTeamKey = `${normalizeName(p.name)}|${p.team.toLowerCase().trim()}`;
             matched = matchedByNameTeam.get(nameTeamKey);
             if (matched && import.meta.env.DEV) {
               console.log('[DraftRoom] Two-way player matched by name+team fallback:', {
                 name: p.name,
                 id: p.id,
                 matchedProjectionId: matched.projectionPlayerId,
+                status: matched.scrapedPlayer.status,
+              });
+            }
+          }
+
+          // Final fallback: match ANY player by normalized name+team if projection ID matching failed
+          // This handles cases where the server couldn't match due to diacritics, team changes, etc.
+          // But the player exists in both the frontend projections and the scraped data
+          if (!matched) {
+            const nameTeamKey = `${normalizeName(p.name)}|${p.team.toLowerCase().trim()}`;
+            matched = matchedByNameTeam.get(nameTeamKey);
+            if (matched && import.meta.env.DEV) {
+              console.log('[DraftRoom] Player matched by name+team fallback (diacritics/team mismatch):', {
+                name: p.name,
+                id: p.id,
+                scrapedName: matched.scrapedPlayer.fullName,
                 status: matched.scrapedPlayer.status,
               });
             }
