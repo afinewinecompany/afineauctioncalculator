@@ -550,9 +550,34 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
 
         // ALSO add from unmatchedPlayers - these are players the server scraped but couldn't match to projections
         // They still need to be tracked for inflation and auction display
+        // BUT: Skip players that were already matched to a frontend player via unmatchedByNameTeam lookup
+        // This prevents duplicates like Ohtani appearing twice (once matched, once as out-of-pool)
         if (result.unmatchedPlayers) {
+          // Build a set of normalized name+team keys for players already in the list
+          // This includes both existing players AND updated players that matched via unmatchedByNameTeam
+          const alreadyMatchedByNameTeam = new Set<string>();
+          updatedPlayers.forEach(p => {
+            if (p.status === 'drafted' || p.status === 'on_block') {
+              const key = `${normalizeName(p.name)}|${p.team.toLowerCase().trim()}`;
+              alreadyMatchedByNameTeam.add(key);
+            }
+          });
+
           result.unmatchedPlayers.forEach(up => {
             const playerId = `cm-${up.couchManagersId}`;
+            const nameTeamKey = `${normalizeName(up.fullName)}|${up.mlbTeam.toLowerCase().trim()}`;
+
+            // Skip if this player was already matched to a frontend player by name+team
+            if (alreadyMatchedByNameTeam.has(nameTeamKey)) {
+              if (import.meta.env.DEV) {
+                console.log('[DraftRoom] Skipping unmatched player (already matched by name+team):', {
+                  name: up.fullName,
+                  team: up.mlbTeam,
+                });
+              }
+              return;
+            }
+
             if (!existingPlayerIds.has(playerId) && !addedOutOfPoolIds.has(playerId) &&
                 (up.status === 'drafted' || up.status === 'on_block')) {
               const playerAuction = result.auctionData.activeAuctions?.find(
