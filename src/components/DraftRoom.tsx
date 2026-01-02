@@ -194,6 +194,20 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         }
       });
 
+      // Also build a lookup from unmatchedPlayers - these are players the server couldn't match
+      // to projections, but we might still be able to match them on the frontend by name
+      const unmatchedByNameTeam = new Map<string, ScrapedPlayer>();
+      if (result.unmatchedPlayers) {
+        result.unmatchedPlayers.forEach(up => {
+          if (up.status === 'drafted' || up.status === 'on_block') {
+            const key = `${normalizeName(up.fullName)}|${up.mlbTeam.toLowerCase().trim()}`;
+            if (!unmatchedByNameTeam.has(key)) {
+              unmatchedByNameTeam.set(key, up);
+            }
+          }
+        });
+      }
+
       // OHTANI SPECIAL HANDLING: Find Ohtani specifically in the scraped players
       // This is needed because Ohtani has separate hitter/pitcher projections with different IDs,
       // but the frontend combines them into a single player. The server may return a different
@@ -290,18 +304,34 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         // DEBUG: Log on_block players from scrape
         const onBlockScraped = result.auctionData.players.filter(p => p.status === 'on_block');
         const onBlockMatched = result.matchedPlayers.filter(mp => mp.scrapedPlayer.status === 'on_block');
+
+        // Find on_block players that were scraped but NOT matched to projections
+        const matchedCmIds = new Set(onBlockMatched.map(mp => mp.scrapedPlayer.couchManagersId));
+        const unmatchedOnBlock = onBlockScraped.filter(p => !matchedCmIds.has(p.couchManagersId));
+
         console.log('[DraftRoom] ON_BLOCK DEBUG from sync:', {
           scrapedOnBlockCount: onBlockScraped.length,
-          scrapedOnBlock: onBlockScraped.map(p => ({ name: p.fullName, cmId: p.couchManagersId })),
           matchedOnBlockCount: onBlockMatched.length,
+          unmatchedOnBlockCount: unmatchedOnBlock.length,
+          unmatchedOnBlock: unmatchedOnBlock.map(p => ({
+            name: p.fullName,
+            team: p.mlbTeam,
+            positions: p.positions,
+            cmId: p.couchManagersId,
+            normalizedName: normalizeName(p.fullName),
+          })),
           matchedOnBlock: onBlockMatched.map(mp => ({
             scrapedName: mp.scrapedPlayer.fullName,
             projectionId: mp.projectionPlayerId,
             currentBid: mp.scrapedPlayer.winningBid
           })),
-          activeAuctions: result.auctionData.activeAuctions,
-          currentAuction: result.auctionData.currentAuction,
         });
+
+        // If there are unmatched on_block players, they won't show up correctly!
+        if (unmatchedOnBlock.length > 0) {
+          console.warn('[DraftRoom] WARNING: These on_block players have NO projection match and may not display correctly:',
+            unmatchedOnBlock.map(p => `${p.fullName} (${p.mlbTeam}) - positions: ${p.positions.join(', ')}`));
+        }
       }
 
       // Update players state with drafted info and build drafted list
@@ -375,6 +405,35 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                 scrapedName: matched.scrapedPlayer.fullName,
                 status: matched.scrapedPlayer.status,
               });
+            }
+          }
+
+          // FINAL FALLBACK: Check unmatchedPlayers - these are players the server scraped but
+          // couldn't match to projections. If we find a match by name+team, create a synthetic MatchedPlayer.
+          // This handles cases where the server's projections don't include the player but our frontend does.
+          if (!matched) {
+            const nameTeamKey = `${normalizeName(p.name)}|${p.team.toLowerCase().trim()}`;
+            const unmatchedPlayer = unmatchedByNameTeam.get(nameTeamKey);
+            if (unmatchedPlayer) {
+              // Create a synthetic MatchedPlayer from the unmatched scraped player
+              matched = {
+                scrapedPlayer: unmatchedPlayer,
+                projectionPlayerId: p.id, // Use the frontend player's ID
+                projectedValue: p.projectedValue ?? 0,
+                actualBid: unmatchedPlayer.winningBid ?? null,
+                inflationAmount: null,
+                inflationPercent: null,
+                matchConfidence: 'partial' as const,
+              };
+              if (import.meta.env.DEV) {
+                console.log('[DraftRoom] Player matched via unmatchedPlayers fallback:', {
+                  name: p.name,
+                  id: p.id,
+                  scrapedName: unmatchedPlayer.fullName,
+                  status: unmatchedPlayer.status,
+                  winningBid: unmatchedPlayer.winningBid,
+                });
+              }
             }
           }
 
@@ -458,13 +517,17 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         // Inject out-of-pool players that are drafted or on_block but not in our players list
         // This ensures we track ALL auction activity, not just players in the projection pool
         const outOfPoolPlayers: Player[] = [];
+        const addedOutOfPoolIds = new Set<string>();
+
+        // First, add from matchedPlayers
         result.matchedPlayers.forEach(mp => {
           const playerId = mp.projectionPlayerId || `cm-${mp.scrapedPlayer.couchManagersId}`;
-          if (!existingPlayerIds.has(playerId) &&
+          if (!existingPlayerIds.has(playerId) && !addedOutOfPoolIds.has(playerId) &&
               (mp.scrapedPlayer.status === 'drafted' || mp.scrapedPlayer.status === 'on_block')) {
             const playerAuction = result.auctionData.activeAuctions?.find(
               auction => auction.playerId === mp.scrapedPlayer.couchManagersId
             );
+            addedOutOfPoolIds.add(playerId);
             outOfPoolPlayers.push({
               id: playerId,
               name: mp.scrapedPlayer.fullName,
@@ -484,6 +547,46 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
             });
           }
         });
+
+        // ALSO add from unmatchedPlayers - these are players the server scraped but couldn't match to projections
+        // They still need to be tracked for inflation and auction display
+        if (result.unmatchedPlayers) {
+          result.unmatchedPlayers.forEach(up => {
+            const playerId = `cm-${up.couchManagersId}`;
+            if (!existingPlayerIds.has(playerId) && !addedOutOfPoolIds.has(playerId) &&
+                (up.status === 'drafted' || up.status === 'on_block')) {
+              const playerAuction = result.auctionData.activeAuctions?.find(
+                auction => auction.playerId === up.couchManagersId
+              );
+              addedOutOfPoolIds.add(playerId);
+              outOfPoolPlayers.push({
+                id: playerId,
+                name: up.fullName,
+                team: up.mlbTeam,
+                positions: up.positions,
+                projectedValue: 0, // No projection available
+                adjustedValue: 0,
+                projectedStats: {},
+                status: up.status as 'drafted' | 'on_block',
+                draftedPrice: up.winningBid,
+                draftedBy: up.winningTeam || 'Unknown',
+                currentBid: up.status === 'on_block' ? playerAuction?.currentBid : undefined,
+                currentBidder: up.status === 'on_block' ? playerAuction?.currentBidder : undefined,
+                timeRemaining: up.status === 'on_block' ? playerAuction?.timeRemaining : undefined,
+                tier: 10,
+                isInDraftPool: false,
+              });
+              if (import.meta.env.DEV) {
+                console.log('[DraftRoom] Adding unmatched player to out-of-pool:', {
+                  name: up.fullName,
+                  team: up.mlbTeam,
+                  status: up.status,
+                  bid: up.winningBid,
+                });
+              }
+            }
+          });
+        }
 
         if (outOfPoolPlayers.length > 0) {
           if (import.meta.env.DEV) {
@@ -573,9 +676,16 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       // Also handle unmatched drafted players (no projection match at all)
       result.unmatchedPlayers?.forEach(up => {
         if (up.status === 'drafted') {
+          const playerId = `cm-${up.couchManagersId}`;
+          // Skip if already added (may have been matched via frontend name lookup)
+          if (addedPlayerIds.has(playerId)) {
+            return;
+          }
+          addedPlayerIds.add(playerId);
+
           missingFromPool.push(`${up.fullName} ($${up.winningBid}) [unmatched]`);
           draftedPlayers.push({
-            id: `cm-${up.couchManagersId}`,
+            id: playerId,
             name: up.fullName,
             team: up.mlbTeam,
             positions: up.positions,
