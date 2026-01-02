@@ -2075,23 +2075,31 @@ function calculateDynastyAdjustedValuesDollarBased(
     if (dynastyRanking) {
       dynastyRank = dynastyRanking.overallRank;
 
-      // Convert dynasty rank to a dollar value using exponential decay
-      // Top players get significantly more value, with diminishing returns
-      // Rank 1: ~$55-60 (maxDynastyDollars)
-      // Rank 10: ~$35-40
-      // Rank 25: ~$22-28
-      // Rank 50: ~$14-18
-      // Rank 100: ~$8-10
-      // Rank 200: ~$4-5
-      // Rank 500+: ~$1-2
-      // Note: Age adjustment is already baked into dynasty rankings from source
+      // Convert dynasty rank to a dollar value using a gentler curve
+      // The goal is to create values that reflect market reality:
+      // - Dynasty #1 should be worth ~$50-55 (elite generational talent)
+      // - Dynasty #4-5 (like Skenes) should be worth ~$35-40
+      // - Dynasty #10 should be worth ~$28-32
+      // - Dynasty #25 should be worth ~$18-22
+      // - Dynasty #50 should be worth ~$12-15
+      // - Dynasty #100 should be worth ~$8-10
+      // - Dynasty #200 should be worth ~$4-6
+      // - Dynasty #500+ should be worth ~$1-2
+      //
+      // IMPORTANT: Use a gentler exponent (1.2 instead of 1.5) to avoid
+      // over-inflating top dynasty values relative to projections.
+      // The steeper curve was causing top prospects like Skenes to have
+      // disproportionately high dynasty dollar values.
 
       if (dynastyRank <= 500) {
-        // Use logarithmic decay: value = maxDollars * (1 - log(rank) / log(maxRank))
-        // This creates a smooth curve where top ranks are worth much more
+        // Use logarithmic decay with gentler exponent (1.2 instead of 1.5)
+        // This creates a smoother curve that doesn't over-reward top ranks
         const normalizedRank = Math.max(1, dynastyRank);
         const logDecay = Math.log(normalizedRank) / Math.log(500);
-        dynastyDollarValue = Math.round(maxDynastyDollars * Math.pow(1 - logDecay, 1.5));
+        // Cap maxDynastyDollars at a reasonable ceiling to prevent inflation
+        // Even if Steamer #1 is worth $60, dynasty #1 shouldn't exceed ~$55
+        const cappedMaxDynastyDollars = Math.min(maxDynastyDollars, 55);
+        dynastyDollarValue = Math.round(cappedMaxDynastyDollars * Math.pow(1 - logDecay, 1.2));
         dynastyDollarValue = Math.max(MIN_AUCTION_VALUE, dynastyDollarValue);
       } else {
         dynastyDollarValue = MIN_AUCTION_VALUE;
@@ -2159,7 +2167,26 @@ function calculateDynastyAdjustedValuesDollarBased(
     rankedAvailable: rankedPlayers.length,
     effectivePool: effectivePoolSize,
     unrankedExcluded: unrankedPlayers.length,
+    totalAdjustedValue,
+    distributableDollars,
+    maxDynastyDollars,
   }, 'Dynasty pool size calculation');
+
+  // Log top 5 players for debugging dynasty value distribution
+  const top5 = rankedPlayers.slice(0, 5);
+  logger.info({
+    top5Players: top5.map(p => ({
+      name: p.name,
+      dynastyRank: p.dynastyRank,
+      steamerValue: p.steamerValue,
+      adjustedValue: p.adjustedValue,
+    })),
+    poolStats: {
+      totalAdjustedValue,
+      avgAdjustedValue: totalAdjustedValue / effectivePoolSize,
+      distributableDollars,
+    },
+  }, 'Dynasty top players debug');
 
   const results = sortedPlayers.map((player, index) => {
     // In dynasty mode, ONLY ranked players can be in the draft pool
@@ -2182,6 +2209,16 @@ function calculateDynastyAdjustedValuesDollarBased(
     if (isInPool && totalAdjustedValue > 0 && player.adjustedValue > 0) {
       const valueShare = player.adjustedValue / totalAdjustedValue;
       auctionValue = MIN_AUCTION_VALUE + Math.round(valueShare * distributableDollars);
+
+      // Debug logging for top players
+      if (index < 5) {
+        logger.debug({
+          player: player.name,
+          valueShare: (valueShare * 100).toFixed(2) + '%',
+          adjustedValue: player.adjustedValue,
+          calculatedAuctionValue: auctionValue,
+        }, 'Dynasty top player auction value');
+      }
     } else if (isInPool) {
       auctionValue = MIN_AUCTION_VALUE;
     }
