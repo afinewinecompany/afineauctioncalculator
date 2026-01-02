@@ -430,6 +430,106 @@ export function getPositionScarcity(
   return 'low';
 }
 
+/**
+ * Strategic bid analysis result - helps users understand realistic bidding limits
+ */
+export interface StrategicBidAnalysis {
+  /** Budget after mandatory $1 reserves for remaining roster spots */
+  effectiveBudget: number;
+  /** Amount reserved for $1 minimum bids on remaining spots */
+  mandatoryReserve: number;
+  /** Max bid that leaves competitive $ for remaining roster (avg $2.50/spot) */
+  competitiveMaxBid: number;
+  /** Hard ceiling - 50% of effective budget (don't put all eggs in one basket) */
+  absoluteMax: number;
+  /** Recommended max bid (min of competitive and absolute) */
+  recommendedMax: number;
+  /** What % of effective budget the adjusted value represents */
+  adjustedValuePercent: number;
+  /** Risk level based on adjusted value vs limits */
+  riskLevel: 'safe' | 'aggressive' | 'dangerous';
+  /** Strategic advice message */
+  advice: string;
+}
+
+/**
+ * Calculates strategic bidding limits based on roster constraints.
+ *
+ * Key insight: You can't spend $171 on one player and fill 11 remaining spots
+ * with $1 players and expect to win. This function provides realistic limits.
+ *
+ * @param moneyRemaining - User's remaining auction budget
+ * @param rosterSpotsRemaining - Number of roster spots left to fill
+ * @param adjustedValue - The player's inflation-adjusted value
+ * @param projectedValue - The player's base projected value
+ */
+export function calculateStrategicMaxBid(
+  moneyRemaining: number,
+  rosterSpotsRemaining: number,
+  adjustedValue: number,
+  projectedValue: number
+): StrategicBidAnalysis {
+  // Calculate effective budget after $1 minimums for remaining spots
+  // Reserve $1 for each remaining spot except the one we're bidding on
+  const mandatoryReserve = Math.max(0, rosterSpotsRemaining - 1) * 1;
+  const effectiveBudget = Math.max(0, moneyRemaining - mandatoryReserve);
+
+  // Calculate "smart max" - leave enough to fill roster competitively
+  // Historical data shows you need at least $2-3 average per remaining player
+  // to have competitive depth. Using $2.50 as baseline.
+  const competitiveReserve = Math.max(0, rosterSpotsRemaining - 1) * 2.5;
+  const competitiveMaxBid = Math.max(1, moneyRemaining - competitiveReserve);
+
+  // Hard ceiling - never more than 50% of effective budget on one player
+  // This prevents roster-crippling bids
+  const absoluteMax = Math.max(1, Math.floor(effectiveBudget * 0.5));
+
+  // Recommended max is the more conservative of the two limits
+  const recommendedMax = Math.min(competitiveMaxBid, absoluteMax);
+
+  // Calculate what % of effective budget the adjusted value represents
+  const adjustedValuePercent = effectiveBudget > 0
+    ? Math.round((adjustedValue / effectiveBudget) * 100)
+    : 100;
+
+  // Determine risk level
+  let riskLevel: 'safe' | 'aggressive' | 'dangerous';
+  if (adjustedValue <= recommendedMax) {
+    riskLevel = 'safe';
+  } else if (adjustedValue <= effectiveBudget) {
+    riskLevel = 'aggressive';
+  } else {
+    riskLevel = 'dangerous';
+  }
+
+  // Generate strategic advice based on player value tier and risk
+  let advice: string;
+  if (projectedValue >= 31) {
+    // Elite player - historical data shows they go BELOW projection
+    advice = 'Elite players ($31+) historically sell 17% BELOW projections. Be patient and let others overbid.';
+  } else if (projectedValue <= 5) {
+    // Low-value player - extreme inflation typical
+    advice = 'Low-value players see extreme inflation (500%+). Only bid on must-haves for roster needs.';
+  } else if (riskLevel === 'dangerous') {
+    advice = `This adjusted value would use ${adjustedValuePercent}% of your effective budget. Consider waiting for similar players at better value.`;
+  } else if (riskLevel === 'aggressive') {
+    advice = `Bidding to adjusted value is aggressive but possible. You\'ll need bargains for remaining ${rosterSpotsRemaining - 1} spots.`;
+  } else {
+    advice = 'Adjusted value is within strategic limits. Bid confidently up to this amount.';
+  }
+
+  return {
+    effectiveBudget,
+    mandatoryReserve,
+    competitiveMaxBid: Math.round(competitiveMaxBid),
+    absoluteMax,
+    recommendedMax: Math.round(recommendedMax),
+    adjustedValuePercent,
+    riskLevel,
+    advice,
+  };
+}
+
 export function calculateTeamProjectedStats(roster: Player[]): {
   totalSpent: number;
   projectedHR: number;

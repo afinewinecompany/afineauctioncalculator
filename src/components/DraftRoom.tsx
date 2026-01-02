@@ -1175,6 +1175,10 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       <PlayerDetailModal
         player={selectedPlayerForDetail}
         onClose={handleClosePlayerDetail}
+        inflationResult={inflationResult}
+        leagueSettings={settings}
+        myMoneyRemaining={moneyRemaining}
+        myRosterSpotsRemaining={Object.values(rosterNeedsRemaining).reduce((a, b) => a + b, 0)}
       />
     </div>
   );
