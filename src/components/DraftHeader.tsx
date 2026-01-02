@@ -1,4 +1,4 @@
-import { LeagueSettings, InflationStats } from '../lib/types';
+import { LeagueSettings } from '../lib/types';
 import { getInflationIndicator } from '../lib/calculations';
 import { DollarSign, Users, TrendingUp } from 'lucide-react';
 
@@ -8,7 +8,6 @@ interface DraftHeaderProps {
   rosterNeedsRemaining: LeagueSettings['rosterSpots'];
   totalDrafted: number;
   inflationRate: number;
-  liveInflationStats?: InflationStats | null;
   isMobile?: boolean;
 }
 
@@ -18,20 +17,19 @@ export function DraftHeader({
   rosterNeedsRemaining,
   totalDrafted,
   inflationRate,
-  liveInflationStats,
   isMobile,
 }: DraftHeaderProps) {
   const totalRosterSpots = Object.values(settings.rosterSpots).reduce((a, b) => a + b, 0);
   const totalPlayersNeeded = totalRosterSpots * settings.numTeams;
   const spotsRemaining = Object.values(rosterNeedsRemaining).reduce((a, b) => a + b, 0);
 
-  // Use server-side liveInflationStats when available (already in percentage format)
-  // Fall back to client-side inflationRate (in decimal format, needs * 100)
-  const displayInflationRate = liveInflationStats?.overallInflationRate ?? (inflationRate * 100);
+  // Use client-side inflationRate (which includes on_block players) as primary source
+  // This matches InflationTracker's calculation for consistency
+  // inflationRate from DraftRoom is already a decimal (0.15 = 15%), so multiply by 100 for display
+  const displayInflationRate = inflationRate * 100;
 
-  // getInflationIndicator expects decimal format, so convert back if using live stats
-  const inflationForIndicator = liveInflationStats ? displayInflationRate / 100 : inflationRate;
-  const inflationIndicator = getInflationIndicator(inflationForIndicator);
+  // getInflationIndicator expects decimal format
+  const inflationIndicator = getInflationIndicator(inflationRate);
 
   // Get inflation color classes
   const inflationGradient = inflationIndicator.color === 'text-blue-600' ? 'from-blue-600 to-blue-700' :

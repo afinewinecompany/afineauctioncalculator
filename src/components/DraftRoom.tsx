@@ -997,7 +997,6 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         rosterNeedsRemaining={rosterNeedsRemaining}
         totalDrafted={allDrafted.length}
         inflationRate={inflationRate}
-        liveInflationStats={liveInflationStats}
         isMobile={isMobile}
       />
 
