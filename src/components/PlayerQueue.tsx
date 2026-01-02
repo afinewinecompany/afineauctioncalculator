@@ -18,6 +18,23 @@ function getPlayingPositions(positions: string[]): string[] {
   return positions.filter(p => p.toUpperCase() !== 'MILB');
 }
 
+/**
+ * Calculate the discount/premium percentage for a player
+ * Positive = Premium (overpaying), Negative = Discount (good deal)
+ * Returns null if calculation isn't possible
+ */
+function getDiscountPremiumPercent(player: Player): number | null {
+  if (player.status !== 'on_block' || player.currentBid === undefined) {
+    return null;
+  }
+  const adjustedValue = player.adjustedValue;
+  if (adjustedValue === 0) {
+    // Avoid division by zero - if adj value is 0, any bid is a premium
+    return player.currentBid > 0 ? 100 : 0;
+  }
+  return ((player.currentBid - adjustedValue) / adjustedValue) * 100;
+}
+
 // Virtualization constants
 const ROW_HEIGHT = 64; // Height of each player row in pixels
 const BUFFER_SIZE = 5; // Number of extra rows to render above/below viewport
@@ -93,7 +110,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
   }, [scarcityByPosition]);
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'on_block' | 'drafted' | 'targets'>('available');
   const [hideMiLB, setHideMiLB] = useState<boolean>(true); // Hide minor league players by default
-  const [sortBy, setSortBy] = useState<'name' | 'projectedValue' | 'adjustedValue'>('adjustedValue');
+  const [sortBy, setSortBy] = useState<'name' | 'projectedValue' | 'adjustedValue' | 'discountPremium'>('adjustedValue');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const handleSort = (field: typeof sortBy) => {
@@ -193,6 +210,17 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
       const bOnBlock = b.status === 'on_block' ? 1 : 0;
       if (aOnBlock !== bOnBlock) {
         return bOnBlock - aOnBlock; // on_block first
+      }
+
+      // Special handling for discountPremium sorting
+      if (sortBy === 'discountPremium') {
+        const aPercent = getDiscountPremiumPercent(a);
+        const bPercent = getDiscountPremiumPercent(b);
+        // Players without discount/premium (not on_block) sort to the end
+        if (aPercent === null && bPercent === null) return 0;
+        if (aPercent === null) return 1;
+        if (bPercent === null) return -1;
+        return sortOrder === 'asc' ? aPercent - bPercent : bPercent - aPercent;
       }
 
       // Then apply normal sorting
@@ -458,8 +486,10 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
           </div>
         </div>
       ) : (
-        /* DESKTOP: Full 12-column header */
-        <div className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 z-10">
+        /* DESKTOP: Full 12-column header (13 columns when on_block filter active) */
+        <div className={`grid gap-3 px-4 py-3 border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 z-10 ${
+          filterStatus === 'on_block' ? 'grid-cols-13' : 'grid-cols-12'
+        }`} style={filterStatus === 'on_block' ? { gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' } : undefined}>
           <button
             onClick={() => handleSort('name')}
             className="col-span-3 flex items-center gap-1 text-slate-300 hover:text-white transition-colors"
@@ -500,6 +530,18 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
               Player's actual cost from Couch Managers auction
             </span>
           </div>
+          {/* Discount/Premium column - only shown when on_block filter is active */}
+          {filterStatus === 'on_block' && (
+            <button
+              onClick={() => handleSort('discountPremium')}
+              className="col-span-1 flex items-center gap-1 text-amber-400 hover:text-amber-300 transition-colors group relative"
+            >
+              +/- % <ArrowUpDown className="w-3 h-3" />
+              <span className="absolute left-0 top-full mt-2 w-48 p-2 bg-slate-800 border border-amber-600/50 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+                Discount (green) or Premium (red) percentage vs Adjusted Value
+              </span>
+            </button>
+          )}
           <div className="col-span-2 text-slate-300">Key Stats</div>
         </div>
       )}
@@ -716,13 +758,18 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
             );
           }
 
-          // DESKTOP: Original grid layout
+          // DESKTOP: Original grid layout (13 columns when on_block filter active)
           return (
             <div
               key={player.id}
               onClick={() => onPlayerClick(player)}
-              style={useVirtualization ? { height: ROW_HEIGHT } : undefined}
-              className={`grid grid-cols-12 gap-3 px-4 py-3 border-b border-slate-800 hover:bg-gradient-to-r hover:from-blue-900/20 hover:to-emerald-900/20 transition-all cursor-pointer ${
+              style={{
+                ...(useVirtualization ? { height: ROW_HEIGHT } : {}),
+                ...(filterStatus === 'on_block' ? { gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' } : {})
+              }}
+              className={`grid gap-3 px-4 py-3 border-b border-slate-800 hover:bg-gradient-to-r hover:from-blue-900/20 hover:to-emerald-900/20 transition-all cursor-pointer ${
+                filterStatus === 'on_block' ? 'grid-cols-13' : 'grid-cols-12'
+              } ${
                 player.status === 'onMyTeam' ? 'bg-gradient-to-r from-emerald-900/30 to-green-900/30 border-emerald-700/50' : ''
               } ${isOnBlock ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/30 border-amber-500/50 animate-pulse' : ''} ${player.status === 'drafted' ? 'opacity-50' : ''}`}
             >
@@ -999,6 +1046,63 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                   <span className={isOnBlock ? 'text-slate-300' : 'text-slate-600'}>—</span>
                 )}
               </div>
+
+              {/* Discount/Premium % Column - only shown when on_block filter is active */}
+              {filterStatus === 'on_block' && (
+                <div className="col-span-1 flex items-center">
+                  {(() => {
+                    const discountPremium = getDiscountPremiumPercent(player);
+                    if (discountPremium === null) {
+                      return <span className="text-slate-600">—</span>;
+                    }
+                    const isDiscount = discountPremium < 0;
+                    const isPremium = discountPremium > 0;
+                    const absPercent = Math.abs(discountPremium);
+
+                    // Color based on discount (green) or premium (red)
+                    let colorClass = 'text-white';
+                    let bgClass = 'bg-slate-700/50';
+
+                    if (isDiscount) {
+                      // Discount = good deal = green
+                      if (absPercent > 30) {
+                        colorClass = 'text-emerald-300';
+                        bgClass = 'bg-emerald-900/50 border border-emerald-500/30';
+                      } else if (absPercent > 15) {
+                        colorClass = 'text-emerald-400';
+                        bgClass = 'bg-emerald-900/30';
+                      } else {
+                        colorClass = 'text-emerald-500';
+                      }
+                    } else if (isPremium) {
+                      // Premium = overpay = red
+                      if (absPercent > 30) {
+                        colorClass = 'text-red-300';
+                        bgClass = 'bg-red-900/50 border border-red-500/30';
+                      } else if (absPercent > 15) {
+                        colorClass = 'text-red-400';
+                        bgClass = 'bg-red-900/30';
+                      } else {
+                        colorClass = 'text-red-500';
+                      }
+                    }
+
+                    const displayPercent = discountPremium.toFixed(0);
+                    const sign = isPremium ? '+' : '';
+
+                    return (
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-sm font-medium ${colorClass} ${bgClass}`}
+                        title={isDiscount
+                          ? `${absPercent.toFixed(1)}% discount vs adjusted value`
+                          : `${absPercent.toFixed(1)}% premium vs adjusted value`}
+                      >
+                        {sign}{displayPercent}%
+                      </span>
+                    );
+                  })()}
+                </div>
+              )}
 
               <div className={`col-span-2 ${isOnBlock ? 'text-white' : 'text-slate-400'}`}>
                 {keyStats}
