@@ -9,6 +9,7 @@ import { RosterPanel } from './RosterPanel';
 import { InflationTracker } from './InflationTracker';
 import { PlayerDetailModal } from './PlayerDetailModal';
 import { DraftRoomLoadingScreen } from './DraftRoomLoadingScreen';
+import { ChatAssistant } from './ChatAssistant';
 import { useIsMobile } from './ui/use-mobile';
 import { useAuth } from '../contexts/AuthContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
@@ -1179,6 +1180,17 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         leagueSettings={settings}
         myMoneyRemaining={moneyRemaining}
         myRosterSpotsRemaining={Object.values(rosterNeedsRemaining).reduce((a, b) => a + b, 0)}
+      />
+
+      {/* Chat Assistant - Floating bubble */}
+      <ChatAssistant
+        myRoster={myRoster}
+        moneyRemaining={moneyRemaining}
+        rosterNeedsRemaining={rosterNeedsRemaining}
+        inflationRate={inflationRate}
+        players={players}
+        inflationResult={inflationResult}
+        currentAuction={syncResult?.auctionData.currentAuction}
       />
     </div>
   );

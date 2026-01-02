@@ -56,6 +56,12 @@ const envSchema = z.object({
   PROJECTIONS_CACHE_TTL_HOURS: z.string().transform(Number).pipe(z.number().int().positive()).default('24'),
   AUCTION_CACHE_TTL_MINUTES: z.string().transform(Number).pipe(z.number().int().positive()).default('5'),
   DYNASTY_CACHE_TTL_HOURS: z.string().transform(Number).pipe(z.number().int().positive()).default('12'),
+
+  // Chat Assistant (Groq LLM)
+  GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required for chat assistant').optional(),
+  GROQ_MODEL: z.string().default('llama-3.1-8b-instant'),
+  CHAT_MAX_TOKENS: z.string().transform(Number).pipe(z.number().int().positive()).default('1024'),
+  CHAT_RATE_LIMIT_PER_MINUTE: z.string().transform(Number).pipe(z.number().int().positive()).default('30'),
 });
 
 /**
@@ -196,6 +202,17 @@ export const authRateLimitConfig = {
 };
 
 /**
+ * Chat assistant configuration (Groq LLM)
+ */
+export const chatConfig = {
+  apiKey: env.GROQ_API_KEY,
+  model: env.GROQ_MODEL,
+  maxTokens: env.CHAT_MAX_TOKENS,
+  rateLimitPerMinute: env.CHAT_RATE_LIMIT_PER_MINUTE,
+  isEnabled: !!env.GROQ_API_KEY,
+};
+
+/**
  * Log configuration details on startup (non-sensitive only)
  */
 export function logConfig() {
@@ -211,5 +228,6 @@ export function logConfig() {
   console.log(`  Database: ${env.DATABASE_URL.replace(/:[^:@]+@/, ':****@')}`);
   console.log(`  Redis: ${env.REDIS_URL ? 'Configured' : 'Not configured (optional)'}`);
   console.log(`  Google OAuth: ${env.GOOGLE_CLIENT_ID ? 'Configured' : 'Not configured'}`);
+  console.log(`  Chat Assistant: ${chatConfig.isEnabled ? `Enabled (${env.GROQ_MODEL})` : 'Not configured'}`);
   console.log('');
 }

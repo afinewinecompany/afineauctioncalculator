@@ -325,3 +325,21 @@ export const passwordResetLimiter = createRateLimiter({
     });
   },
 });
+
+/**
+ * Chat assistant rate limiter
+ * 30 requests per minute for LLM chat endpoints
+ * Prevents abuse of the LLM API while allowing normal conversation flow
+ */
+export const chatLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
+  prefix: 'chat',
+  handler: (req: Request, res: Response) => {
+    console.warn(`[RateLimit] Chat rate limit exceeded for IP: ${req.ip}`);
+    res.status(429).json({
+      ...createRateLimitResponse(60),
+      message: 'Too many chat requests. Please slow down and try again.',
+    });
+  },
+});

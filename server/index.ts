@@ -27,8 +27,9 @@ import leaguesRoutes from './routes/leagues.js';
 import adminRoutes from './routes/admin.js';
 import errorsRoutes from './routes/errors.js';
 import notificationsRoutes from './routes/notifications.js';
+import chatRoutes from './routes/chat.js';
 import { closeBrowser, prewarmBrowser } from './services/couchManagersScraper.js';
-import { apiLimiter, authLimiter, scrapingLimiter } from './middleware/rateLimiter.js';
+import { apiLimiter, authLimiter, scrapingLimiter, chatLimiter } from './middleware/rateLimiter.js';
 import { sanitizeBody } from './middleware/sanitize.js';
 import requestLogger, { slowRequestLogger } from './middleware/requestLogger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -173,6 +174,9 @@ export function createServer(): Express {
 
   // Notifications routes (SMS settings and team selection)
   app.use('/api/notifications', notificationsRoutes);
+
+  // Chat assistant routes (LLM-powered draft assistant)
+  app.use('/api/chat', chatLimiter, chatRoutes);
 
   // ==========================================================================
   // STATIC FILE SERVING (Production only - serves built frontend if present)
