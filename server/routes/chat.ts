@@ -13,6 +13,35 @@ import { buildDraftContext, DraftContext } from '../services/chatContextBuilder.
 
 const router = Router();
 
+// Category leaders schema
+const CategoryLeadersSchema = z.object({
+  HR: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+  RBI: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+  R: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+  SB: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+  AVG: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+  W: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+  K: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+  SV: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+  ERA: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+  WHIP: z.array(z.object({ name: z.string(), value: z.number() })).optional(),
+});
+
+// Dynasty info schema
+const DynastyInfoSchema = z.object({
+  isDynasty: z.boolean(),
+  rankingsSource: z.enum(['harryknowsball', 'custom']).optional(),
+  topDynastyProspects: z
+    .array(
+      z.object({
+        name: z.string(),
+        rank: z.number(),
+        adjustedValue: z.number(),
+      })
+    )
+    .optional(),
+});
+
 // Request validation schema
 const ChatRequestSchema = z.object({
   message: z.string().min(1, 'Message is required').max(2000, 'Message too long'),
@@ -65,6 +94,12 @@ const ChatRequestSchema = z.object({
         })
       )
       .optional(),
+    // New fields for projection context
+    projectionSystem: z.enum(['steamer', 'batx', 'ja']).optional(),
+    season: z.number().optional(),
+    scoringType: z.enum(['rotisserie', 'h2h-categories', 'h2h-points']).optional(),
+    categoryLeaders: CategoryLeadersSchema.optional(),
+    dynastyInfo: DynastyInfoSchema.optional(),
   }),
 });
 

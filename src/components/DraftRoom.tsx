@@ -1190,6 +1190,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         inflationRate={inflationRate}
         players={players}
         inflationResult={inflationResult}
+        leagueSettings={settings}
         currentAuction={syncResult?.auctionData.currentAuction}
       />
     </div>

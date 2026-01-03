@@ -28,6 +28,31 @@ const API_URL = getApiUrl();
 const CHAT_BASE = `${API_URL}/api/chat`;
 
 /**
+ * Category leaders for contextual recommendations
+ */
+export interface CategoryLeaders {
+  HR?: Array<{ name: string; value: number }>;
+  RBI?: Array<{ name: string; value: number }>;
+  R?: Array<{ name: string; value: number }>;
+  SB?: Array<{ name: string; value: number }>;
+  AVG?: Array<{ name: string; value: number }>;
+  W?: Array<{ name: string; value: number }>;
+  K?: Array<{ name: string; value: number }>;
+  SV?: Array<{ name: string; value: number }>;
+  ERA?: Array<{ name: string; value: number }>;
+  WHIP?: Array<{ name: string; value: number }>;
+}
+
+/**
+ * Dynasty ranking entry for context
+ */
+export interface DynastyRankingEntry {
+  name: string;
+  rank: number;
+  adjustedValue: number;
+}
+
+/**
  * Draft context sent to the chat API
  */
 export interface ChatDraftContext {
@@ -54,6 +79,20 @@ export interface ChatDraftContext {
     position: string;
     scarcityLevel: string;
   }>;
+  /** Projection system being used (steamer, batx, ja) */
+  projectionSystem?: 'steamer' | 'batx' | 'ja';
+  /** Current season year */
+  season?: number;
+  /** League scoring type */
+  scoringType?: 'rotisserie' | 'h2h-categories' | 'h2h-points';
+  /** Category leaders from available players - for targeted recommendations */
+  categoryLeaders?: CategoryLeaders;
+  /** Dynasty league info - only included for dynasty leagues */
+  dynastyInfo?: {
+    isDynasty: boolean;
+    rankingsSource?: 'harryknowsball' | 'custom';
+    topDynastyProspects?: DynastyRankingEntry[];
+  };
 }
 
 /**
