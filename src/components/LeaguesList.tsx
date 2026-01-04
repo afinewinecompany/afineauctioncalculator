@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SavedLeague, LeagueSettings, SubscriptionInfo, ScrapedAuctionData } from '../lib/types';
-import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle, Settings, User, Crown, Loader2, Pencil, Shield } from 'lucide-react';
+import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle, Settings, User, Crown, Loader2, Pencil, Shield, BarChart3 } from 'lucide-react';
 import { EditLeagueModal } from './EditLeagueModal';
 import { fetchAuctionData } from '../lib/auctionApi';
 import { useIsMobile } from './ui/use-mobile';
@@ -14,6 +14,7 @@ interface LeaguesListProps {
   onDeleteLeague: (leagueId: string) => void;
   onEditLeague: (league: SavedLeague) => void;
   onReloadProjections: (league: SavedLeague, newProjectionSystem?: LeagueSettings['projectionSystem']) => Promise<void>;
+  onViewProjections: (league: SavedLeague) => void;
   onLogout: () => void;
   onAccount: () => void;
   onAdmin?: () => void;
@@ -39,6 +40,7 @@ export function LeaguesList({
   onDeleteLeague,
   onEditLeague,
   onReloadProjections,
+  onViewProjections,
   onLogout,
   onAccount,
   onAdmin,
@@ -307,6 +309,16 @@ export function LeaguesList({
                         </button>
                       )}
 
+                      {league.status !== 'setup' && (
+                        <button
+                          onClick={() => onViewProjections(league)}
+                          className="p-2.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:bg-orange-900/30 hover:text-orange-400 hover:border-orange-500/30 transition-all"
+                          title="View Projections"
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                        </button>
+                      )}
+
                       <button
                         onClick={() => setEditingLeague(league)}
                         className="p-2.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:bg-blue-900/30 hover:text-blue-400 hover:border-blue-500/30 transition-all"
@@ -414,6 +426,16 @@ export function LeaguesList({
                               Continue Draft
                             </>
                           )}
+                        </button>
+                      )}
+
+                      {league.status !== 'setup' && (
+                        <button
+                          onClick={() => onViewProjections(league)}
+                          className="px-4 py-3 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:bg-orange-900/30 hover:text-orange-400 hover:border-orange-500/30 transition-all"
+                          title="View Projections"
+                        >
+                          <BarChart3 className="w-4 h-4" />
                         </button>
                       )}
 

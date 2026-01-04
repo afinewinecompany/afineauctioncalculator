@@ -18,9 +18,10 @@ import { TopMenuBar } from './components/TopMenuBar';
 import { ProjectionsLoadingScreen } from './components/ProjectionsLoadingScreen';
 import { AccountScreen } from './components/AccountScreen';
 import { AdminDashboard } from './components/AdminDashboard';
+import { LeagueProjections } from './components/LeagueProjections';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-type AppScreen = 'landing' | 'login' | 'forgot-password' | 'reset-password' | 'google-callback' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account' | 'admin';
+type AppScreen = 'landing' | 'login' | 'forgot-password' | 'reset-password' | 'google-callback' | 'leagues' | 'setup' | 'draft' | 'analysis' | 'account' | 'admin' | 'projections';
 
 // Inner app component that uses auth context
 function AppContent() {
@@ -747,6 +748,44 @@ function AppContent() {
     await handleContinueDraft(league);
   };
 
+  const handleViewProjections = async (league: SavedLeague) => {
+    setIsLoadingProjections(true);
+    setLoadingSettings(league.settings);
+
+    try {
+      // Reload full player projections from API
+      const calculatedValues = await calculateLeagueAuctionValues(league.settings);
+      const projectedPlayers = convertToPlayers(calculatedValues);
+
+      // Update the league with fresh projections
+      const updatedLeague = { ...league, players: projectedPlayers };
+      setCurrentLeague(updatedLeague);
+      setPlayers(projectedPlayers);
+
+      // Update userData with fresh projections
+      if (userData) {
+        const updatedUser = {
+          ...userData,
+          leagues: userData.leagues.map(l => l.id === league.id ? updatedLeague : l)
+        };
+        setUserData(updatedUser);
+      }
+
+      setCurrentScreen('projections');
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error('Failed to load projections for export:', error);
+      }
+      // Fall back to saved data
+      setCurrentLeague(league);
+      setPlayers(league.players);
+      setCurrentScreen('projections');
+    } finally {
+      setIsLoadingProjections(false);
+      setLoadingSettings(null);
+    }
+  };
+
   // Save draft progress periodically (to localStorage and server)
   useEffect(() => {
     if (currentScreen === 'draft' && currentLeague && userData) {
@@ -909,6 +948,7 @@ function AppContent() {
             onDeleteLeague={handleDeleteLeague}
             onEditLeague={handleEditLeague}
             onReloadProjections={handleReloadProjections}
+            onViewProjections={handleViewProjections}
             onLogout={handleLogout}
             onAccount={() => setCurrentScreen('account')}
             onAdmin={user?.role === 'admin' ? () => setCurrentScreen('admin') : undefined}
@@ -1011,6 +1051,18 @@ function AppContent() {
           onReset={handleBackToLeagues}
         >
           <AdminDashboard onBack={handleBackToLeagues} />
+        </ErrorBoundary>
+      )}
+
+      {currentScreen === 'projections' && currentLeague && userData && (
+        <ErrorBoundary
+          screenName="League Projections"
+          onReset={handleBackToLeagues}
+        >
+          <LeagueProjections
+            league={currentLeague}
+            onBack={handleBackToLeagues}
+          />
         </ErrorBoundary>
       )}
 

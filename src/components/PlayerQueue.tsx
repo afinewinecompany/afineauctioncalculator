@@ -670,7 +670,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                     {/* Proj value (smaller) */}
                     <div className="text-right">
                       <div className="text-slate-500 text-[9px]">Proj</div>
-                      <div className="text-slate-300 text-xs">${player.projectedValue}</div>
+                      <div className="text-slate-300 text-xs">${player.projectedValue.toFixed(2)}</div>
                     </div>
 
                     {/* Adj value - for drafted players shows difference (Adj - Paid), for others shows Adj value */}
@@ -703,7 +703,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                       // For available/on_block players: show Adj value
                       <div className="text-right bg-emerald-900/30 px-2 py-1 rounded-lg border border-emerald-700/50">
                         <div className="text-emerald-400 text-[9px]">Adj</div>
-                        <div className="text-emerald-300 text-base font-bold">${player.adjustedValue}</div>
+                        <div className="text-emerald-300 text-base font-bold">${player.adjustedValue.toFixed(2)}</div>
                       </div>
                     )}
 
@@ -874,7 +874,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
               </div>
 
               <div className="col-span-2 text-white">
-                ${player.projectedValue}
+                ${player.projectedValue.toFixed(2)}
               </div>
 
               <div className="col-span-2">
@@ -899,7 +899,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                 ) : (
                   // For available/on_block players: show inflation-adjusted value with comparison indicator
                   <div className="flex items-center gap-1">
-                    <span className="text-white">${player.adjustedValue}</span>
+                    <span className="text-white">${player.adjustedValue.toFixed(2)}</span>
                     {/* Value comparison indicator: Adj $ vs Proj $ */}
                     {valueChange !== null && valueChange !== 0 && (
                       (() => {

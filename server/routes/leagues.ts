@@ -10,6 +10,13 @@ import { z } from 'zod';
 import { prisma } from '../db.js';
 import { requireAuth, getAuthUser } from '../middleware/auth.js';
 import { logger } from '../services/logger.js';
+import { fetchSteamerProjections, fetchBatXProjections } from '../services/projectionsService.js';
+import { fetchJAProjections } from '../services/jaProjectionsService.js';
+import { getCachedProjections, setCachedProjections } from '../services/projectionsCacheService.js';
+import { getDynastyRankings } from '../services/dynastyRankingsScraper.js';
+import { calculateAuctionValues } from '../services/valueCalculator.js';
+import type { LeagueSettings } from '../../src/lib/types.js';
+import type { PlayerWithValue, PlayerWithDynastyValue } from '../types/projections.js';
 
 const router = Router();
 
@@ -569,6 +576,231 @@ router.put('/:id/draft-state', requireAuth, async (req: Request, res: Response) 
       error: 'Failed to save draft state',
       code: 'DRAFT_STATE_SAVE_ERROR',
       message: 'An error occurred while saving draft state',
+    });
+  }
+});
+
+// =============================================================================
+// LEAGUE PROJECTIONS EXPORT
+// =============================================================================
+
+const VALID_PROJECTION_SYSTEMS = ['steamer', 'batx', 'ja'] as const;
+type ProjectionSystem = typeof VALID_PROJECTION_SYSTEMS[number];
+
+function isValidProjectionSystem(system: string): system is ProjectionSystem {
+  return VALID_PROJECTION_SYSTEMS.includes(system as ProjectionSystem);
+}
+
+/**
+ * Export player projection format for the projections endpoint
+ */
+interface ExportPlayer {
+  id: string;
+  name: string;
+  team: string;
+  positions: string[];
+  projectedValue: number;
+  tier: number;
+  stats: Record<string, number>;
+}
+
+/**
+ * GET /api/leagues/:id/projections
+ * Get league projections data for export
+ *
+ * Returns player projections calculated using the league's settings,
+ * including auction values, tiers, and projected stats.
+ */
+router.get('/:id/projections', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = getAuthUser(req);
+    const { id } = req.params;
+
+    // Verify league exists and belongs to user
+    const league = await prisma.league.findFirst({
+      where: {
+        id,
+        ownerId: user.id,
+      },
+    });
+
+    if (!league) {
+      res.status(404).json({
+        error: 'League not found',
+        code: 'LEAGUE_NOT_FOUND',
+        message: 'The requested league does not exist or you do not have access to it',
+      });
+      return;
+    }
+
+    // Validate projection system
+    const projectionSystem = league.projectionSystem;
+    if (!isValidProjectionSystem(projectionSystem)) {
+      res.status(400).json({
+        error: 'Invalid projection system',
+        code: 'INVALID_PROJECTION_SYSTEM',
+        message: `League has invalid projection system: ${projectionSystem}`,
+      });
+      return;
+    }
+
+    logger.info(
+      { userId: user.id, leagueId: id, projectionSystem },
+      'Fetching league projections for export'
+    );
+
+    // Get projections (from cache or fetch fresh)
+    let cached = await getCachedProjections(projectionSystem);
+
+    if (!cached) {
+      logger.info({ projectionSystem }, 'No cached projections, fetching fresh');
+
+      let projections;
+      switch (projectionSystem) {
+        case 'steamer':
+          projections = await fetchSteamerProjections();
+          break;
+        case 'ja':
+          projections = await fetchJAProjections();
+          break;
+        case 'batx':
+          projections = await fetchBatXProjections();
+          break;
+        default:
+          res.status(400).json({
+            error: 'Invalid projection system',
+            code: 'INVALID_PROJECTION_SYSTEM',
+            message: `Unsupported projection system: ${projectionSystem}`,
+          });
+          return;
+      }
+
+      await setCachedProjections(projectionSystem, projections);
+      cached = await getCachedProjections(projectionSystem);
+    }
+
+    if (!cached) {
+      res.status(503).json({
+        error: 'Failed to load projections',
+        code: 'PROJECTIONS_UNAVAILABLE',
+        message: 'Unable to fetch or load projection data',
+      });
+      return;
+    }
+
+    // Build league settings from stored league data
+    const leagueSettings: LeagueSettings = {
+      leagueName: league.name,
+      couchManagerRoomId: league.couchManagerRoomId || '',
+      numTeams: league.numTeams,
+      budgetPerTeam: league.budgetPerTeam,
+      rosterSpots: league.rosterSpots as LeagueSettings['rosterSpots'],
+      leagueType: league.leagueType as LeagueSettings['leagueType'],
+      scoringType: league.scoringType as LeagueSettings['scoringType'],
+      projectionSystem: projectionSystem,
+      dynastySettings: league.dynastySettings as unknown as LeagueSettings['dynastySettings'],
+      hittingCategories: league.hittingCategories as LeagueSettings['hittingCategories'],
+      pitchingCategories: league.pitchingCategories as LeagueSettings['pitchingCategories'],
+    };
+
+    // For dynasty leagues, also fetch dynasty rankings
+    let dynastyRankings;
+    if (leagueSettings.leagueType === 'dynasty') {
+      logger.info('Dynasty mode - fetching dynasty rankings for export');
+      try {
+        dynastyRankings = await getDynastyRankings();
+        logger.info({ count: dynastyRankings.length }, 'Loaded dynasty rankings');
+      } catch (dynastyError) {
+        logger.warn({ error: dynastyError }, 'Failed to load dynasty rankings, using projections only');
+      }
+    }
+
+    // Calculate auction values
+    const result = calculateAuctionValues(
+      cached.projections,
+      leagueSettings,
+      dynastyRankings
+    );
+
+    // Transform players to export format
+    const exportPlayers: ExportPlayer[] = result.players.map((player: PlayerWithValue | PlayerWithDynastyValue) => {
+      // Build stats object from hitting or pitching stats
+      const stats: Record<string, number> = {};
+
+      if (player.hitting) {
+        stats.G = player.hitting.games;
+        stats.AB = player.hitting.atBats;
+        stats.PA = player.hitting.plateAppearances;
+        stats.R = player.hitting.runs;
+        stats.H = player.hitting.hits;
+        stats['1B'] = player.hitting.singles;
+        stats['2B'] = player.hitting.doubles;
+        stats['3B'] = player.hitting.triples;
+        stats.HR = player.hitting.homeRuns;
+        stats.RBI = player.hitting.rbi;
+        stats.SB = player.hitting.stolenBases;
+        stats.CS = player.hitting.caughtStealing;
+        stats.BB = player.hitting.walks;
+        stats.SO = player.hitting.strikeouts;
+        stats.AVG = player.hitting.battingAvg;
+        stats.OBP = player.hitting.onBasePct;
+        stats.SLG = player.hitting.sluggingPct;
+        stats.OPS = player.hitting.ops;
+        stats.wOBA = player.hitting.wOBA;
+        stats['wRC+'] = player.hitting.wrcPlus;
+        stats.WAR = player.hitting.war;
+      }
+
+      if (player.pitching) {
+        stats.G = player.pitching.games;
+        stats.GS = player.pitching.gamesStarted;
+        stats.IP = player.pitching.inningsPitched;
+        stats.W = player.pitching.wins;
+        stats.L = player.pitching.losses;
+        stats.SV = player.pitching.saves;
+        stats.HLD = player.pitching.holds;
+        stats.H = player.pitching.hitsAllowed;
+        stats.ER = player.pitching.earnedRuns;
+        stats.HR = player.pitching.homeRunsAllowed;
+        stats.BB = player.pitching.walks;
+        stats.K = player.pitching.strikeouts;
+        stats.ERA = player.pitching.era;
+        stats.WHIP = player.pitching.whip;
+        stats['K/9'] = player.pitching.k9;
+        stats['BB/9'] = player.pitching.bb9;
+        stats.FIP = player.pitching.fip;
+        stats.WAR = player.pitching.war;
+      }
+
+      return {
+        id: player.externalId,
+        name: player.name,
+        team: player.team,
+        positions: player.positions,
+        projectedValue: player.auctionValue,
+        tier: player.tier,
+        stats,
+      };
+    });
+
+    logger.info(
+      { userId: user.id, leagueId: id, playerCount: exportPlayers.length },
+      'League projections fetched successfully'
+    );
+
+    res.json({
+      leagueId: league.id,
+      leagueName: league.name,
+      projectionSystem,
+      players: exportPlayers,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error({ error, leagueId: req.params.id }, 'Failed to fetch league projections');
+    res.status(500).json({
+      error: 'Failed to fetch projections',
+      code: 'PROJECTIONS_FETCH_ERROR',
+      message: 'An error occurred while fetching league projections',
     });
   }
 });

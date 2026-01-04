@@ -482,7 +482,7 @@ router.post('/:roomId/sync-lite', async (req: Request, res: Response) => {
       logger.info({ projectionSystem }, 'No cached projections, fetching fresh');
       try {
         // Import and fetch projections dynamically based on system
-        const { fetchSteamerProjections } = await import('../services/projectionsService');
+        const { fetchSteamerProjections, fetchBatXProjections } = await import('../services/projectionsService');
         const { fetchJAProjections } = await import('../services/jaProjectionsService');
         const { setCachedProjections } = await import('../services/projectionsCacheService');
 
@@ -490,6 +490,9 @@ router.post('/:roomId/sync-lite', async (req: Request, res: Response) => {
         switch (projectionSystem) {
           case 'steamer':
             projections = await fetchSteamerProjections();
+            break;
+          case 'batx':
+            projections = await fetchBatXProjections();
             break;
           case 'ja':
             projections = await fetchJAProjections();
