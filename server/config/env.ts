@@ -59,7 +59,7 @@ const envSchema = z.object({
 
   // Chat Assistant (Groq LLM)
   GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required for chat assistant').optional(),
-  GROQ_MODEL: z.string().default('llama-3.1-8b-instant'),
+  GROQ_MODEL: z.string().default('llama-3.3-70b-versatile'),
   CHAT_MAX_TOKENS: z.string().transform(Number).pipe(z.number().int().positive()).default('1024'),
   CHAT_RATE_LIMIT_PER_MINUTE: z.string().transform(Number).pipe(z.number().int().positive()).default('30'),
 });

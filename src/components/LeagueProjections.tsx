@@ -316,25 +316,33 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
   const [playerType, setPlayerType] = useState<PlayerType>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
   const [statusFilters, setStatusFilters] = useState<Set<PlayerStatus>>(
-    new Set(['available', 'on_block', 'drafted']) // All selected by default
+    new Set<PlayerStatus>(['available', 'on_block', 'drafted']) // All selected by default
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('projectedValue');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   // Toggle a status filter
+  // Behavior:
+  // - If clicking on an already-selected status when multiple are selected: select ONLY that status
+  // - If clicking on a not-selected status: add it to selection
+  // - If clicking on the only selected status: no change (keep at least one selected)
   const toggleStatusFilter = useCallback((status: PlayerStatus) => {
     setStatusFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(status)) {
-        // Don't allow deselecting all - keep at least one
-        if (next.size > 1) {
-          next.delete(status);
-        }
-      } else {
+      const isCurrentlySelected = prev.has(status);
+
+      if (isCurrentlySelected && prev.size > 1) {
+        // Clicking on an already-selected status when multiple are selected:
+        // Select ONLY this status (exclusive selection)
+        return new Set<PlayerStatus>([status]);
+      } else if (!isCurrentlySelected) {
+        // Clicking on a not-selected status: add it
+        const next = new Set(prev);
         next.add(status);
+        return next;
       }
-      return next;
+      // Clicking on the only selected status: no change
+      return prev;
     });
   }, []);
 
