@@ -1,5 +1,7 @@
-import { useState, useMemo, useCallback } from 'react';
-import { SavedLeague, Player } from '../lib/types';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { SavedLeague, Player, AuctionSyncResult, MatchedPlayer, ScrapedPlayer } from '../lib/types';
+import { syncAuctionLite } from '../lib/auctionApi';
+import { normalizeName } from '../lib/calculations';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
@@ -27,6 +29,7 @@ import {
   Download,
   Search,
   Users,
+  RefreshCw,
 } from 'lucide-react';
 
 // -----------------------------------------------------------------------------
@@ -312,6 +315,12 @@ function downloadCSV(content: string, filename: string): void {
 export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
   const isMobile = useIsMobile();
 
+  // State for players with live status from Couch Managers
+  const [players, setPlayers] = useState<Player[]>(league.players);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
   // State
   const [playerType, setPlayerType] = useState<PlayerType>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
@@ -321,6 +330,147 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('projectedValue');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // Sync with Couch Managers to get live player statuses
+  const syncWithCouchManagers = useCallback(async () => {
+    const roomId = league.settings.couchManagerRoomId;
+    if (!roomId) {
+      if (import.meta.env.DEV) {
+        console.log('[LeagueProjections] No couchManagerRoomId configured, skipping sync');
+      }
+      return;
+    }
+
+    setIsSyncing(true);
+    setSyncError(null);
+
+    try {
+      if (import.meta.env.DEV) {
+        console.log(`[LeagueProjections] Syncing with Couch Managers room ${roomId}`);
+      }
+
+      const result = await syncAuctionLite(roomId, league.settings);
+
+      if (import.meta.env.DEV) {
+        console.log(`[LeagueProjections] Sync successful! Matched ${result.matchedPlayers.length} players`);
+        console.log(`[LeagueProjections] Drafted: ${result.auctionData.players.filter(p => p.status === 'drafted').length}`);
+        console.log(`[LeagueProjections] On Block: ${result.auctionData.players.filter(p => p.status === 'on_block').length}`);
+        console.log(`[LeagueProjections] Available: ${result.auctionData.players.filter(p => p.status === 'available').length}`);
+      }
+
+      // Build lookup maps for matching
+      const matchedByProjectionId = new Map<string, MatchedPlayer>();
+      result.matchedPlayers.forEach(mp => {
+        if (mp.projectionPlayerId) {
+          matchedByProjectionId.set(mp.projectionPlayerId, mp);
+        }
+      });
+
+      // Build lookup map by normalized name+team for fallback matching
+      const matchedByNameTeam = new Map<string, MatchedPlayer>();
+      result.matchedPlayers.forEach(mp => {
+        if (mp.scrapedPlayer.status === 'drafted' || mp.scrapedPlayer.status === 'on_block') {
+          const key = `${normalizeName(mp.scrapedPlayer.fullName)}|${mp.scrapedPlayer.mlbTeam.toLowerCase().trim()}`;
+          if (!matchedByNameTeam.has(key)) {
+            matchedByNameTeam.set(key, mp);
+          }
+        }
+      });
+
+      // Also build a lookup from unmatchedPlayers
+      const unmatchedByNameTeam = new Map<string, ScrapedPlayer>();
+      if (result.unmatchedPlayers) {
+        result.unmatchedPlayers.forEach(up => {
+          if (up.status === 'drafted' || up.status === 'on_block') {
+            const key = `${normalizeName(up.fullName)}|${up.mlbTeam.toLowerCase().trim()}`;
+            if (!unmatchedByNameTeam.has(key)) {
+              unmatchedByNameTeam.set(key, up);
+            }
+          }
+        });
+      }
+
+      // Update players with status from Couch Managers
+      setPlayers(prevPlayers => {
+        return prevPlayers.map(p => {
+          // Try to match by projection ID first
+          let matched = matchedByProjectionId.get(p.id);
+
+          // Fallback: match by normalized name+team
+          if (!matched) {
+            const nameTeamKey = `${normalizeName(p.name)}|${p.team.toLowerCase().trim()}`;
+            matched = matchedByNameTeam.get(nameTeamKey);
+          }
+
+          // Final fallback: check unmatchedPlayers
+          if (!matched) {
+            const nameTeamKey = `${normalizeName(p.name)}|${p.team.toLowerCase().trim()}`;
+            const unmatchedPlayer = unmatchedByNameTeam.get(nameTeamKey);
+            if (unmatchedPlayer) {
+              matched = {
+                scrapedPlayer: unmatchedPlayer,
+                projectionPlayerId: p.id,
+                projectedValue: p.projectedValue ?? 0,
+                actualBid: unmatchedPlayer.winningBid ?? null,
+                inflationAmount: null,
+                inflationPercent: null,
+                matchConfidence: 'partial' as const,
+              };
+            }
+          }
+
+          if (matched) {
+            if (matched.scrapedPlayer.status === 'drafted') {
+              return {
+                ...p,
+                status: 'drafted' as const,
+                draftedPrice: matched.scrapedPlayer.winningBid,
+                draftedBy: matched.scrapedPlayer.winningTeam || 'Unknown',
+                currentBid: undefined,
+                currentBidder: undefined,
+              };
+            } else if (matched.scrapedPlayer.status === 'on_block') {
+              const playerAuction = result.auctionData.activeAuctions?.find(
+                auction => auction.playerId === matched!.scrapedPlayer.couchManagersId
+              );
+              return {
+                ...p,
+                status: 'on_block' as const,
+                currentBid: playerAuction?.currentBid ?? result.auctionData.currentAuction?.currentBid,
+                currentBidder: playerAuction?.currentBidder ?? result.auctionData.currentAuction?.currentBidder,
+                draftedPrice: undefined,
+                draftedBy: undefined,
+              };
+            }
+          }
+
+          // No match or player is available - reset to available
+          return {
+            ...p,
+            status: 'available' as const,
+            draftedPrice: undefined,
+            draftedBy: undefined,
+            currentBid: undefined,
+            currentBidder: undefined,
+          };
+        });
+      });
+
+      setLastSyncAt(new Date().toISOString());
+    } catch (error) {
+      console.error('[LeagueProjections] Sync failed:', error);
+      setSyncError(error instanceof Error ? error.message : 'Failed to sync');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [league.settings]);
+
+  // Sync on mount if a Couch Managers room ID is configured
+  useEffect(() => {
+    if (league.settings.couchManagerRoomId) {
+      syncWithCouchManagers();
+    }
+  }, [league.settings.couchManagerRoomId, syncWithCouchManagers]);
 
   // Toggle a status filter
   // Behavior:
@@ -358,8 +508,8 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
 
   // Filter players to only include those in draft pool
   const draftPoolPlayers = useMemo(() => {
-    return league.players.filter((p) => p.isInDraftPool !== false);
-  }, [league.players]);
+    return players.filter((p) => p.isInDraftPool !== false);
+  }, [players]);
 
   // Get available positions from all players
   const availablePositions = useMemo(() => {
@@ -636,16 +786,46 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
               <p className="text-slate-400 mt-1 flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 {draftPoolPlayers.length} players in draft pool
+                {league.settings.couchManagerRoomId && (
+                  <>
+                    <span className="mx-1">•</span>
+                    {isSyncing ? (
+                      <span className="text-amber-400 flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        Syncing...
+                      </span>
+                    ) : lastSyncAt ? (
+                      <span className="text-emerald-400">
+                        Synced with Couch Managers
+                      </span>
+                    ) : syncError ? (
+                      <span className="text-red-400">Sync failed</span>
+                    ) : null}
+                  </>
+                )}
               </p>
             </div>
 
-            <Button
-              onClick={handleExport}
-              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/30"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
+            <div className={`flex gap-2 ${isMobile ? 'flex-wrap' : ''}`}>
+              {league.settings.couchManagerRoomId && (
+                <Button
+                  onClick={syncWithCouchManagers}
+                  disabled={isSyncing}
+                  variant="outline"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Refresh Status'}
+                </Button>
+              )}
+              <Button
+                onClick={handleExport}
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/30"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -765,15 +945,19 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
               ) : (
                 filteredPlayers.map((player, index) => {
                   const playerIsPitcher = isPitcher(player);
+                  const isDrafted = player.status === 'drafted';
+                  const isOnBlock = player.status === 'on_block';
                   return (
                     <div
                       key={player.id}
-                      className="p-4 hover:bg-slate-800/50 transition-colors"
+                      className={`p-4 hover:bg-slate-800/50 transition-colors ${
+                        isDrafted ? 'opacity-60 bg-slate-900/50' : ''
+                      } ${isOnBlock ? 'bg-amber-900/20' : ''}`}
                     >
                       {/* Header row */}
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-slate-500 text-sm">
                               #{index + 1}
                             </span>
@@ -783,6 +967,16 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                             {player.tier && (
                               <span className="px-1.5 py-0.5 text-xs bg-slate-700 text-slate-300 rounded">
                                 T{player.tier}
+                              </span>
+                            )}
+                            {isDrafted && (
+                              <span className="px-1.5 py-0.5 text-xs bg-slate-700 text-slate-400 rounded">
+                                Drafted ${player.draftedPrice}
+                              </span>
+                            )}
+                            {isOnBlock && (
+                              <span className="px-1.5 py-0.5 text-xs bg-amber-600/80 text-white rounded animate-pulse">
+                                On Block ${player.currentBid ?? '?'}
                               </span>
                             )}
                           </div>
@@ -911,17 +1105,33 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                   filteredPlayers.map((player, index) => {
                     const playerIsPitcher = isPitcher(player);
                     const playerIsHitter = isHitter(player);
+                    const isDrafted = player.status === 'drafted';
+                    const isOnBlock = player.status === 'on_block';
 
                     return (
                       <TableRow
                         key={player.id}
-                        className="border-slate-800 hover:bg-slate-800/50 transition-colors"
+                        className={`border-slate-800 hover:bg-slate-800/50 transition-colors ${
+                          isDrafted ? 'opacity-60' : ''
+                        } ${isOnBlock ? 'bg-amber-900/20' : ''}`}
                       >
                         <TableCell className="text-slate-400 font-mono">
                           {index + 1}
                         </TableCell>
                         <TableCell className="text-white font-medium">
-                          {player.name}
+                          <div className="flex items-center gap-2">
+                            {player.name}
+                            {isDrafted && (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">
+                                ${player.draftedPrice}
+                              </span>
+                            )}
+                            {isOnBlock && (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-600/80 text-white animate-pulse">
+                                ${player.currentBid ?? '?'}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-slate-400">
                           {player.team}
