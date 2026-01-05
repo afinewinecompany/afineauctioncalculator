@@ -7,6 +7,7 @@ import { DraftHeader } from './DraftHeader';
 import { PlayerQueue } from './PlayerQueue';
 import { RosterPanel } from './RosterPanel';
 import { InflationTracker } from './InflationTracker';
+import { TeamOverviewGrid } from './TeamOverviewGrid';
 import { PlayerDetailModal } from './PlayerDetailModal';
 import { DraftRoomLoadingScreen } from './DraftRoomLoadingScreen';
 import { ChatAssistant } from './ChatAssistant';
@@ -1142,6 +1143,17 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
               liveInflationStats={liveInflationStats}
               currentAuction={syncResult?.auctionData.currentAuction}
               onManualSync={performSync}
+              isMobile={isMobile}
+            />
+          </div>
+
+          {/* Team Overview Grid - Shows all teams' budget status */}
+          <div className="w-full">
+            <TeamOverviewGrid
+              settings={settings}
+              auctionData={syncResult?.auctionData ?? null}
+              allDrafted={allDrafted}
+              selectedTeam={selectedTeam}
               isMobile={isMobile}
             />
           </div>
