@@ -3,6 +3,13 @@ import { SavedLeague, Player } from '../lib/types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -192,6 +199,7 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
 
   // State
   const [playerType, setPlayerType] = useState<PlayerType>('all');
+  const [positionFilter, setPositionFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('projectedValue');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -200,6 +208,35 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
   const draftPoolPlayers = useMemo(() => {
     return league.players.filter((p) => p.isInDraftPool !== false);
   }, [league.players]);
+
+  // Get available positions from all players
+  const availablePositions = useMemo(() => {
+    const positionSet = new Set<string>();
+    draftPoolPlayers.forEach((p) => {
+      p.positions.forEach((pos) => positionSet.add(pos));
+    });
+    // Sort positions: C, 1B, 2B, 3B, SS, OF, DH, then pitchers SP, RP, P
+    const hitterOrder = ['C', '1B', '2B', '3B', 'SS', 'OF', 'DH', 'UTIL'];
+    const pitcherOrder = ['SP', 'RP', 'P'];
+    const sorted = Array.from(positionSet).sort((a, b) => {
+      const aHitterIdx = hitterOrder.indexOf(a);
+      const bHitterIdx = hitterOrder.indexOf(b);
+      const aPitcherIdx = pitcherOrder.indexOf(a);
+      const bPitcherIdx = pitcherOrder.indexOf(b);
+
+      // Both are hitters
+      if (aHitterIdx !== -1 && bHitterIdx !== -1) return aHitterIdx - bHitterIdx;
+      // Both are pitchers
+      if (aPitcherIdx !== -1 && bPitcherIdx !== -1) return aPitcherIdx - bPitcherIdx;
+      // a is hitter, b is pitcher - hitters first
+      if (aHitterIdx !== -1 && bPitcherIdx !== -1) return -1;
+      // a is pitcher, b is hitter - hitters first
+      if (aPitcherIdx !== -1 && bHitterIdx !== -1) return 1;
+      // Unknown positions - alphabetical
+      return a.localeCompare(b);
+    });
+    return sorted;
+  }, [draftPoolPlayers]);
 
   // Apply filters and sorting
   const filteredPlayers = useMemo(() => {
@@ -210,6 +247,11 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
       result = result.filter((p) => isHitter(p) && !isPitcher(p));
     } else if (playerType === 'pitchers') {
       result = result.filter(isPitcher);
+    }
+
+    // Filter by position
+    if (positionFilter !== 'all') {
+      result = result.filter((p) => p.positions.includes(positionFilter));
     }
 
     // Filter by search query
@@ -331,7 +373,7 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
     });
 
     return result;
-  }, [draftPoolPlayers, playerType, searchQuery, sortField, sortDirection]);
+  }, [draftPoolPlayers, playerType, positionFilter, searchQuery, sortField, sortDirection]);
 
   // Handle column header click for sorting
   const handleSort = useCallback((field: SortField) => {
@@ -517,6 +559,30 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+
+          {/* Position Filter */}
+          <Select
+            value={positionFilter}
+            onValueChange={setPositionFilter}
+          >
+            <SelectTrigger className={`${isMobile ? 'w-full' : 'w-32'} bg-slate-900 border-slate-700 text-white`}>
+              <SelectValue placeholder="Position" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-900 border-slate-700">
+              <SelectItem value="all" className="text-white hover:bg-slate-800">
+                All Positions
+              </SelectItem>
+              {availablePositions.map((pos) => (
+                <SelectItem
+                  key={pos}
+                  value={pos}
+                  className="text-white hover:bg-slate-800"
+                >
+                  {pos}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Results count */}
           <div className={`text-slate-400 text-sm ${isMobile ? '' : 'ml-auto'}`}>
