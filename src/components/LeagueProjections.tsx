@@ -321,6 +321,11 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
 
+  // Sync players state when league.players prop changes (e.g., after fresh projection fetch)
+  useEffect(() => {
+    setPlayers(league.players);
+  }, [league.players]);
+
   // State
   const [playerType, setPlayerType] = useState<PlayerType>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
