@@ -22,17 +22,10 @@ export function PlayerDetailModal({
 }: PlayerDetailModalProps) {
   const [showInflationBreakdown, setShowInflationBreakdown] = useState(true);
 
-  if (!player) return null;
-
-  const isPitcher = player.positions.some(p => ['SP', 'RP'].includes(p));
-  const valueChange = player.adjustedValue - player.projectedValue;
-  const valueChangePercent = player.projectedValue > 0
-    ? ((valueChange / player.projectedValue) * 100).toFixed(1)
-    : '0';
-
   // Calculate inflation breakdown components
+  // Note: All hooks must be called before any early returns to avoid React error #310
   const inflationBreakdown = useMemo(() => {
-    if (!inflationResult) return null;
+    if (!player || !inflationResult) return null;
 
     const effectiveBudget = inflationResult.adjustedRemainingBudget ?? inflationResult.remainingBudget;
     const remainingValue = inflationResult.remainingProjectedValue;
@@ -72,7 +65,7 @@ export function PlayerDetailModal({
 
   // Calculate strategic bid analysis
   const strategicAnalysis = useMemo(() => {
-    if (myMoneyRemaining === undefined || myRosterSpotsRemaining === undefined) {
+    if (!player || myMoneyRemaining === undefined || myRosterSpotsRemaining === undefined) {
       return null;
     }
     return calculateStrategicMaxBid(
@@ -81,10 +74,12 @@ export function PlayerDetailModal({
       player.adjustedValue,
       player.projectedValue
     );
-  }, [myMoneyRemaining, myRosterSpotsRemaining, player.adjustedValue, player.projectedValue]);
+  }, [player, myMoneyRemaining, myRosterSpotsRemaining]);
 
   // Get historical context for this player's tier/price range
   const historicalContext = useMemo(() => {
+    if (!player) return { tierData: null, priceRangeData: undefined, positionData: null, priceRange: '$1-$5' };
+
     const tierData = player.tier ? HISTORICAL_INFLATION_BASELINES.byTier[player.tier] : null;
 
     let priceRange: string;
@@ -108,6 +103,15 @@ export function PlayerDetailModal({
 
     return { tierData, priceRangeData, positionData, priceRange };
   }, [player]);
+
+  // Early return AFTER all hooks to comply with Rules of Hooks
+  if (!player) return null;
+
+  const isPitcher = player.positions.some(p => ['SP', 'RP'].includes(p));
+  const valueChange = player.adjustedValue - player.projectedValue;
+  const valueChangePercent = player.projectedValue > 0
+    ? ((valueChange / player.projectedValue) * 100).toFixed(1)
+    : '0';
 
   const getRiskColor = (risk: 'safe' | 'aggressive' | 'dangerous') => {
     switch (risk) {
