@@ -572,7 +572,7 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                             ${player.projectedValue.toFixed(2)}
                           </div>
                           {player.sgpValue !== undefined && (
-                            <div className="text-sky-300 text-xs">
+                            <div className="text-blue-400 text-xs">
                               Z: {player.sgpValue.toFixed(2)}
                             </div>
                           )}
@@ -685,7 +685,7 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                   </SortableHeader>
                   <SortableHeader
                     field="zScore"
-                    className="w-20 text-sky-300"
+                    className="w-20 text-blue-400"
                   >
                     Z-Score
                   </SortableHeader>
@@ -778,7 +778,7 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                         <TableCell className="text-emerald-400 font-bold">
                           ${player.projectedValue.toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-sky-300 font-medium">
+                        <TableCell className="text-blue-400 font-medium">
                           {player.sgpValue?.toFixed(2) ?? '-'}
                         </TableCell>
                         <TableCell className="text-slate-400">
