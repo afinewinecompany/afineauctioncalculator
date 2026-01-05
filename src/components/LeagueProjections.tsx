@@ -39,6 +39,7 @@ type SortField =
   | 'team'
   | 'positions'
   | 'projectedValue'
+  | 'zScore'
   | 'tier'
   // Hitter stats
   | 'HR'
@@ -90,7 +91,7 @@ function generateCSV(
   playerType: PlayerType
 ): string {
   // Define columns based on player type
-  const baseColumns = ['Rank', 'Name', 'Team', 'Position(s)', 'Projected Value ($)', 'Tier'];
+  const baseColumns = ['Rank', 'Name', 'Team', 'Position(s)', 'Projected Value ($)', 'Z-Score', 'Tier'];
 
   const hitterStatColumns = ['HR', 'RBI', 'SB', 'AVG', 'R'];
   const pitcherStatColumns = ['W', 'K', 'ERA', 'WHIP', 'SV', 'IP'];
@@ -118,6 +119,7 @@ function generateCSV(
       player.team,
       `"${player.positions.join(', ')}"`,
       player.projectedValue.toFixed(2),
+      player.sgpValue?.toFixed(2) ?? '-',
       player.tier ?? '-',
     ];
 
@@ -255,6 +257,10 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
         case 'projectedValue':
           aVal = a.projectedValue;
           bVal = b.projectedValue;
+          break;
+        case 'zScore':
+          aVal = a.sgpValue ?? 0;
+          bVal = b.sgpValue ?? 0;
           break;
         case 'tier':
           aVal = a.tier ?? 999;
@@ -565,6 +571,11 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                           <div className="text-emerald-400 font-bold text-lg">
                             ${player.projectedValue.toFixed(2)}
                           </div>
+                          {player.sgpValue !== undefined && (
+                            <div className="text-cyan-400 text-xs">
+                              Z: {player.sgpValue.toFixed(2)}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -672,6 +683,12 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                   >
                     Value $
                   </SortableHeader>
+                  <SortableHeader
+                    field="zScore"
+                    className="w-20 text-cyan-400"
+                  >
+                    Z-Score
+                  </SortableHeader>
                   <SortableHeader field="tier" className="w-16 text-slate-300">
                     Tier
                   </SortableHeader>
@@ -727,7 +744,7 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                   <TableRow>
                     <TableCell
                       colSpan={
-                        6 +
+                        7 +
                         (showHitterStats ? 5 : 0) +
                         (showPitcherStats ? 6 : 0)
                       }
@@ -760,6 +777,9 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                         </TableCell>
                         <TableCell className="text-emerald-400 font-bold">
                           ${player.projectedValue.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-cyan-400 font-medium">
+                          {player.sgpValue?.toFixed(2) ?? '-'}
                         </TableCell>
                         <TableCell className="text-slate-400">
                           {player.tier ?? '-'}

@@ -482,6 +482,7 @@ export interface Player {
   isInDraftPool?: boolean; // Whether player is in the draftable pool
   isTwoWayPlayer?: boolean; // Whether this is a combined two-way player (e.g., Ohtani)
   isTargeted?: boolean; // Whether player is marked as a target/watchlist player
+  sgpValue?: number; // SGP (Z-Score) - measures player value relative to league average
 }
 
 export interface DraftedPlayer extends Player {

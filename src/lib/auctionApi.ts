@@ -651,6 +651,7 @@ function createPlayerFromProjection(p: CalculatedValuesResponse['players'][0]): 
     status: 'available' as const,
     tier: p.tier,
     isInDraftPool: p.isInDraftPool,
+    sgpValue: p.sgpValue,
   };
 }
 
@@ -696,6 +697,9 @@ function combineTwoWayPlayer(
     projectedStats.IP = pitcher.pitching.inningsPitched;
   }
 
+  // Combine SGP values from both hitter and pitcher entries
+  const combinedSgpValue = (hitter.sgpValue ?? 0) + (pitcher.sgpValue ?? 0);
+
   return {
     id: hitter.externalId, // Same ID for both entries
     externalId: hitter.externalId,
@@ -710,5 +714,6 @@ function combineTwoWayPlayer(
     tier: combinedTier,
     isInDraftPool: hitter.isInDraftPool || pitcher.isInDraftPool,
     isTwoWayPlayer: true, // Flag to indicate this is a combined two-way player
+    sgpValue: combinedSgpValue,
   };
 }
