@@ -378,7 +378,23 @@ export async function calculateLeagueAuctionValues(
     throw new Error(error.error || 'Failed to calculate auction values');
   }
 
-  return response.json();
+  const result: CalculatedValuesResponse = await response.json();
+
+  // Debug: Check if API response contains kPercent data for pitchers
+  if (import.meta.env.DEV) {
+    const pitchersWithPitching = result.players.filter(p => p.pitching);
+    console.log('[calculateLeagueAuctionValues] K% Debug:');
+    console.log(`  Total players: ${result.players.length}`);
+    console.log(`  Players with pitching object: ${pitchersWithPitching.length}`);
+    if (pitchersWithPitching.length > 0) {
+      const sample = pitchersWithPitching[0];
+      console.log(`  Sample pitcher: ${sample.name}`);
+      console.log(`    pitching.kPercent: ${sample.pitching?.kPercent}`);
+      console.log(`    pitching.bbPercent: ${sample.pitching?.bbPercent}`);
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -516,7 +532,7 @@ export function convertToPlayers(
   // Pool size = numTeams * totalRosterSpots (e.g., 12 teams * 23 spots = 276 players)
   const draftablePlayersOnly = calculatedValues.players.filter(p => p.isInDraftPool);
 
-  // Debug: Check if problematic players are being included
+  // Debug: Check K% data flow and problematic players
   if (import.meta.env.DEV) {
     const jesusCheck = calculatedValues.players.find(p => p.name.includes('Jesus Rodriguez'));
     const rafaelCheck = calculatedValues.players.find(p => p.name.includes('Rafael Flores'));
@@ -525,6 +541,14 @@ export function convertToPlayers(
       console.log('[convertToPlayers] Debug - Rafael Flores:', rafaelCheck ? { isInDraftPool: rafaelCheck.isInDraftPool, tier: rafaelCheck.tier, auctionValue: rafaelCheck.auctionValue } : 'not found');
     }
     console.log(`[convertToPlayers] Total players: ${calculatedValues.players.length}, In draft pool: ${draftablePlayersOnly.length}`);
+
+    // Debug K% data flow
+    const pitchersInPool = draftablePlayersOnly.filter(p => p.pitching);
+    console.log(`[convertToPlayers] K% Debug: ${pitchersInPool.length} pitchers in pool`);
+    if (pitchersInPool.length > 0) {
+      const sample = pitchersInPool[0];
+      console.log(`  Sample: ${sample.name}, kPercent=${sample.pitching?.kPercent}`);
+    }
   }
 
   // Group players by mlbamId (if available) OR externalId to identify two-way players
@@ -613,6 +637,16 @@ export function convertToPlayers(
       }
     }
   });
+
+  // Debug: Verify K/BF% is in final Player objects
+  if (import.meta.env.DEV) {
+    const pitcherPlayers = players.filter(p => p.positions.some(pos => ['SP', 'RP', 'P'].includes(pos)));
+    console.log(`[convertToPlayers] Final result: ${pitcherPlayers.length} pitcher Players`);
+    if (pitcherPlayers.length > 0) {
+      const sample = pitcherPlayers[0];
+      console.log(`  Sample: ${sample.name}, projectedStats['K/BF%']=${sample.projectedStats['K/BF%']}`);
+    }
+  }
 
   return players;
 }

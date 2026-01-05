@@ -511,6 +511,20 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
     [league.settings]
   );
 
+  // Debug: Log K% data flow
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const pitchers = players.filter(p => p.positions.some(pos => ['SP', 'RP', 'P'].includes(pos)));
+      if (pitchers.length > 0) {
+        console.log('[LeagueProjections] K% Debug:');
+        console.log('  pitchingCategories:', league.settings.pitchingCategories);
+        console.log('  enabledPitchingCategories:', enabledPitchingCategories);
+        console.log('  First pitcher projectedStats:', pitchers[0]?.projectedStats);
+        console.log('  First pitcher K/BF%:', pitchers[0]?.projectedStats?.['K/BF%']);
+      }
+    }
+  }, [players, league.settings.pitchingCategories, enabledPitchingCategories]);
+
   // Filter players to only include those in draft pool
   const draftPoolPlayers = useMemo(() => {
     return players.filter((p) => p.isInDraftPool !== false);
