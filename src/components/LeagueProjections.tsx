@@ -2,8 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { SavedLeague, Player } from '../lib/types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Checkbox } from './ui/checkbox';
-import { Label } from './ui/label';
 import {
   Select,
   SelectContent,
@@ -45,11 +43,31 @@ type PlayerType = 'all' | 'hitters' | 'pitchers';
 // Player status types for filtering (matches Couch Managers data)
 type PlayerStatus = 'available' | 'on_block' | 'drafted';
 
-// Status filter configuration
-const STATUS_OPTIONS: { value: PlayerStatus; label: string; color: string }[] = [
-  { value: 'available', label: 'Available', color: 'text-emerald-400' },
-  { value: 'on_block', label: 'On Block', color: 'text-amber-400' },
-  { value: 'drafted', label: 'Gone', color: 'text-slate-500' },
+// Status filter configuration with styling for toggle buttons
+const STATUS_OPTIONS: {
+  value: PlayerStatus;
+  label: string;
+  activeClass: string;
+  inactiveClass: string;
+}[] = [
+  {
+    value: 'available',
+    label: 'Available',
+    activeClass: 'bg-emerald-600 text-white border-emerald-500',
+    inactiveClass: 'bg-slate-800 text-slate-400 border-slate-600 hover:border-emerald-500/50',
+  },
+  {
+    value: 'on_block',
+    label: 'On Block',
+    activeClass: 'bg-amber-600 text-white border-amber-500',
+    inactiveClass: 'bg-slate-800 text-slate-400 border-slate-600 hover:border-amber-500/50',
+  },
+  {
+    value: 'drafted',
+    label: 'Drafted',
+    activeClass: 'bg-slate-600 text-white border-slate-500',
+    inactiveClass: 'bg-slate-800 text-slate-500 border-slate-600 hover:border-slate-400/50',
+  },
 ];
 
 type SortField =
@@ -79,7 +97,9 @@ type SortField =
   | 'SV'
   | 'IP'
   | 'QS'
-  | 'HLD';
+  | 'HLD'
+  | 'K/BF%'
+  | 'BB%';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -104,9 +124,12 @@ function isHitter(player: Player): boolean {
 /**
  * Format a number for display (handles nullish values)
  */
-function formatStat(value: number | undefined, decimals = 0): string {
+function formatStat(value: number | undefined, decimals = 0, isPercentage = false): string {
   if (value === undefined || value === null) return '-';
-  return decimals > 0 ? value.toFixed(decimals) : String(Math.round(value));
+  // For percentage stats (K/BF%, BB%), the value is stored as a decimal (0.30 for 30%)
+  // Multiply by 100 for display
+  const displayValue = isPercentage ? value * 100 : value;
+  return decimals > 0 ? displayValue.toFixed(decimals) : String(Math.round(displayValue));
 }
 
 /**
@@ -117,6 +140,7 @@ interface StatConfig {
   label: string;
   decimals: number;
   isLowerBetter?: boolean; // For stats like ERA, WHIP where lower is better
+  isPercentage?: boolean;  // For stats stored as decimals that display as percentages
 }
 
 /**
@@ -183,6 +207,15 @@ function getEnabledPitchingCategories(settings: SavedLeague['settings']): StatCo
   if (pc.HLD) categories.push({ key: 'HLD', label: 'HLD', decimals: 0 });
   if (pc.IP) categories.push({ key: 'IP', label: 'IP', decimals: 1 });
 
+  // Rate stats - K/BF% (same as K%) and BB%
+  // Check for both K/BF% and K% settings since they mean the same thing
+  if (pc['K/BF%'] || pc['K%']) {
+    categories.push({ key: 'K/BF%', label: 'K%', decimals: 1, isPercentage: true });
+  }
+  if (pc['BB%']) {
+    categories.push({ key: 'BB%', label: 'BB%', decimals: 1, isLowerBetter: true, isPercentage: true });
+  }
+
   return categories;
 }
 
@@ -217,7 +250,9 @@ function generateCSV(
   const getStatValue = (player: Player, config: StatConfig): string => {
     const value = player.projectedStats[config.key as keyof typeof player.projectedStats];
     if (value === undefined || value === null) return '-';
-    return config.decimals > 0 ? value.toFixed(config.decimals) : String(Math.round(value));
+    // For percentage stats, multiply by 100 for display
+    const displayValue = config.isPercentage ? value * 100 : value;
+    return config.decimals > 0 ? displayValue.toFixed(config.decimals) : String(Math.round(displayValue));
   };
 
   // Create CSV rows
@@ -367,8 +402,17 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
     // Map player status to our filter categories
     result = result.filter((p) => {
       // Map 'onMyTeam' to 'drafted' for filtering purposes
-      const filterStatus: PlayerStatus =
-        p.status === 'onMyTeam' ? 'drafted' : p.status as PlayerStatus;
+      // Players without a status (not synced with Couch Managers) are treated as 'available'
+      let filterStatus: PlayerStatus;
+      if (!p.status || p.status === 'available') {
+        filterStatus = 'available';
+      } else if (p.status === 'onMyTeam' || p.status === 'drafted') {
+        filterStatus = 'drafted';
+      } else if (p.status === 'on_block') {
+        filterStatus = 'on_block';
+      } else {
+        filterStatus = 'available'; // fallback
+      }
       return statusFilters.has(filterStatus);
     });
 
@@ -671,24 +715,21 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
             </SelectContent>
           </Select>
 
-          {/* Status Filter (multi-select checkboxes) */}
-          <div className={`flex items-center gap-3 ${isMobile ? 'flex-wrap' : ''}`}>
-            <span className="text-slate-400 text-sm">Status:</span>
+          {/* Status Filter (toggle buttons) */}
+          <div className={`flex items-center gap-2 ${isMobile ? 'flex-wrap' : ''}`}>
+            <span className="text-slate-400 text-sm mr-1">Status:</span>
             {STATUS_OPTIONS.map((option) => (
-              <div key={option.value} className="flex items-center gap-1.5">
-                <Checkbox
-                  id={`status-${option.value}`}
-                  checked={statusFilters.has(option.value)}
-                  onCheckedChange={() => toggleStatusFilter(option.value)}
-                  className="border-slate-600 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
-                />
-                <Label
-                  htmlFor={`status-${option.value}`}
-                  className={`text-sm cursor-pointer ${option.color}`}
-                >
-                  {option.label}
-                </Label>
-              </div>
+              <button
+                key={option.value}
+                onClick={() => toggleStatusFilter(option.value)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
+                  statusFilters.has(option.value)
+                    ? option.activeClass
+                    : option.inactiveClass
+                }`}
+              >
+                {option.label}
+              </button>
             ))}
           </div>
 
@@ -762,7 +803,8 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                               <span className="text-white">
                                 {formatStat(
                                   player.projectedStats[cat.key as keyof typeof player.projectedStats],
-                                  cat.decimals
+                                  cat.decimals,
+                                  cat.isPercentage
                                 )}
                               </span>
                             </span>
@@ -774,7 +816,8 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                               <span className="text-white">
                                 {formatStat(
                                   player.projectedStats[cat.key as keyof typeof player.projectedStats],
-                                  cat.decimals
+                                  cat.decimals,
+                                  cat.isPercentage
                                 )}
                               </span>
                             </span>
@@ -898,7 +941,8 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                           >
                             {formatStat(
                               player.projectedStats[cat.key as keyof typeof player.projectedStats],
-                              cat.decimals
+                              cat.decimals,
+                              cat.isPercentage
                             )}
                           </TableCell>
                         ))}
@@ -913,7 +957,8 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                           >
                             {formatStat(
                               player.projectedStats[cat.key as keyof typeof player.projectedStats],
-                              cat.decimals
+                              cat.decimals,
+                              cat.isPercentage
                             )}
                           </TableCell>
                         ))}

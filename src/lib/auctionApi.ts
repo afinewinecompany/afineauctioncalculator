@@ -101,6 +101,11 @@ export interface NormalizedProjection {
     bb9: number;
     fip: number;
     war: number;
+    // Rate stats - K% is same as K/BF%
+    kPercent: number;
+    bbPercent: number;
+    battersFaced: number;
+    qualityStarts: number;
   };
 }
 
@@ -640,6 +645,9 @@ function createPlayerFromProjection(p: CalculatedValuesResponse['players'][0]): 
     projectedStats.IP = p.pitching.inningsPitched;
     projectedStats.QS = p.pitching.qualityStarts;
     projectedStats.HLD = p.pitching.holds;
+    // Rate stats - K% from FanGraphs maps to K/BF% league setting
+    projectedStats['K/BF%'] = p.pitching.kPercent;
+    projectedStats['BB%'] = p.pitching.bbPercent;
   }
 
   return {
@@ -703,6 +711,9 @@ function combineTwoWayPlayer(
     projectedStats.IP = pitcher.pitching.inningsPitched;
     projectedStats.QS = pitcher.pitching.qualityStarts;
     projectedStats.HLD = pitcher.pitching.holds;
+    // Rate stats - K% from FanGraphs maps to K/BF% league setting
+    projectedStats['K/BF%'] = pitcher.pitching.kPercent;
+    projectedStats['BB%'] = pitcher.pitching.bbPercent;
   }
 
   // Combine SGP values from both hitter and pitcher entries

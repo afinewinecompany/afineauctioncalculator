@@ -301,6 +301,11 @@ function normalizeJAPitcher(raw: JAPitcher): NormalizedProjection {
       bb9: ip > 0 ? ((raw.BB || 0) / ip) * 9 : 0,
       fip: 0, // Not provided in JA
       war: 0, // Not provided in JA
+      // Rate stats - calculate K% from available data (estimate TBF from IP)
+      kPercent: 0, // Not directly provided in JA - would need TBF
+      bbPercent: 0, // Not directly provided in JA - would need TBF
+      battersFaced: 0, // Not provided in JA
+      qualityStarts: 0, // Not provided in JA
     },
   };
 }

@@ -477,6 +477,9 @@ export interface Player {
     IP?: number;
     QS?: number;
     HLD?: number;
+    // Pitching rate stats
+    'K/BF%'?: number;   // Strikeout percentage (K/BF) - same as K%
+    'BB%'?: number;     // Walk percentage (BB/BF)
   };
   status: 'available' | 'drafted' | 'onMyTeam' | 'on_block';
   draftedPrice?: number;

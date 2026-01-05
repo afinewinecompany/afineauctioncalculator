@@ -252,6 +252,11 @@ function normalizePitcher(raw: FanGraphsPitcher): NormalizedProjection {
       bb9: raw['BB/9'] || 0,
       fip: raw.FIP || 0,
       war: raw.WAR || 0,
+      // Rate stats - K% is same as K/BF%
+      kPercent: raw['K%'] || 0,
+      bbPercent: raw['BB%'] || 0,
+      battersFaced: raw.TBF || 0,
+      qualityStarts: Math.round(raw.QS || 0),
     },
   };
 }

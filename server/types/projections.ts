@@ -60,6 +60,11 @@ export interface FanGraphsPitcher {
   'BB/9': number;
   FIP: number;
   WAR: number;
+  // Rate stats
+  'K%': number;    // Strikeout percentage (K/BF) - same as K/BF%
+  'BB%': number;   // Walk percentage (BB/BF)
+  TBF: number;     // Total batters faced
+  QS: number;      // Quality starts
 }
 
 /**
@@ -111,6 +116,11 @@ export interface PitchingStats {
   bb9: number;
   fip: number;
   war: number;
+  // Additional rate stats
+  kPercent: number;         // Strikeout percentage (K/BF) - maps to K% and K/BF% league settings
+  bbPercent: number;        // Walk percentage (BB/BF) - maps to BB% league setting
+  battersFaced: number;     // Total batters faced (TBF)
+  qualityStarts: number;    // Quality starts (QS)
 }
 
 /**
