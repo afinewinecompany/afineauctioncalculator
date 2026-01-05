@@ -486,10 +486,9 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
           </div>
         </div>
       ) : (
-        /* DESKTOP: Full 12-column header (13 columns when on_block filter active) */
-        <div className={`grid gap-3 px-4 py-3 border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 z-10 ${
-          filterStatus === 'on_block' ? 'grid-cols-13' : 'grid-cols-12'
-        }`} style={filterStatus === 'on_block' ? { gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' } : undefined}>
+        /* DESKTOP: Full 13-column header (14 columns when on_block filter active) */
+        <div className={`grid gap-3 px-4 py-3 border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 z-10`}
+          style={{ gridTemplateColumns: filterStatus === 'on_block' ? 'repeat(14, minmax(0, 1fr))' : 'repeat(13, minmax(0, 1fr))' }}>
           <button
             onClick={() => handleSort('name')}
             className="col-span-3 flex items-center gap-1 text-slate-300 hover:text-white transition-colors"
@@ -509,6 +508,15 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
               Original Projected Auction Value based on projections and league settings
             </span>
           </button>
+          <div className="col-span-1 text-blue-400 flex items-center gap-1 group relative">
+            Z
+            <span className="text-blue-500/50 group-hover:text-blue-400/70">
+              <Info className="w-3 h-3" />
+            </span>
+            <span className="absolute left-0 top-full mt-2 w-48 p-2 bg-slate-800 border border-blue-600/50 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+              Z-Score (SGP) - measures player value relative to league average. Higher is better.
+            </span>
+          </div>
           <button
             onClick={() => handleSort('adjustedValue')}
             className="col-span-2 flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors group relative"
@@ -667,10 +675,13 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
 
                   {/* Values - right side of row */}
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Proj value (smaller) */}
+                    {/* Proj value and Z-Score (smaller) */}
                     <div className="text-right">
                       <div className="text-slate-500 text-[9px]">Proj</div>
-                      <div className="text-slate-300 text-xs">${player.projectedValue.toFixed(2)}</div>
+                      <div className="text-slate-300 text-xs">${Math.round(player.projectedValue)}</div>
+                      {player.sgpValue !== undefined && (
+                        <div className="text-blue-400 text-[9px]">Z: {player.sgpValue.toFixed(2)}</div>
+                      )}
                     </div>
 
                     {/* Adj value - for drafted players shows difference (Adj - Paid), for others shows Adj value */}
@@ -703,7 +714,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                       // For available/on_block players: show Adj value
                       <div className="text-right bg-emerald-900/30 px-2 py-1 rounded-lg border border-emerald-700/50">
                         <div className="text-emerald-400 text-[9px]">Adj</div>
-                        <div className="text-emerald-300 text-base font-bold">${player.adjustedValue.toFixed(2)}</div>
+                        <div className="text-emerald-300 text-base font-bold">${Math.round(player.adjustedValue)}</div>
                       </div>
                     )}
 
@@ -758,18 +769,16 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
             );
           }
 
-          // DESKTOP: Original grid layout (13 columns when on_block filter active)
+          // DESKTOP: Original grid layout (14 columns when on_block filter active)
           return (
             <div
               key={player.id}
               onClick={() => onPlayerClick(player)}
               style={{
                 ...(useVirtualization ? { height: ROW_HEIGHT } : {}),
-                ...(filterStatus === 'on_block' ? { gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' } : {})
+                gridTemplateColumns: filterStatus === 'on_block' ? 'repeat(14, minmax(0, 1fr))' : 'repeat(13, minmax(0, 1fr))'
               }}
               className={`grid gap-3 px-4 py-3 border-b border-slate-800 hover:bg-gradient-to-r hover:from-blue-900/20 hover:to-emerald-900/20 transition-all cursor-pointer ${
-                filterStatus === 'on_block' ? 'grid-cols-13' : 'grid-cols-12'
-              } ${
                 player.status === 'onMyTeam' ? 'bg-gradient-to-r from-emerald-900/30 to-green-900/30 border-emerald-700/50' : ''
               } ${isOnBlock ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/30 border-amber-500/50 animate-pulse' : ''} ${player.status === 'drafted' ? 'opacity-50' : ''}`}
             >
@@ -874,7 +883,12 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
               </div>
 
               <div className="col-span-2 text-white">
-                ${player.projectedValue.toFixed(2)}
+                ${Math.round(player.projectedValue)}
+              </div>
+
+              {/* Z-Score column */}
+              <div className="col-span-1 text-blue-400 font-medium">
+                {player.sgpValue !== undefined ? player.sgpValue.toFixed(2) : '-'}
               </div>
 
               <div className="col-span-2">
@@ -899,7 +913,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
                 ) : (
                   // For available/on_block players: show inflation-adjusted value with comparison indicator
                   <div className="flex items-center gap-1">
-                    <span className="text-white">${player.adjustedValue.toFixed(2)}</span>
+                    <span className="text-white">${Math.round(player.adjustedValue)}</span>
                     {/* Value comparison indicator: Adj $ vs Proj $ */}
                     {valueChange !== null && valueChange !== 0 && (
                       (() => {

@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { SavedLeague, Player } from '../lib/types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { Checkbox } from './ui/checkbox';
+import { Label } from './ui/label';
 import {
   Select,
   SelectContent,
@@ -39,6 +41,16 @@ interface LeagueProjectionsProps {
 }
 
 type PlayerType = 'all' | 'hitters' | 'pitchers';
+
+// Player status types for filtering (matches Couch Managers data)
+type PlayerStatus = 'available' | 'on_block' | 'drafted';
+
+// Status filter configuration
+const STATUS_OPTIONS: { value: PlayerStatus; label: string; color: string }[] = [
+  { value: 'available', label: 'Available', color: 'text-emerald-400' },
+  { value: 'on_block', label: 'On Block', color: 'text-amber-400' },
+  { value: 'drafted', label: 'Gone', color: 'text-slate-500' },
+];
 
 type SortField =
   | 'rank'
@@ -268,9 +280,28 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
   // State
   const [playerType, setPlayerType] = useState<PlayerType>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
+  const [statusFilters, setStatusFilters] = useState<Set<PlayerStatus>>(
+    new Set(['available', 'on_block', 'drafted']) // All selected by default
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('projectedValue');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // Toggle a status filter
+  const toggleStatusFilter = useCallback((status: PlayerStatus) => {
+    setStatusFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(status)) {
+        // Don't allow deselecting all - keep at least one
+        if (next.size > 1) {
+          next.delete(status);
+        }
+      } else {
+        next.add(status);
+      }
+      return next;
+    });
+  }, []);
 
   // Get enabled scoring categories from league settings
   const enabledHittingCategories = useMemo(
@@ -331,6 +362,15 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
     if (positionFilter !== 'all') {
       result = result.filter((p) => p.positions.includes(positionFilter));
     }
+
+    // Filter by player status (available, on_block, drafted/gone)
+    // Map player status to our filter categories
+    result = result.filter((p) => {
+      // Map 'onMyTeam' to 'drafted' for filtering purposes
+      const filterStatus: PlayerStatus =
+        p.status === 'onMyTeam' ? 'drafted' : p.status as PlayerStatus;
+      return statusFilters.has(filterStatus);
+    });
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -418,7 +458,7 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
     });
 
     return result;
-  }, [draftPoolPlayers, playerType, positionFilter, searchQuery, sortField, sortDirection, enabledHittingCategories, enabledPitchingCategories]);
+  }, [draftPoolPlayers, playerType, positionFilter, statusFilters, searchQuery, sortField, sortDirection, enabledHittingCategories, enabledPitchingCategories]);
 
   // Handle column header click for sorting
   const handleSort = useCallback((field: SortField) => {
@@ -630,6 +670,27 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Status Filter (multi-select checkboxes) */}
+          <div className={`flex items-center gap-3 ${isMobile ? 'flex-wrap' : ''}`}>
+            <span className="text-slate-400 text-sm">Status:</span>
+            {STATUS_OPTIONS.map((option) => (
+              <div key={option.value} className="flex items-center gap-1.5">
+                <Checkbox
+                  id={`status-${option.value}`}
+                  checked={statusFilters.has(option.value)}
+                  onCheckedChange={() => toggleStatusFilter(option.value)}
+                  className="border-slate-600 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                />
+                <Label
+                  htmlFor={`status-${option.value}`}
+                  className={`text-sm cursor-pointer ${option.color}`}
+                >
+                  {option.label}
+                </Label>
+              </div>
+            ))}
+          </div>
 
           {/* Results count */}
           <div className={`text-slate-400 text-sm ${isMobile ? '' : 'ml-auto'}`}>
