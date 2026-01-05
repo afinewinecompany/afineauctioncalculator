@@ -48,19 +48,26 @@ type SortField =
   | 'projectedValue'
   | 'zScore'
   | 'tier'
-  // Hitter stats
+  // Hitter stats (any stat from hittingCategories)
   | 'HR'
   | 'RBI'
   | 'SB'
   | 'AVG'
   | 'R'
-  // Pitcher stats
+  | 'H'
+  | 'OBP'
+  | 'SLG'
+  | 'OPS'
+  | 'BB'
+  // Pitcher stats (any stat from pitchingCategories)
   | 'W'
   | 'K'
   | 'ERA'
   | 'WHIP'
   | 'SV'
-  | 'IP';
+  | 'IP'
+  | 'QS'
+  | 'HLD';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -91,32 +98,115 @@ function formatStat(value: number | undefined, decimals = 0): string {
 }
 
 /**
+ * Category configuration for display formatting
+ */
+interface StatConfig {
+  key: string;
+  label: string;
+  decimals: number;
+  isLowerBetter?: boolean; // For stats like ERA, WHIP where lower is better
+}
+
+/**
+ * Get enabled hitting categories from league settings
+ */
+function getEnabledHittingCategories(settings: SavedLeague['settings']): StatConfig[] {
+  const categories: StatConfig[] = [];
+  const hc = settings.hittingCategories;
+
+  if (!hc) {
+    // Default categories if none configured
+    return [
+      { key: 'HR', label: 'HR', decimals: 0 },
+      { key: 'RBI', label: 'RBI', decimals: 0 },
+      { key: 'SB', label: 'SB', decimals: 0 },
+      { key: 'AVG', label: 'AVG', decimals: 3 },
+      { key: 'R', label: 'R', decimals: 0 },
+    ];
+  }
+
+  // Core counting stats
+  if (hc.R) categories.push({ key: 'R', label: 'R', decimals: 0 });
+  if (hc.HR) categories.push({ key: 'HR', label: 'HR', decimals: 0 });
+  if (hc.RBI) categories.push({ key: 'RBI', label: 'RBI', decimals: 0 });
+  if (hc.SB) categories.push({ key: 'SB', label: 'SB', decimals: 0 });
+  if (hc.H) categories.push({ key: 'H', label: 'H', decimals: 0 });
+  if (hc.BB) categories.push({ key: 'BB', label: 'BB', decimals: 0 });
+
+  // Rate stats
+  if (hc.AVG) categories.push({ key: 'AVG', label: 'AVG', decimals: 3 });
+  if (hc.OBP) categories.push({ key: 'OBP', label: 'OBP', decimals: 3 });
+  if (hc.SLG) categories.push({ key: 'SLG', label: 'SLG', decimals: 3 });
+  if (hc.OPS) categories.push({ key: 'OPS', label: 'OPS', decimals: 3 });
+
+  return categories;
+}
+
+/**
+ * Get enabled pitching categories from league settings
+ */
+function getEnabledPitchingCategories(settings: SavedLeague['settings']): StatConfig[] {
+  const categories: StatConfig[] = [];
+  const pc = settings.pitchingCategories;
+
+  if (!pc) {
+    // Default categories if none configured
+    return [
+      { key: 'W', label: 'W', decimals: 0 },
+      { key: 'K', label: 'K', decimals: 0 },
+      { key: 'ERA', label: 'ERA', decimals: 2, isLowerBetter: true },
+      { key: 'WHIP', label: 'WHIP', decimals: 2, isLowerBetter: true },
+      { key: 'SV', label: 'SV', decimals: 0 },
+      { key: 'IP', label: 'IP', decimals: 1 },
+    ];
+  }
+
+  // Core stats
+  if (pc.W) categories.push({ key: 'W', label: 'W', decimals: 0 });
+  if (pc.K) categories.push({ key: 'K', label: 'K', decimals: 0 });
+  if (pc.ERA) categories.push({ key: 'ERA', label: 'ERA', decimals: 2, isLowerBetter: true });
+  if (pc.WHIP) categories.push({ key: 'WHIP', label: 'WHIP', decimals: 2, isLowerBetter: true });
+  if (pc.SV) categories.push({ key: 'SV', label: 'SV', decimals: 0 });
+  if (pc.QS) categories.push({ key: 'QS', label: 'QS', decimals: 0 });
+  if (pc.HLD) categories.push({ key: 'HLD', label: 'HLD', decimals: 0 });
+  if (pc.IP) categories.push({ key: 'IP', label: 'IP', decimals: 1 });
+
+  return categories;
+}
+
+/**
  * Generate CSV content from player data
  */
 function generateCSV(
   players: Player[],
-  playerType: PlayerType
+  playerType: PlayerType,
+  hittingCategories: StatConfig[],
+  pitchingCategories: StatConfig[]
 ): string {
   // Define columns based on player type
   const baseColumns = ['Rank', 'Name', 'Team', 'Position(s)', 'Projected Value ($)', 'Z-Score', 'Tier'];
 
-  const hitterStatColumns = ['HR', 'RBI', 'SB', 'AVG', 'R'];
-  const pitcherStatColumns = ['W', 'K', 'ERA', 'WHIP', 'SV', 'IP'];
-
   let statColumns: string[];
   if (playerType === 'hitters') {
-    statColumns = hitterStatColumns;
+    statColumns = hittingCategories.map(c => c.label);
   } else if (playerType === 'pitchers') {
-    statColumns = pitcherStatColumns;
+    statColumns = pitchingCategories.map(c => c.label);
   } else {
     // All players - include both stat sets
-    statColumns = [...hitterStatColumns, ...pitcherStatColumns];
+    statColumns = [...hittingCategories.map(c => c.label), ...pitchingCategories.map(c => c.label)];
   }
 
   const columns = [...baseColumns, ...statColumns];
 
   // Create CSV header
   const header = columns.join(',');
+
+  // Helper to get stat value from player
+  const getStatValue = (player: Player, config: StatConfig): string => {
+    const value = player.projectedStats[config.key as keyof typeof player.projectedStats];
+    if (value === undefined || value === null) return '-';
+    return config.decimals > 0 ? value.toFixed(config.decimals) : String(Math.round(value));
+  };
 
   // Create CSV rows
   const rows = players.map((player, index) => {
@@ -130,38 +220,16 @@ function generateCSV(
       player.tier ?? '-',
     ];
 
-    let statValues: (string | number)[];
+    let statValues: string[];
     if (playerType === 'hitters') {
-      statValues = [
-        player.projectedStats.HR ?? '-',
-        player.projectedStats.RBI ?? '-',
-        player.projectedStats.SB ?? '-',
-        player.projectedStats.AVG?.toFixed(3) ?? '-',
-        player.projectedStats.R ?? '-',
-      ];
+      statValues = hittingCategories.map(c => getStatValue(player, c));
     } else if (playerType === 'pitchers') {
-      statValues = [
-        player.projectedStats.W ?? '-',
-        player.projectedStats.K ?? '-',
-        player.projectedStats.ERA?.toFixed(2) ?? '-',
-        player.projectedStats.WHIP?.toFixed(2) ?? '-',
-        player.projectedStats.SV ?? '-',
-        player.projectedStats.IP?.toFixed(1) ?? '-',
-      ];
+      statValues = pitchingCategories.map(c => getStatValue(player, c));
     } else {
       // All players - include both stat sets
       statValues = [
-        player.projectedStats.HR ?? '-',
-        player.projectedStats.RBI ?? '-',
-        player.projectedStats.SB ?? '-',
-        player.projectedStats.AVG?.toFixed(3) ?? '-',
-        player.projectedStats.R ?? '-',
-        player.projectedStats.W ?? '-',
-        player.projectedStats.K ?? '-',
-        player.projectedStats.ERA?.toFixed(2) ?? '-',
-        player.projectedStats.WHIP?.toFixed(2) ?? '-',
-        player.projectedStats.SV ?? '-',
-        player.projectedStats.IP?.toFixed(1) ?? '-',
+        ...hittingCategories.map(c => getStatValue(player, c)),
+        ...pitchingCategories.map(c => getStatValue(player, c)),
       ];
     }
 
@@ -203,6 +271,16 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('projectedValue');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // Get enabled scoring categories from league settings
+  const enabledHittingCategories = useMemo(
+    () => getEnabledHittingCategories(league.settings),
+    [league.settings]
+  );
+  const enabledPitchingCategories = useMemo(
+    () => getEnabledPitchingCategories(league.settings),
+    [league.settings]
+  );
 
   // Filter players to only include those in draft pool
   const draftPoolPlayers = useMemo(() => {
@@ -269,6 +347,10 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
       let aVal: string | number | undefined;
       let bVal: string | number | undefined;
 
+      // Check if it's a stat category (check both hitting and pitching categories)
+      const allCategories = [...enabledHittingCategories, ...enabledPitchingCategories];
+      const categoryConfig = allCategories.find(c => c.key === sortField);
+
       switch (sortField) {
         case 'rank':
           // Rank is derived from projected value
@@ -308,60 +390,23 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
           aVal = a.tier ?? 999;
           bVal = b.tier ?? 999;
           break;
-        // Hitter stats
-        case 'HR':
-          aVal = a.projectedStats.HR ?? 0;
-          bVal = b.projectedStats.HR ?? 0;
-          break;
-        case 'RBI':
-          aVal = a.projectedStats.RBI ?? 0;
-          bVal = b.projectedStats.RBI ?? 0;
-          break;
-        case 'SB':
-          aVal = a.projectedStats.SB ?? 0;
-          bVal = b.projectedStats.SB ?? 0;
-          break;
-        case 'AVG':
-          aVal = a.projectedStats.AVG ?? 0;
-          bVal = b.projectedStats.AVG ?? 0;
-          break;
-        case 'R':
-          aVal = a.projectedStats.R ?? 0;
-          bVal = b.projectedStats.R ?? 0;
-          break;
-        // Pitcher stats
-        case 'W':
-          aVal = a.projectedStats.W ?? 0;
-          bVal = b.projectedStats.W ?? 0;
-          break;
-        case 'K':
-          aVal = a.projectedStats.K ?? 0;
-          bVal = b.projectedStats.K ?? 0;
-          break;
-        case 'ERA':
-          aVal = a.projectedStats.ERA ?? 999;
-          bVal = b.projectedStats.ERA ?? 999;
-          // ERA: lower is better, so reverse default sort
-          return sortDirection === 'asc'
-            ? (aVal ?? 999) - (bVal ?? 999)
-            : (bVal ?? 999) - (aVal ?? 999);
-        case 'WHIP':
-          aVal = a.projectedStats.WHIP ?? 999;
-          bVal = b.projectedStats.WHIP ?? 999;
-          // WHIP: lower is better, so reverse default sort
-          return sortDirection === 'asc'
-            ? (aVal ?? 999) - (bVal ?? 999)
-            : (bVal ?? 999) - (aVal ?? 999);
-        case 'SV':
-          aVal = a.projectedStats.SV ?? 0;
-          bVal = b.projectedStats.SV ?? 0;
-          break;
-        case 'IP':
-          aVal = a.projectedStats.IP ?? 0;
-          bVal = b.projectedStats.IP ?? 0;
-          break;
         default:
-          return 0;
+          // Handle dynamic stat categories
+          if (categoryConfig) {
+            const key = sortField as keyof typeof a.projectedStats;
+            const defaultVal = categoryConfig.isLowerBetter ? 999 : 0;
+            aVal = a.projectedStats[key] ?? defaultVal;
+            bVal = b.projectedStats[key] ?? defaultVal;
+
+            // For stats where lower is better (ERA, WHIP), reverse the sort
+            if (categoryConfig.isLowerBetter) {
+              return sortDirection === 'asc'
+                ? (aVal ?? 999) - (bVal ?? 999)
+                : (bVal ?? 999) - (aVal ?? 999);
+            }
+          } else {
+            return 0;
+          }
       }
 
       // Default numeric comparison
@@ -373,7 +418,7 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
     });
 
     return result;
-  }, [draftPoolPlayers, playerType, positionFilter, searchQuery, sortField, sortDirection]);
+  }, [draftPoolPlayers, playerType, positionFilter, searchQuery, sortField, sortDirection, enabledHittingCategories, enabledPitchingCategories]);
 
   // Handle column header click for sorting
   const handleSort = useCallback((field: SortField) => {
@@ -383,21 +428,23 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
     } else {
       // Set new field with default direction
       setSortField(field);
-      // Default to desc for most fields, asc for ERA/WHIP (lower is better)
-      setSortDirection(field === 'ERA' || field === 'WHIP' ? 'asc' : 'desc');
+      // Check if this field is a "lower is better" stat
+      const allCategories = [...enabledHittingCategories, ...enabledPitchingCategories];
+      const categoryConfig = allCategories.find(c => c.key === field);
+      setSortDirection(categoryConfig?.isLowerBetter ? 'asc' : 'desc');
     }
-  }, [sortField]);
+  }, [sortField, enabledHittingCategories, enabledPitchingCategories]);
 
   // Handle CSV export
   const handleExport = useCallback(() => {
-    const csv = generateCSV(filteredPlayers, playerType);
+    const csv = generateCSV(filteredPlayers, playerType, enabledHittingCategories, enabledPitchingCategories);
     const date = new Date().toISOString().split('T')[0];
     const sanitizedLeagueName = league.leagueName
       .replace(/[^a-zA-Z0-9]/g, '_')
       .toLowerCase();
     const filename = `${sanitizedLeagueName}_projections_${date}.csv`;
     downloadCSV(csv, filename);
-  }, [filteredPlayers, playerType, league.leagueName]);
+  }, [filteredPlayers, playerType, league.leagueName, enabledHittingCategories, enabledPitchingCategories]);
 
   // Sort indicator component
   const SortIndicator = ({ field }: { field: SortField }) => {
@@ -645,80 +692,32 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                         </div>
                       </div>
 
-                      {/* Stats row */}
+                      {/* Stats row - Dynamic based on league settings */}
                       <div className="flex flex-wrap gap-2 text-xs">
                         {playerIsPitcher ? (
-                          <>
-                            <span className="text-slate-400">
-                              W:{' '}
+                          enabledPitchingCategories.map((cat) => (
+                            <span key={cat.key} className="text-slate-400">
+                              {cat.label}:{' '}
                               <span className="text-white">
-                                {formatStat(player.projectedStats.W)}
+                                {formatStat(
+                                  player.projectedStats[cat.key as keyof typeof player.projectedStats],
+                                  cat.decimals
+                                )}
                               </span>
                             </span>
-                            <span className="text-slate-400">
-                              K:{' '}
-                              <span className="text-white">
-                                {formatStat(player.projectedStats.K)}
-                              </span>
-                            </span>
-                            <span className="text-slate-400">
-                              ERA:{' '}
-                              <span className="text-white">
-                                {formatStat(player.projectedStats.ERA, 2)}
-                              </span>
-                            </span>
-                            <span className="text-slate-400">
-                              WHIP:{' '}
-                              <span className="text-white">
-                                {formatStat(player.projectedStats.WHIP, 2)}
-                              </span>
-                            </span>
-                            <span className="text-slate-400">
-                              SV:{' '}
-                              <span className="text-white">
-                                {formatStat(player.projectedStats.SV)}
-                              </span>
-                            </span>
-                            <span className="text-slate-400">
-                              IP:{' '}
-                              <span className="text-white">
-                                {formatStat(player.projectedStats.IP, 1)}
-                              </span>
-                            </span>
-                          </>
+                          ))
                         ) : (
-                          <>
-                            <span className="text-slate-400">
-                              HR:{' '}
+                          enabledHittingCategories.map((cat) => (
+                            <span key={cat.key} className="text-slate-400">
+                              {cat.label}:{' '}
                               <span className="text-white">
-                                {formatStat(player.projectedStats.HR)}
+                                {formatStat(
+                                  player.projectedStats[cat.key as keyof typeof player.projectedStats],
+                                  cat.decimals
+                                )}
                               </span>
                             </span>
-                            <span className="text-slate-400">
-                              RBI:{' '}
-                              <span className="text-white">
-                                {formatStat(player.projectedStats.RBI)}
-                              </span>
-                            </span>
-                            <span className="text-slate-400">
-                              SB:{' '}
-                              <span className="text-white">
-                                {formatStat(player.projectedStats.SB)}
-                              </span>
-                            </span>
-                            <span className="text-slate-400">
-                              AVG:{' '}
-                              <span className="text-white">
-                                {formatStat(player.projectedStats.AVG, 3)}
-                              </span>
-                            </span>
-                            <span className="text-slate-400">
-                              R:{' '}
-                              <span className="text-white">
-                                {formatStat(player.projectedStats.R)}
-                              </span>
-                            </span>
-                          </>
+                          ))
                         )}
                       </div>
                     </div>
@@ -759,50 +758,27 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                     Tier
                   </SortableHeader>
 
-                  {/* Hitter Stats */}
-                  {showHitterStats && (
-                    <>
-                      <SortableHeader field="HR" className="w-14 text-slate-300">
-                        HR
-                      </SortableHeader>
-                      <SortableHeader field="RBI" className="w-14 text-slate-300">
-                        RBI
-                      </SortableHeader>
-                      <SortableHeader field="SB" className="w-14 text-slate-300">
-                        SB
-                      </SortableHeader>
-                      <SortableHeader field="AVG" className="w-16 text-slate-300">
-                        AVG
-                      </SortableHeader>
-                      <SortableHeader field="R" className="w-14 text-slate-300">
-                        R
-                      </SortableHeader>
-                    </>
-                  )}
+                  {/* Hitter Stats - Dynamic based on league settings */}
+                  {showHitterStats && enabledHittingCategories.map((cat) => (
+                    <SortableHeader
+                      key={cat.key}
+                      field={cat.key as SortField}
+                      className="w-14 text-slate-300"
+                    >
+                      {cat.label}
+                    </SortableHeader>
+                  ))}
 
-                  {/* Pitcher Stats */}
-                  {showPitcherStats && (
-                    <>
-                      <SortableHeader field="W" className="w-14 text-slate-300">
-                        W
-                      </SortableHeader>
-                      <SortableHeader field="K" className="w-14 text-slate-300">
-                        K
-                      </SortableHeader>
-                      <SortableHeader field="ERA" className="w-16 text-slate-300">
-                        ERA
-                      </SortableHeader>
-                      <SortableHeader field="WHIP" className="w-16 text-slate-300">
-                        WHIP
-                      </SortableHeader>
-                      <SortableHeader field="SV" className="w-14 text-slate-300">
-                        SV
-                      </SortableHeader>
-                      <SortableHeader field="IP" className="w-14 text-slate-300">
-                        IP
-                      </SortableHeader>
-                    </>
-                  )}
+                  {/* Pitcher Stats - Dynamic based on league settings */}
+                  {showPitcherStats && enabledPitchingCategories.map((cat) => (
+                    <SortableHeader
+                      key={cat.key}
+                      field={cat.key as SortField}
+                      className="w-14 text-slate-300"
+                    >
+                      {cat.label}
+                    </SortableHeader>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -811,8 +787,8 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                     <TableCell
                       colSpan={
                         7 +
-                        (showHitterStats ? 5 : 0) +
-                        (showPitcherStats ? 6 : 0)
+                        (showHitterStats ? enabledHittingCategories.length : 0) +
+                        (showPitcherStats ? enabledPitchingCategories.length : 0)
                       }
                       className="h-24 text-center text-slate-500"
                     >
@@ -851,94 +827,35 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
                           {player.tier ?? '-'}
                         </TableCell>
 
-                        {/* Hitter Stats */}
-                        {showHitterStats && (
-                          <>
-                            <TableCell
-                              className={
-                                playerIsHitter ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.HR)}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                playerIsHitter ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.RBI)}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                playerIsHitter ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.SB)}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                playerIsHitter ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.AVG, 3)}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                playerIsHitter ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.R)}
-                            </TableCell>
-                          </>
-                        )}
+                        {/* Hitter Stats - Dynamic based on league settings */}
+                        {showHitterStats && enabledHittingCategories.map((cat) => (
+                          <TableCell
+                            key={cat.key}
+                            className={
+                              playerIsHitter ? 'text-white' : 'text-slate-600'
+                            }
+                          >
+                            {formatStat(
+                              player.projectedStats[cat.key as keyof typeof player.projectedStats],
+                              cat.decimals
+                            )}
+                          </TableCell>
+                        ))}
 
-                        {/* Pitcher Stats */}
-                        {showPitcherStats && (
-                          <>
-                            <TableCell
-                              className={
-                                playerIsPitcher ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.W)}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                playerIsPitcher ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.K)}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                playerIsPitcher ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.ERA, 2)}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                playerIsPitcher ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.WHIP, 2)}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                playerIsPitcher ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.SV)}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                playerIsPitcher ? 'text-white' : 'text-slate-600'
-                              }
-                            >
-                              {formatStat(player.projectedStats.IP, 1)}
-                            </TableCell>
-                          </>
-                        )}
+                        {/* Pitcher Stats - Dynamic based on league settings */}
+                        {showPitcherStats && enabledPitchingCategories.map((cat) => (
+                          <TableCell
+                            key={cat.key}
+                            className={
+                              playerIsPitcher ? 'text-white' : 'text-slate-600'
+                            }
+                          >
+                            {formatStat(
+                              player.projectedStats[cat.key as keyof typeof player.projectedStats],
+                              cat.decimals
+                            )}
+                          </TableCell>
+                        ))}
                       </TableRow>
                     );
                   })

@@ -43,6 +43,7 @@ You are the master orchestrator agent responsible for analyzing complex tasks, b
 | Agent | Specialization | Use When |
 |-------|---------------|----------|
 | `data-scientist` | Statistical modeling, analytics | Data analysis, ML experiments, statistics |
+| `ai-engineer` | LLM applications, RAG systems | LLM integrations, vector search, prompt pipelines, agent orchestration |
 | `api-documenter` | API documentation, OpenAPI specs | Creating API docs, Swagger specs |
 | `payment-integration` | Payment processors, Stripe/PayPal | Implementing payment flows |
 | `ui-ux-designer` | User experience, design systems | Design decisions, accessibility, UX |

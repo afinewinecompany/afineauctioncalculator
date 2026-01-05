@@ -457,6 +457,7 @@ export interface Player {
   projectedValue: number;
   adjustedValue: number;
   projectedStats: {
+    // Hitting stats
     HR?: number;
     RBI?: number;
     SB?: number;
@@ -465,12 +466,17 @@ export interface Player {
     H?: number;
     OBP?: number;
     SLG?: number;
+    OPS?: number;
+    BB?: number;
+    // Pitching stats
     W?: number;
     K?: number;
     ERA?: number;
     WHIP?: number;
     SV?: number;
     IP?: number;
+    QS?: number;
+    HLD?: number;
   };
   status: 'available' | 'drafted' | 'onMyTeam' | 'on_block';
   draftedPrice?: number;

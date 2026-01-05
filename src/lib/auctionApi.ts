@@ -627,6 +627,8 @@ function createPlayerFromProjection(p: CalculatedValuesResponse['players'][0]): 
     projectedStats.H = p.hitting.hits;
     projectedStats.OBP = p.hitting.onBasePct;
     projectedStats.SLG = p.hitting.sluggingPct;
+    projectedStats.OPS = p.hitting.ops;
+    projectedStats.BB = p.hitting.walks;
   }
 
   if (p.pitching) {
@@ -636,6 +638,8 @@ function createPlayerFromProjection(p: CalculatedValuesResponse['players'][0]): 
     projectedStats.WHIP = p.pitching.whip;
     projectedStats.SV = p.pitching.saves;
     projectedStats.IP = p.pitching.inningsPitched;
+    projectedStats.QS = p.pitching.qualityStarts;
+    projectedStats.HLD = p.pitching.holds;
   }
 
   return {
@@ -685,6 +689,8 @@ function combineTwoWayPlayer(
     projectedStats.H = hitter.hitting.hits;
     projectedStats.OBP = hitter.hitting.onBasePct;
     projectedStats.SLG = hitter.hitting.sluggingPct;
+    projectedStats.OPS = hitter.hitting.ops;
+    projectedStats.BB = hitter.hitting.walks;
   }
 
   // Pitching stats
@@ -695,6 +701,8 @@ function combineTwoWayPlayer(
     projectedStats.WHIP = pitcher.pitching.whip;
     projectedStats.SV = pitcher.pitching.saves;
     projectedStats.IP = pitcher.pitching.inningsPitched;
+    projectedStats.QS = pitcher.pitching.qualityStarts;
+    projectedStats.HLD = pitcher.pitching.holds;
   }
 
   // Combine SGP values from both hitter and pitcher entries
