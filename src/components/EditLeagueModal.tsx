@@ -62,6 +62,8 @@ export function EditLeagueModal({
     'Rate Stats': true,
   });
 
+  // Early return moved AFTER all hooks to comply with Rules of Hooks
+  // (React error #310: "Rendered more hooks than during the previous render")
   if (!isOpen) return null;
 
   const handleSettingChange = <K extends keyof LeagueSettings>(key: K, value: LeagueSettings[K]) => {

@@ -148,13 +148,18 @@ export function TeamOverviewGrid({
     }
   };
 
-  // If no team data, don't render
-  if (teamStats.length === 0) {
-    return null;
-  }
-
   // Calculate league-wide stats
+  // NOTE: This useMemo must be BEFORE any early returns to comply with React Rules of Hooks
+  // (React error #310: "Rendered more hooks than during the previous render")
   const leagueStats = useMemo(() => {
+    if (teamStats.length === 0) {
+      return {
+        totalSpent: 0,
+        totalRemaining: 0,
+        totalDrafted: 0,
+        teamsWithTightBudget: 0,
+      };
+    }
     const totalSpent = teamStats.reduce((sum, t) => sum + t.moneySpent, 0);
     const totalRemaining = teamStats.reduce((sum, t) => sum + t.moneyRemaining, 0);
     const totalDrafted = teamStats.reduce((sum, t) => sum + t.playersDrafted, 0);
@@ -167,6 +172,11 @@ export function TeamOverviewGrid({
       teamsWithTightBudget,
     };
   }, [teamStats]);
+
+  // If no team data, don't render - must be AFTER all hooks
+  if (teamStats.length === 0) {
+    return null;
+  }
 
   const SortIcon = ({ column }: { column: 'name' | 'remaining' | 'avgLeft' }) => {
     if (sortBy !== column) return null;
