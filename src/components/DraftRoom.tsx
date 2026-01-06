@@ -14,7 +14,6 @@ import { DraftRoomLoadingScreen } from './DraftRoomLoadingScreen';
 import { ChatAssistant } from './ChatAssistant';
 import { useIsMobile } from './ui/use-mobile';
 import { useAuth } from '../contexts/AuthContext';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Users, ListFilter, Trophy } from 'lucide-react';
 
 // Timing constants
@@ -1064,30 +1063,38 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
           {/* Top Section - Player Queue & Roster Panel */}
           {isMobile ? (
             /* MOBILE: Tab-based layout */
-            <Tabs
-              value={mobileActiveTab}
-              onValueChange={(v: string) => setMobileActiveTab(v as 'players' | 'roster')}
-              className="flex flex-col flex-1"
-            >
+            <div className="flex flex-col flex-1">
+              {/* Navigation row with tabs and Team Rankings button */}
               <div className="flex items-center gap-2">
-                <TabsList className="flex-1 grid grid-cols-2 bg-slate-900 border-2 border-slate-600 rounded-xl p-1.5 shadow-lg">
-                  <TabsTrigger
-                    value="players"
-                    className="flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all text-slate-300 bg-slate-800 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/30"
+                <div className="flex-1 bg-slate-900 border-2 border-slate-600 rounded-xl p-1.5 shadow-lg grid grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setMobileActiveTab('players')}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all ${
+                      mobileActiveTab === 'players'
+                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/30'
+                        : 'text-slate-300 bg-slate-800'
+                    }`}
                   >
                     <ListFilter className="w-4 h-4" />
                     <span>Players</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="roster"
-                    className="flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all text-slate-300 bg-slate-800 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/30"
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileActiveTab('roster')}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all ${
+                      mobileActiveTab === 'roster'
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30'
+                        : 'text-slate-300 bg-slate-800'
+                    }`}
                   >
                     <Users className="w-4 h-4" />
                     <span>Roster ({myRoster.length})</span>
-                  </TabsTrigger>
-                </TabsList>
+                  </button>
+                </div>
                 {/* Team Rankings button for mobile */}
                 <button
+                  type="button"
                   onClick={handleOpenTeamRankings}
                   className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 rounded-xl shadow-lg shadow-amber-500/30 transition-all active:scale-95"
                   aria-label="Team Rankings"
@@ -1096,8 +1103,9 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                 </button>
               </div>
 
-              <TabsContent value="players" className="flex-1 mt-2" style={{ minHeight: '55vh' }}>
-                <div className="h-full bg-slate-900/95 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50 flex flex-col">
+              {/* Content based on active tab */}
+              {mobileActiveTab === 'players' ? (
+                <div className="flex-1 mt-2 bg-slate-900/95 rounded-xl shadow-2xl overflow-hidden border border-slate-700/50 flex flex-col" style={{ minHeight: '55vh' }}>
                   <PlayerQueue
                     players={players}
                     onPlayerClick={handlePlayerClick}
@@ -1109,21 +1117,21 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                     maxPlayers={maxPlayersInQueue}
                   />
                 </div>
-              </TabsContent>
-
-              <TabsContent value="roster" className="flex-1 mt-2" style={{ minHeight: '55vh' }}>
-                <RosterPanel
-                  roster={myRoster}
-                  settings={settings}
-                  rosterNeedsRemaining={rosterNeedsRemaining}
-                  availableTeams={availableTeams}
-                  selectedTeam={selectedTeam}
-                  onTeamSelect={handleTeamSelect}
-                  isManualMode={isManualMode}
-                  isMobile={true}
-                />
-              </TabsContent>
-            </Tabs>
+              ) : (
+                <div className="flex-1 mt-2" style={{ minHeight: '55vh' }}>
+                  <RosterPanel
+                    roster={myRoster}
+                    settings={settings}
+                    rosterNeedsRemaining={rosterNeedsRemaining}
+                    availableTeams={availableTeams}
+                    selectedTeam={selectedTeam}
+                    onTeamSelect={handleTeamSelect}
+                    isManualMode={isManualMode}
+                    isMobile={true}
+                  />
+                </div>
+              )}
+            </div>
           ) : (
             /* DESKTOP: Original grid layout */
             <div className="grid grid-cols-12 gap-4" style={{ minHeight: '55vh' }}>
