@@ -1,12 +1,6 @@
 import { useMemo, useState } from 'react';
 import { LeagueSettings, Player, ScrapedAuctionData } from '../lib/types';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog';
-import {
   Trophy,
   TrendingUp,
   TrendingDown,
@@ -20,6 +14,7 @@ import {
   BarChart3,
   Sparkles,
   AlertCircle,
+  X,
 } from 'lucide-react';
 
 interface TeamRankingsProps {
@@ -297,35 +292,60 @@ export function TeamRankings({
     return sortAsc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
   };
 
+  // Don't render if not open
+  if (!isOpen) return null;
+
   if (teamRankings.length === 0) {
     return (
-      <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div
+          className="bg-slate-900 border border-slate-700 text-white max-w-md w-full rounded-lg p-6"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-400" />
-              Team Rankings
-            </DialogTitle>
-          </DialogHeader>
+              <h2 className="text-lg font-semibold">Team Rankings</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-slate-800 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <AlertCircle className="w-12 h-12 text-slate-500 mb-4" />
             <p className="text-slate-400">No auction data available yet.</p>
             <p className="text-slate-500 text-sm mt-1">Rankings will appear once the draft begins.</p>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className={`bg-slate-900 border-slate-700 text-white ${isMobile ? 'max-w-full h-[90vh]' : 'max-w-5xl max-h-[85vh]'} overflow-hidden flex flex-col`}>
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div
+        className={`bg-slate-900 border border-slate-700 text-white rounded-lg ${isMobile ? 'w-full h-[90vh]' : 'max-w-5xl w-full max-h-[85vh]'} overflow-hidden flex flex-col`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-700 flex-shrink-0">
+          <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-400" />
-            Team Rankings
-          </DialogTitle>
-        </DialogHeader>
+            <h2 className="text-lg font-semibold">Team Rankings</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-slate-400" />
+          </button>
+        </div>
+
+        {/* Content wrapper with padding */}
+        <div className="flex-1 overflow-hidden flex flex-col p-4">
 
         {/* League Summary */}
         {leagueStats && (
@@ -642,7 +662,8 @@ export function TeamRankings({
             <span className="text-slate-400">Value = Projected - Actual price</span>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }
