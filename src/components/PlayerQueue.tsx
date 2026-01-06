@@ -110,7 +110,7 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
   }, [scarcityByPosition]);
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'on_block' | 'drafted' | 'targets'>('available');
   const [hideMiLB, setHideMiLB] = useState<boolean>(true); // Hide minor league players by default
-  const [sortBy, setSortBy] = useState<'name' | 'projectedValue' | 'adjustedValue' | 'discountPremium'>('adjustedValue');
+  const [sortBy, setSortBy] = useState<'name' | 'projectedValue' | 'adjustedValue' | 'zScore' | 'discountPremium'>('adjustedValue');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const handleSort = (field: typeof sortBy) => {
@@ -221,6 +221,13 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
         if (aPercent === null) return 1;
         if (bPercent === null) return -1;
         return sortOrder === 'asc' ? aPercent - bPercent : bPercent - aPercent;
+      }
+
+      // Special handling for zScore sorting
+      if (sortBy === 'zScore') {
+        const aScore = a.sgpValue ?? -999;
+        const bScore = b.sgpValue ?? -999;
+        return sortOrder === 'asc' ? aScore - bScore : bScore - aScore;
       }
 
       // Then apply normal sorting
@@ -470,16 +477,22 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
           >
             Player <ArrowUpDown className="w-3 h-3" />
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => handleSort('projectedValue')}
-              className="flex items-center gap-1 text-slate-300 text-sm"
+              className={`flex items-center gap-1 text-sm ${sortBy === 'projectedValue' ? 'text-white' : 'text-slate-400'}`}
             >
               Proj <ArrowUpDown className="w-3 h-3" />
             </button>
             <button
+              onClick={() => handleSort('zScore')}
+              className={`flex items-center gap-1 text-sm ${sortBy === 'zScore' ? 'text-blue-300' : 'text-blue-400'}`}
+            >
+              Z <ArrowUpDown className="w-3 h-3" />
+            </button>
+            <button
               onClick={() => handleSort('adjustedValue')}
-              className="flex items-center gap-1 text-emerald-400 text-sm"
+              className={`flex items-center gap-1 text-sm ${sortBy === 'adjustedValue' ? 'text-emerald-300' : 'text-emerald-400'}`}
             >
               Adj <ArrowUpDown className="w-3 h-3" />
             </button>
@@ -508,15 +521,18 @@ export const PlayerQueue = memo(function PlayerQueue({ players, onPlayerClick, p
               Original Projected Auction Value based on projections and league settings
             </span>
           </button>
-          <div className="col-span-1 text-blue-400 flex items-center gap-1 group relative">
-            Z
+          <button
+            onClick={() => handleSort('zScore')}
+            className="col-span-1 text-blue-400 hover:text-blue-300 flex items-center gap-1 group relative transition-colors"
+          >
+            Z <ArrowUpDown className="w-3 h-3" />
             <span className="text-blue-500/50 group-hover:text-blue-400/70">
               <Info className="w-3 h-3" />
             </span>
             <span className="absolute left-0 top-full mt-2 w-48 p-2 bg-slate-800 border border-blue-600/50 rounded-lg text-xs text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
               Z-Score (SGP) - measures player value relative to league average. Higher is better.
             </span>
-          </div>
+          </button>
           <button
             onClick={() => handleSort('adjustedValue')}
             className="col-span-2 flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors group relative"

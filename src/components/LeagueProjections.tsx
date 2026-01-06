@@ -943,6 +943,38 @@ export function LeagueProjections({ league, onBack }: LeagueProjectionsProps) {
           {isMobile ? (
             // Mobile Card Layout
             <div className="divide-y divide-slate-800">
+              {/* Mobile Sort Toggle */}
+              <div className="px-4 py-3 bg-slate-800/50 border-b border-slate-700 flex items-center justify-between">
+                <span className="text-slate-400 text-sm">Sort by:</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setSortField('projectedValue');
+                      setSortDirection('desc');
+                    }}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                      sortField === 'projectedValue'
+                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30'
+                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                    }`}
+                  >
+                    Value $
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSortField('zScore');
+                      setSortDirection('desc');
+                    }}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                      sortField === 'zScore'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
+                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                    }`}
+                  >
+                    Z-Score
+                  </button>
+                </div>
+              </div>
               {filteredPlayers.length === 0 ? (
                 <div className="p-8 text-center text-slate-500">
                   No players match your search criteria

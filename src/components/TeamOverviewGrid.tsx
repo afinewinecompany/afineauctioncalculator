@@ -76,18 +76,18 @@ export function TeamOverviewGrid({
       const onBlockCount = onBlockByTeam.get(team.name) || 0;
       const onBlockValue = onBlockValueByTeam.get(team.name) || 0;
 
-      // Use sync data for spending, which is more accurate
-      const moneySpent = team.spent || teamDrafted.reduce((sum, p) => sum + (p.draftedPrice || 0), 0);
-      const moneyRemaining = team.remaining || (settings.budgetPerTeam - moneySpent);
+      // Calculate money spent from drafted players
+      const moneySpent = teamDrafted.reduce((sum, p) => sum + (p.draftedPrice || 0), 0);
 
-      // Effective remaining = remaining - on block bids
+      // Remaining = league budget - money spent (simple calculation from league settings)
+      const moneyRemaining = settings.budgetPerTeam - moneySpent;
+
+      // Effective remaining = remaining - on block bids (money committed but not yet finalized)
       const effectiveRemaining = moneyRemaining - onBlockValue;
 
       const rosterSpotsRemaining = totalRosterSpots - draftedCount - onBlockCount;
 
-      // Average $ left per remaining player (must reserve $1 per remaining spot)
-      const reservedForMinBids = Math.max(0, rosterSpotsRemaining - 1); // -1 because last player gets all
-      const spendableBudget = Math.max(0, effectiveRemaining - reservedForMinBids);
+      // Average $ remaining per open roster spot
       const avgPerRemainingPlayer = rosterSpotsRemaining > 0
         ? Math.round(effectiveRemaining / rosterSpotsRemaining)
         : 0;
@@ -266,7 +266,7 @@ export function TeamOverviewGrid({
                       <div className="text-slate-300">${team.moneySpent}</div>
                     </div>
                     <div>
-                      <span className="text-slate-500">Avg/Player</span>
+                      <span className="text-slate-500">Avg $/Spot</span>
                       <div className={`${
                         team.avgPerRemainingPlayer <= 1 ? 'text-red-400' :
                         team.avgPerRemainingPlayer <= 3 ? 'text-amber-400' : 'text-slate-300'
@@ -313,10 +313,10 @@ export function TeamOverviewGrid({
                     <th
                       className="text-right py-3 px-2 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
                       onClick={() => handleSort('avgLeft')}
-                      title="Average $ per remaining roster spot"
+                      title="Average $ remaining per open roster spot"
                     >
                       <div className="flex items-center justify-end gap-1">
-                        Avg/Player <SortIcon column="avgLeft" />
+                        Avg $/Spot <SortIcon column="avgLeft" />
                       </div>
                     </th>
                     <th className="text-center py-3 px-2 text-slate-400 font-medium">Spots Left</th>
