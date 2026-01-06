@@ -1,6 +1,6 @@
 import { LeagueSettings } from '../lib/types';
 import { getInflationIndicator } from '../lib/calculations';
-import { DollarSign, Users, TrendingUp } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Trophy } from 'lucide-react';
 
 interface DraftHeaderProps {
   settings: LeagueSettings;
@@ -9,6 +9,7 @@ interface DraftHeaderProps {
   totalDrafted: number;
   inflationRate: number;
   isMobile?: boolean;
+  onOpenTeamRankings?: () => void;
 }
 
 export function DraftHeader({
@@ -18,6 +19,7 @@ export function DraftHeader({
   totalDrafted,
   inflationRate,
   isMobile,
+  onOpenTeamRankings,
 }: DraftHeaderProps) {
   const totalRosterSpots = Object.values(settings.rosterSpots).reduce((a, b) => a + b, 0);
   const totalPlayersNeeded = totalRosterSpots * settings.numTeams;
@@ -159,6 +161,22 @@ export function DraftHeader({
                 </div>
               </div>
             </div>
+
+            {/* Team Rankings Button */}
+            {onOpenTeamRankings && (
+              <button
+                onClick={onOpenTeamRankings}
+                className="flex items-center gap-3 bg-gradient-to-br from-amber-600/20 to-amber-700/20 hover:from-amber-600/30 hover:to-amber-700/30 px-4 py-3 rounded-xl border border-amber-500/30 hover:border-amber-500/50 backdrop-blur-sm transition-all group"
+              >
+                <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:scale-105 transition-transform">
+                  <Trophy className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-amber-300 font-medium">Team Rankings</span>
+                  <span className="text-amber-400/70 text-xs">View standings</span>
+                </div>
+              </button>
+            )}
           </div>
         )}
       </div>
