@@ -166,14 +166,14 @@ export function DraftHeader({
             {onOpenTeamRankings && (
               <button
                 onClick={onOpenTeamRankings}
-                className="flex items-center gap-3 bg-gradient-to-br from-amber-600/20 to-amber-700/20 hover:from-amber-600/30 hover:to-amber-700/30 px-4 py-3 rounded-xl border border-amber-500/30 hover:border-amber-500/50 backdrop-blur-sm transition-all group"
+                className="flex items-center gap-3 bg-gradient-to-br from-amber-500/30 to-amber-600/30 hover:from-amber-500/50 hover:to-amber-600/50 px-4 py-3 rounded-xl border-2 border-amber-400/60 hover:border-amber-400 backdrop-blur-sm transition-all group shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40"
               >
-                <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:scale-105 transition-transform">
+                <div className="p-2 bg-gradient-to-br from-amber-400 to-amber-500 rounded-lg group-hover:scale-110 transition-transform shadow-md">
                   <Trophy className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex flex-col text-left">
-                  <span className="text-amber-300 font-medium">Team Rankings</span>
-                  <span className="text-amber-400/70 text-xs">View standings</span>
+                  <span className="text-amber-200 font-semibold">Team Rankings</span>
+                  <span className="text-amber-300/80 text-xs">View standings</span>
                 </div>
               </button>
             )}
