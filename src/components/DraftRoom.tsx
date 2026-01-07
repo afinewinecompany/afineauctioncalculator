@@ -797,14 +797,31 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
 
   // Extract on_block players with their current bids for inflation calculation
   // This avoids circular dependency: inflationResult -> setPlayers -> players -> inflationResult
-  // Only recalculate when on_block statuses or bids change, not when adjustedValue changes
-  const onBlockPlayersData = useMemo(() => {
-    // Return on_block players with their IDs and current bids for inflation calculation
-    // Use a default bid of 1 if currentBid is undefined (player just went on block)
+  // CRITICAL: Only recalculate when on_block statuses or bids change, not when adjustedValue changes
+  //
+  // We create a stable key string from the on_block player data. The inflationResult memo
+  // will depend on this key, not on the players array directly. This breaks the loop:
+  // inflationResult -> adjustPlayerValuesWithTiers -> setPlayers -> players change
+  // but onBlockKey stays the same (since status/currentBid didn't change) -> inflationResult stable
+  const onBlockKey = useMemo(() => {
     return players
       .filter(p => p.status === 'on_block')
-      .map(p => ({ id: p.id, currentBid: p.currentBid ?? 1, isOnBlock: true }));
+      .map(p => `${p.id}:${p.currentBid ?? 1}`)
+      .sort()
+      .join('|');
   }, [players]);
+
+  // Store the actual on_block player data in state, updated only when the key changes
+  const [stableOnBlockData, setStableOnBlockData] = useState<Array<{ id: string; currentBid: number; isOnBlock: true }>>([]);
+
+  // Update stable data only when the key changes (meaning actual on_block status/bid changed)
+  useEffect(() => {
+    const newData = players
+      .filter(p => p.status === 'on_block')
+      .map(p => ({ id: p.id, currentBid: p.currentBid ?? 1, isOnBlock: true as const }));
+    setStableOnBlockData(newData);
+  }, [onBlockKey]); // Only depend on the key, not players
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 
   // Recalculate tier-weighted inflation whenever players are drafted or go on_block
   // We use initialPlayers with status/bid overlay to include on_block players
@@ -812,7 +829,8 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   // Merge server-side enhanced data (positional scarcity, team constraints) when available
   const inflationResult: InflationResult = useMemo(() => {
     // Build a map of on_block player IDs to their data (bid + isOnBlock flag)
-    const onBlockMap = new Map(onBlockPlayersData.map(p => [p.id, p]));
+    // Use stableOnBlockData which only changes when actual on_block status/bids change
+    const onBlockMap = new Map(stableOnBlockData.map(p => [p.id, p]));
     const draftedIds = new Set(allDrafted.map(p => p.id));
 
     // Create a view of players with current status and currentBid from sync
@@ -830,28 +848,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       };
     });
 
-    // DEBUG: Log inflation calculation inputs
-    if (import.meta.env.DEV) {
-      const onBlockPlayers = playersWithStatus.filter(p => p.status === 'on_block');
-      console.log('[DraftRoom] INFLATION DEBUG:', {
-        onBlockPlayersCount: onBlockPlayers.length,
-        onBlockPlayers: onBlockPlayers.map(p => ({ name: (p as any).name, id: p.id, currentBid: p.currentBid, projectedValue: p.projectedValue, tier: p.tier })),
-        allDraftedCount: allDrafted.length,
-        initialPlayersCount: initialPlayers.length,
-      });
-    }
-
     const baseResult = calculateTierWeightedInflation(settings, allDrafted, playersWithStatus);
-
-    // DEBUG: Log inflation result
-    if (import.meta.env.DEV) {
-      console.log('[DraftRoom] INFLATION RESULT:', {
-        overallInflationRate: baseResult.overallInflationRate,
-        remainingBudget: baseResult.remainingBudget,
-        remainingProjectedValue: baseResult.remainingProjectedValue,
-        tierInflation: baseResult.tierInflation.filter(t => t.draftedCount > 0),
-      });
-    }
 
     // Merge in server-side enhanced data if available
     if (liveInflationStats) {
@@ -865,7 +862,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
     }
 
     return baseResult;
-  }, [allDrafted, initialPlayers, onBlockPlayersData, settings, liveInflationStats]);
+  }, [allDrafted, initialPlayers, stableOnBlockData, settings, liveInflationStats]);
 
   // Update inflation rate state only when it changes
   useEffect(() => {
