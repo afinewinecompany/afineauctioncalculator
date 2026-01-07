@@ -333,56 +333,48 @@ export function TeamRankings({
         className={`bg-slate-900 border border-slate-700 text-white rounded-lg ${isMobile ? 'w-full' : 'max-w-5xl w-full'} ${modalHeight} flex flex-col overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700 shrink-0">
+        {/* Header - compact */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700 shrink-0">
           <div className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-400" />
-            <h2 className="text-lg font-semibold">Team Rankings</h2>
+            <Trophy className="w-4 h-4 text-amber-400" />
+            <h2 className="text-sm font-semibold">Team Rankings</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-1 hover:bg-slate-800 rounded transition-colors"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-4 h-4 text-slate-400" />
           </button>
         </div>
 
-        {/* League Summary - fixed at top */}
+        {/* League Summary - compact */}
         {leagueStats && (
-          <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-2 p-4 pb-0 shrink-0`}>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-              <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-                <BarChart3 className="w-3 h-3" />
-                Avg Z-Score
-              </div>
-              <div className="text-emerald-400 font-semibold">{leagueStats.avgZScore.toFixed(1)}</div>
+          <div className={`flex ${isMobile ? 'flex-wrap' : ''} gap-4 px-4 py-2 border-b border-slate-700/50 shrink-0 text-xs`}>
+            <div className="flex items-center gap-1.5">
+              <BarChart3 className="w-3 h-3 text-slate-400" />
+              <span className="text-slate-400">Avg Z:</span>
+              <span className="text-emerald-400 font-semibold">{leagueStats.avgZScore.toFixed(1)}</span>
             </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-              <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-                <Zap className="w-3 h-3" />
-                Avg $/Z
-              </div>
-              <div className="text-blue-400 font-semibold">${leagueStats.avgEfficiency.toFixed(2)}</div>
+            <div className="flex items-center gap-1.5">
+              <Zap className="w-3 h-3 text-slate-400" />
+              <span className="text-slate-400">Avg $/Z:</span>
+              <span className="text-blue-400 font-semibold">${leagueStats.avgEfficiency.toFixed(2)}</span>
             </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-              <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-                <DollarSign className="w-3 h-3" />
-                Total Spent
-              </div>
-              <div className="text-white font-semibold">${leagueStats.totalSpent}</div>
+            <div className="flex items-center gap-1.5">
+              <DollarSign className="w-3 h-3 text-slate-400" />
+              <span className="text-slate-400">Spent:</span>
+              <span className="text-white font-semibold">${leagueStats.totalSpent}</span>
             </div>
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-              <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-                <Users className="w-3 h-3" />
-                Players Drafted
-              </div>
-              <div className="text-white font-semibold">{leagueStats.totalDrafted}</div>
+            <div className="flex items-center gap-1.5">
+              <Users className="w-3 h-3 text-slate-400" />
+              <span className="text-slate-400">Drafted:</span>
+              <span className="text-white font-semibold">{leagueStats.totalDrafted}</span>
             </div>
           </div>
         )}
 
         {/* Scrollable Rankings Table/Cards */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
           {isMobile ? (
             /* Mobile: Card layout */
             <div className="space-y-2">
@@ -474,55 +466,60 @@ export function TeamRankings({
               ))}
             </div>
           ) : (
-            /* Desktop: Table layout */
+            /* Desktop: Compact table layout */
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs">
                 <thead className="sticky top-0 bg-slate-900">
                   <tr className="border-b border-slate-700/50">
                     <th
-                      className="text-left py-3 px-2 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                      className="text-left py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
                       onClick={() => handleSort('overallRank')}
+                      title="Overall Rank - Combined ranking based on Z-Score, efficiency, and value gained"
                     >
-                      <div className="flex items-center gap-1">
-                        <Medal className="w-4 h-4" /> Overall <SortIcon column="overallRank" />
+                      <div className="flex items-center gap-0.5">
+                        <Medal className="w-3 h-3" /> # <SortIcon column="overallRank" />
                       </div>
                     </th>
-                    <th className="text-left py-3 px-2 text-slate-400 font-medium">Team</th>
+                    <th className="text-left py-1.5 px-1.5 text-slate-400 font-medium" title="Team name and roster progress (drafted/total spots)">Team</th>
                     <th
-                      className="text-center py-3 px-2 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                      className="text-center py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
                       onClick={() => handleSort('zScoreRank')}
+                      title="Total Z-Score - Sum of all drafted players' projected value. Higher = better team"
                     >
-                      <div className="flex items-center justify-center gap-1">
-                        <BarChart3 className="w-4 h-4" /> Z-Score <SortIcon column="zScoreRank" />
+                      <div className="flex items-center justify-center gap-0.5">
+                        Z <SortIcon column="zScoreRank" />
                       </div>
                     </th>
                     <th
-                      className="text-center py-3 px-2 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                      className="text-center py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
                       onClick={() => handleSort('efficiencyRank')}
+                      title="Cost Efficiency - Dollars spent per Z-Score point. Lower = more efficient spending"
                     >
-                      <div className="flex items-center justify-center gap-1">
-                        <Zap className="w-4 h-4" /> $/Z <SortIcon column="efficiencyRank" />
+                      <div className="flex items-center justify-center gap-0.5">
+                        $/Z <SortIcon column="efficiencyRank" />
                       </div>
                     </th>
                     <th
-                      className="text-center py-3 px-2 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                      className="text-center py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
                       onClick={() => handleSort('valueRank')}
+                      title="Value Gained - Difference between projected value and actual cost. Positive = got bargains"
                     >
-                      <div className="flex items-center justify-center gap-1">
-                        <Target className="w-4 h-4" /> Value <SortIcon column="valueRank" />
+                      <div className="flex items-center justify-center gap-0.5">
+                        Val <SortIcon column="valueRank" />
                       </div>
                     </th>
-                    <th className="text-center py-3 px-2 text-slate-400 font-medium">Hitters</th>
-                    <th className="text-center py-3 px-2 text-slate-400 font-medium">Pitchers</th>
+                    <th className="text-center py-1.5 px-1.5 text-slate-400 font-medium" title="Hitter Z-Score - Total projected value from position players">Hit</th>
+                    <th className="text-center py-1.5 px-1.5 text-slate-400 font-medium" title="Pitcher Z-Score - Total projected value from pitchers">Pitch</th>
                     <th
-                      className="text-right py-3 px-2 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                      className="text-right py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
                       onClick={() => handleSort('moneyRemaining')}
+                      title="Budget Remaining - Money left to spend on remaining roster spots"
                     >
-                      <div className="flex items-center justify-end gap-1">
-                        <DollarSign className="w-4 h-4" /> Left <SortIcon column="moneyRemaining" />
+                      <div className="flex items-center justify-end gap-0.5">
+                        $ <SortIcon column="moneyRemaining" />
                       </div>
                     </th>
-                    <th className="text-center py-3 px-2 text-slate-400 font-medium">Best Pick</th>
+                    <th className="text-center py-1.5 px-1.5 text-slate-400 font-medium" title="Best Pick - The player with the best value relative to their cost">Best</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -536,87 +533,57 @@ export function TeamRankings({
                       }`}
                     >
                       {/* Overall Rank */}
-                      <td className="py-3 px-2 text-center">
+                      <td className="py-1 px-1.5 text-center">
                         <RankBadge rank={team.overallRank} />
                       </td>
 
                       {/* Team Name */}
-                      <td className="py-3 px-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`font-medium ${team.name === selectedTeam ? 'text-emerald-300' : 'text-white'}`}>
-                            {team.name}
-                          </span>
-                          <span className="text-slate-500 text-xs">
-                            {team.playersDrafted}/{team.rosterSpotsTotal}
-                          </span>
-                        </div>
+                      <td className="py-1 px-1.5">
+                        <span className={`font-medium ${team.name === selectedTeam ? 'text-emerald-300' : 'text-white'}`}>
+                          {team.name}
+                        </span>
+                        <span className="text-slate-500 ml-1">{team.playersDrafted}/{team.rosterSpotsTotal}</span>
                       </td>
 
                       {/* Z-Score */}
-                      <td className="py-3 px-2 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-emerald-400 font-bold">{team.totalZScore.toFixed(1)}</span>
-                          <span className="text-slate-500 text-xs">#{team.zScoreRank}</span>
-                        </div>
+                      <td className="py-1 px-1.5 text-center">
+                        <span className="text-emerald-400 font-semibold">{team.totalZScore.toFixed(1)}</span>
                       </td>
 
                       {/* Efficiency ($/Z) */}
-                      <td className="py-3 px-2 text-center">
-                        <div className="flex flex-col items-center">
-                          {team.totalZScore > 0 ? (
-                            <>
-                              <span className={`font-bold ${
-                                team.efficiencyRank <= 3 ? 'text-emerald-400' :
-                                team.efficiencyRank <= 6 ? 'text-blue-400' : 'text-slate-300'
-                              }`}>
-                                ${team.dollarsPerZScore.toFixed(2)}
-                              </span>
-                              <span className="text-slate-500 text-xs">#{team.efficiencyRank}</span>
-                            </>
-                          ) : (
-                            <span className="text-slate-500">N/A</span>
-                          )}
-                        </div>
+                      <td className="py-1 px-1.5 text-center">
+                        {team.totalZScore > 0 ? (
+                          <span className={`font-semibold ${
+                            team.efficiencyRank <= 3 ? 'text-emerald-400' :
+                            team.efficiencyRank <= 6 ? 'text-blue-400' : 'text-slate-300'
+                          }`}>
+                            ${team.dollarsPerZScore.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">-</span>
+                        )}
                       </td>
 
                       {/* Value Gained */}
-                      <td className="py-3 px-2 text-center">
-                        <div className="flex flex-col items-center">
-                          <div className="flex items-center gap-1">
-                            {team.valueGained >= 0 ? (
-                              <TrendingUp className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <TrendingDown className="w-3 h-3 text-red-400" />
-                            )}
-                            <span className={`font-bold ${team.valueGained >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {team.valueGained >= 0 ? '+' : ''}{team.valueGained.toFixed(0)}
-                            </span>
-                          </div>
-                          <span className="text-slate-500 text-xs">
-                            {team.bargainCount}↑ {team.overpayCount}↓
-                          </span>
-                        </div>
+                      <td className="py-1 px-1.5 text-center">
+                        <span className={`font-semibold ${team.valueGained >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {team.valueGained >= 0 ? '+' : ''}{team.valueGained.toFixed(0)}
+                        </span>
                       </td>
 
                       {/* Hitters */}
-                      <td className="py-3 px-2 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-amber-400 font-medium">{team.hitterZScore.toFixed(1)}</span>
-                          <span className="text-slate-500 text-xs">${team.hitterSpent}</span>
-                        </div>
+                      <td className="py-1 px-1.5 text-center">
+                        <span className="text-amber-400">{team.hitterZScore.toFixed(1)}</span>
                       </td>
 
                       {/* Pitchers */}
-                      <td className="py-3 px-2 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-purple-400 font-medium">{team.pitcherZScore.toFixed(1)}</span>
-                          <span className="text-slate-500 text-xs">${team.pitcherSpent}</span>
-                        </div>
+                      <td className="py-1 px-1.5 text-center">
+                        <span className="text-purple-400">{team.pitcherZScore.toFixed(1)}</span>
                       </td>
 
                       {/* Money Remaining */}
-                      <td className="py-3 px-2 text-right">
-                        <span className={`font-bold ${
+                      <td className="py-1 px-1.5 text-right">
+                        <span className={`font-semibold ${
                           team.moneyRemaining > 50 ? 'text-emerald-400' :
                           team.moneyRemaining > 20 ? 'text-blue-400' : 'text-amber-400'
                         }`}>
@@ -625,18 +592,13 @@ export function TeamRankings({
                       </td>
 
                       {/* Best Pick */}
-                      <td className="py-3 px-2">
+                      <td className="py-1 px-1.5 text-center">
                         {team.bestPick ? (
-                          <div className="flex flex-col items-center">
-                            <span className="text-white text-xs truncate max-w-[100px]" title={team.bestPick.name}>
-                              {team.bestPick.name.split(' ').slice(-1)[0]}
-                            </span>
-                            <span className="text-emerald-400 text-xs">
-                              ${team.bestPick.price} (${team.bestPick.value.toFixed(0)})
-                            </span>
-                          </div>
+                          <span className="text-slate-300" title={`${team.bestPick.name}: $${team.bestPick.price} (proj $${team.bestPick.value.toFixed(0)})`}>
+                            {team.bestPick.name.split(' ').slice(-1)[0]}
+                          </span>
                         ) : (
-                          <span className="text-slate-500 text-xs">-</span>
+                          <span className="text-slate-500">-</span>
                         )}
                       </td>
                     </tr>
@@ -647,20 +609,13 @@ export function TeamRankings({
           )}
         </div>
 
-        {/* Legend - fixed at bottom */}
-        <div className={`flex flex-wrap items-center gap-4 ${isMobile ? 'text-xs' : 'text-sm'} border-t border-slate-700 p-4 shrink-0 bg-slate-900`}>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-emerald-400" />
-            <span className="text-slate-400">Z-Score = Total player value (SGP)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-blue-400" />
-            <span className="text-slate-400">$/Z = Dollars spent per Z-Score point</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-purple-400" />
-            <span className="text-slate-400">Value = Projected - Actual price</span>
-          </div>
+        {/* Legend - compact */}
+        <div className="flex flex-wrap items-center gap-3 text-xs border-t border-slate-700 px-4 py-2 shrink-0 bg-slate-900">
+          <span className="text-slate-500">Z=Total value</span>
+          <span className="text-slate-500">$/Z=Cost efficiency</span>
+          <span className="text-slate-500">Val=Savings vs projected</span>
+          <span className="text-amber-400">Hit</span>
+          <span className="text-purple-400">Pitch</span>
         </div>
       </div>
     </div>
