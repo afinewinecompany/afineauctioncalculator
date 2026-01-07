@@ -3,7 +3,7 @@ import { toast, Toaster } from 'sonner';
 import { LeagueSettings, Player, SavedLeague, UserData } from './lib/types';
 import { generateMockPlayers } from './lib/mockData';
 import { calculateLeagueAuctionValues, convertToPlayers } from './lib/auctionApi';
-import { fetchLeagues, createLeague as createLeagueApi, updateLeague as updateLeagueApi, deleteLeague as deleteLeagueApi, fetchDraftState, saveDraftState, DraftPlayerState } from './lib/leaguesApi';
+import { fetchLeagues, fetchLeague, createLeague as createLeagueApi, updateLeague as updateLeagueApi, deleteLeague as deleteLeagueApi, fetchDraftState, saveDraftState, DraftPlayerState } from './lib/leaguesApi';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
@@ -447,8 +447,25 @@ function AppContent() {
     setIsLoadingProjections(true);
 
     try {
-      // Always reload full player projections from API
-      const calculatedValues = await calculateLeagueAuctionValues(league.settings);
+      // For backend leagues, fetch fresh settings from server to ensure cross-device consistency
+      // This prevents issues where mobile/desktop have different cached settings
+      let leagueToUse = league;
+      if (!league.id.startsWith('league-')) {
+        try {
+          const freshLeague = await fetchLeague(league.id);
+          if (import.meta.env.DEV) {
+            console.log('[App] Fetched fresh league settings from server');
+          }
+          // Use server settings but keep local player data for now
+          leagueToUse = { ...league, settings: freshLeague.settings };
+        } catch (error) {
+          console.error('[App] Failed to fetch fresh league settings, using cached:', error);
+          // Continue with cached settings if fetch fails
+        }
+      }
+
+      // Always reload full player projections from API using the freshest settings
+      const calculatedValues = await calculateLeagueAuctionValues(leagueToUse.settings);
       const projectedPlayers = convertToPlayers(calculatedValues);
 
       // Fetch draft state from server (primary source for cross-device sync)
@@ -513,9 +530,9 @@ function AppContent() {
 
       setPlayers(mergedPlayers);
 
-      // Update the league in userData with full player data
+      // Update the league in userData with full player data and fresh settings
       if (userData) {
-        const updatedLeague = { ...league, players: mergedPlayers };
+        const updatedLeague = { ...leagueToUse, players: mergedPlayers };
         const updatedUser = {
           ...userData,
           leagues: userData.leagues.map(l => l.id === league.id ? updatedLeague : l)
@@ -524,7 +541,7 @@ function AppContent() {
         setCurrentLeague(updatedLeague);
       }
 
-      if (league.status === 'complete') {
+      if (leagueToUse.status === 'complete') {
         const myTeam = mergedPlayers.filter(p => p.status === 'onMyTeam');
         setFinalRoster(myTeam as any);
         setCurrentScreen('analysis');
