@@ -530,6 +530,12 @@ export function TeamRankings({
             <div className="text-purple-200">
               Total Drafted: {allDrafted.length} | Teams: {auctionData?.teams?.length || 0}
             </div>
+            <div className="text-purple-200/70 mt-0.5">
+              Settings: {settings.numTeams}T, ${settings.budgetPerTeam}budget, {settings.projectionSystem}
+            </div>
+            <div className="text-purple-200/70">
+              Cats: {settings.scoringCategories?.hitter?.length || 0}H/{settings.scoringCategories?.pitcher?.length || 0}P, HitSplit: {settings.hitterPitcherSplit || 'default'}
+            </div>
             {marlinsTeam && (
               <div className="mt-1 text-purple-200">
                 <div>Marlins: Val={marlinsTeam.valueGained.toFixed(0)}, Z={marlinsTeam.totalZScore.toFixed(1)}, $/Z=${marlinsTeam.dollarsPerZScore.toFixed(1)}</div>
@@ -700,10 +706,12 @@ export function TeamRankings({
         {/* Temporarily enabled in production for debugging */}
         {(
           <div className="px-4 py-2 bg-purple-900/30 border-b border-purple-500/30 text-xs shrink-0">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <span className="text-purple-300 font-semibold">DEBUG INFO (Desktop)</span>
               <span className="text-purple-200">Total Drafted: {allDrafted.length}</span>
               <span className="text-purple-200">Teams: {auctionData?.teams?.length || 0}</span>
+              <span className="text-purple-200/70">Settings: {settings.numTeams}T, ${settings.budgetPerTeam}, {settings.projectionSystem}</span>
+              <span className="text-purple-200/70">Cats: {settings.scoringCategories?.hitter?.length || 0}H/{settings.scoringCategories?.pitcher?.length || 0}P, Split: {settings.hitterPitcherSplit || 'def'}</span>
               {marlinsTeamDesktop && (
                 <>
                   <span className="text-purple-200">Marlins Val={marlinsTeamDesktop.valueGained.toFixed(0)}</span>
