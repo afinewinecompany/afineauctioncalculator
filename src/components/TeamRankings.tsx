@@ -1,20 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import { LeagueSettings, Player, ScrapedAuctionData } from '../lib/types';
 import {
   Trophy,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Target,
   ChevronDown,
   ChevronUp,
   Medal,
   Zap,
   Users,
   BarChart3,
-  Sparkles,
   AlertCircle,
   X,
+  Download,
+  DollarSign,
 } from 'lucide-react';
 
 interface TeamRankingsProps {
@@ -70,7 +67,8 @@ export function TeamRankings({
 }: TeamRankingsProps) {
   const [sortBy, setSortBy] = useState<SortColumn>('overallRank');
   const [sortAsc, setSortAsc] = useState(true);
-  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [showPrintView, setShowPrintView] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
   const totalRosterSpots = useMemo(() => {
     const rs = settings.rosterSpots;
@@ -280,11 +278,42 @@ export function TeamRankings({
     return { avgZScore, avgEfficiency, totalSpent, totalDrafted };
   }, [teamRankings]);
 
-  const RankBadge = ({ rank }: { rank: number }) => {
-    if (rank === 1) return <span className="text-lg">🥇</span>;
-    if (rank === 2) return <span className="text-lg">🥈</span>;
-    if (rank === 3) return <span className="text-lg">🥉</span>;
-    return <span className="text-slate-400 text-sm font-medium">#{rank}</span>;
+  // Save as image functionality
+  const handleSaveAsImage = useCallback(async () => {
+    setShowPrintView(true);
+    // Wait for print view to render
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    if (printRef.current) {
+      try {
+        // Dynamic import html2canvas
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(printRef.current, {
+          backgroundColor: '#1e293b',
+          scale: 2,
+          logging: false,
+        });
+
+        // Convert to image and download
+        const link = document.createElement('a');
+        link.download = `team-rankings-${new Date().toISOString().split('T')[0]}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (error) {
+        console.error('Failed to save image:', error);
+        // Fallback: copy to clipboard or show error
+        alert('Failed to save image. Please try taking a screenshot instead.');
+      }
+    }
+    setShowPrintView(false);
+  }, []);
+
+  const RankBadge = ({ rank, size = 'normal' }: { rank: number; size?: 'normal' | 'small' }) => {
+    const textSize = size === 'small' ? 'text-sm' : 'text-lg';
+    if (rank === 1) return <span className={textSize}>🥇</span>;
+    if (rank === 2) return <span className={textSize}>🥈</span>;
+    if (rank === 3) return <span className={textSize}>🥉</span>;
+    return <span className={`text-slate-400 ${size === 'small' ? 'text-xs' : 'text-sm'} font-medium`}>#{rank}</span>;
   };
 
   const SortIcon = ({ column }: { column: SortColumn }) => {
@@ -324,13 +353,207 @@ export function TeamRankings({
     );
   }
 
-  // Calculate max height based on viewport
-  const modalHeight = isMobile ? 'h-[90vh]' : 'h-[85vh]';
+  // Print view - clean, simple layout for saving
+  if (showPrintView) {
+    return (
+      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+        <div
+          ref={printRef}
+          className="bg-slate-800 p-6 rounded-lg max-w-2xl w-full"
+        >
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-600">
+            <Trophy className="w-6 h-6 text-amber-400" />
+            <h1 className="text-xl font-bold text-white">Team Rankings</h1>
+            <span className="text-slate-400 text-sm ml-auto">
+              {new Date().toLocaleDateString()}
+            </span>
+          </div>
 
+          {leagueStats && (
+            <div className="flex gap-6 mb-4 text-sm text-slate-300">
+              <span>Avg Z: <strong className="text-emerald-400">{leagueStats.avgZScore.toFixed(1)}</strong></span>
+              <span>Total Spent: <strong className="text-white">${leagueStats.totalSpent}</strong></span>
+              <span>Drafted: <strong className="text-white">{leagueStats.totalDrafted}</strong></span>
+            </div>
+          )}
+
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-600 text-slate-400">
+                <th className="text-left py-2 px-2">#</th>
+                <th className="text-left py-2 px-2">Team</th>
+                <th className="text-center py-2 px-2">Z</th>
+                <th className="text-center py-2 px-2">$/Z</th>
+                <th className="text-center py-2 px-2">Value</th>
+                <th className="text-right py-2 px-2">$ Left</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedTeams.map((team) => (
+                <tr key={team.name} className="border-b border-slate-700/50">
+                  <td className="py-2 px-2">
+                    <RankBadge rank={team.overallRank} size="small" />
+                  </td>
+                  <td className="py-2 px-2 text-white font-medium">{team.name}</td>
+                  <td className="py-2 px-2 text-center text-emerald-400">{team.totalZScore.toFixed(1)}</td>
+                  <td className="py-2 px-2 text-center text-blue-400">
+                    {team.totalZScore > 0 ? `$${team.dollarsPerZScore.toFixed(1)}` : '-'}
+                  </td>
+                  <td className={`py-2 px-2 text-center ${team.valueGained >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {team.valueGained >= 0 ? '+' : ''}{team.valueGained.toFixed(0)}
+                  </td>
+                  <td className="py-2 px-2 text-right text-slate-300">${team.moneyRemaining}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="mt-4 pt-3 border-t border-slate-600 text-xs text-slate-500 flex gap-4">
+            <span>Z = Total Value</span>
+            <span>$/Z = Cost Efficiency</span>
+            <span>Value = Savings vs Projected</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile view - full screen with simple scrolling list
+  if (isMobile) {
+    return (
+      <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-900">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-400" />
+            <h2 className="text-base font-semibold text-white">Team Rankings</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSaveAsImage}
+              className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+              title="Save as Image"
+            >
+              <Download className="w-5 h-5 text-slate-400" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* League Summary */}
+        {leagueStats && (
+          <div className="grid grid-cols-4 gap-1 px-3 py-2 border-b border-slate-700/50 bg-slate-800/50 text-xs">
+            <div className="text-center">
+              <div className="text-slate-500">Avg Z</div>
+              <div className="text-emerald-400 font-semibold">{leagueStats.avgZScore.toFixed(1)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-slate-500">Avg $/Z</div>
+              <div className="text-blue-400 font-semibold">${leagueStats.avgEfficiency.toFixed(1)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-slate-500">Spent</div>
+              <div className="text-white font-semibold">${leagueStats.totalSpent}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-slate-500">Drafted</div>
+              <div className="text-white font-semibold">{leagueStats.totalDrafted}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Column Headers - Fixed */}
+        <div className="grid grid-cols-12 gap-1 px-3 py-2 border-b border-slate-700 bg-slate-800 text-xs text-slate-400 font-medium">
+          <div className="col-span-1 text-center">#</div>
+          <div className="col-span-4">Team</div>
+          <div className="col-span-2 text-center">Z</div>
+          <div className="col-span-2 text-center">$/Z</div>
+          <div className="col-span-2 text-center">Val</div>
+          <div className="col-span-1 text-right">$</div>
+        </div>
+
+        {/* Scrollable Team List */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          {sortedTeams.map((team) => (
+            <div
+              key={team.name}
+              className={`grid grid-cols-12 gap-1 px-3 py-3 border-b border-slate-700/30 items-center ${
+                team.name === selectedTeam ? 'bg-emerald-900/30' : ''
+              }`}
+            >
+              {/* Rank */}
+              <div className="col-span-1 text-center">
+                <RankBadge rank={team.overallRank} size="small" />
+              </div>
+
+              {/* Team Name */}
+              <div className="col-span-4">
+                <div className={`font-medium text-sm truncate ${team.name === selectedTeam ? 'text-emerald-300' : 'text-white'}`}>
+                  {team.name}
+                </div>
+                <div className="text-xs text-slate-500">
+                  {team.playersDrafted}/{team.rosterSpotsTotal}
+                </div>
+              </div>
+
+              {/* Z-Score */}
+              <div className="col-span-2 text-center">
+                <div className="text-emerald-400 font-semibold text-sm">
+                  {team.totalZScore.toFixed(1)}
+                </div>
+              </div>
+
+              {/* $/Z */}
+              <div className="col-span-2 text-center">
+                <div className={`text-sm font-medium ${
+                  team.totalZScore > 0
+                    ? team.efficiencyRank <= 3 ? 'text-emerald-400' : 'text-blue-400'
+                    : 'text-slate-500'
+                }`}>
+                  {team.totalZScore > 0 ? `$${team.dollarsPerZScore.toFixed(1)}` : '-'}
+                </div>
+              </div>
+
+              {/* Value */}
+              <div className="col-span-2 text-center">
+                <div className={`text-sm font-semibold ${team.valueGained >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {team.valueGained >= 0 ? '+' : ''}{team.valueGained.toFixed(0)}
+                </div>
+              </div>
+
+              {/* Money Remaining */}
+              <div className="col-span-1 text-right">
+                <div className={`text-sm font-medium ${
+                  team.moneyRemaining > 50 ? 'text-emerald-400' :
+                  team.moneyRemaining > 20 ? 'text-blue-400' : 'text-amber-400'
+                }`}>
+                  ${team.moneyRemaining}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Legend Footer */}
+        <div className="flex justify-center gap-4 text-xs border-t border-slate-700 px-4 py-2 bg-slate-800">
+          <span className="text-slate-500">Z=Value</span>
+          <span className="text-slate-500">$/Z=Efficiency</span>
+          <span className="text-slate-500">Val=Savings</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className={`bg-slate-900 border border-slate-700 text-white rounded-lg ${isMobile ? 'w-full' : 'max-w-5xl w-full'} ${modalHeight} flex flex-col overflow-hidden`}
+        className="bg-slate-900 border border-slate-700 text-white rounded-lg max-w-5xl w-full h-[85vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header - compact */}
@@ -339,17 +562,27 @@ export function TeamRankings({
             <Trophy className="w-4 h-4 text-amber-400" />
             <h2 className="text-sm font-semibold">Team Rankings</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-slate-800 rounded transition-colors"
-          >
-            <X className="w-4 h-4 text-slate-400" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSaveAsImage}
+              className="flex items-center gap-1.5 px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 rounded transition-colors"
+              title="Save as Image"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Save
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-slate-800 rounded transition-colors"
+            >
+              <X className="w-4 h-4 text-slate-400" />
+            </button>
+          </div>
         </div>
 
         {/* League Summary - compact */}
         {leagueStats && (
-          <div className={`flex ${isMobile ? 'flex-wrap' : ''} gap-4 px-4 py-2 border-b border-slate-700/50 shrink-0 text-xs`}>
+          <div className="flex gap-4 px-4 py-2 border-b border-slate-700/50 shrink-0 text-xs">
             <div className="flex items-center gap-1.5">
               <BarChart3 className="w-3 h-3 text-slate-400" />
               <span className="text-slate-400">Avg Z:</span>
@@ -373,240 +606,147 @@ export function TeamRankings({
           </div>
         )}
 
-        {/* Scrollable Rankings Table/Cards */}
+        {/* Scrollable Rankings Table */}
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
-          {isMobile ? (
-            /* Mobile: Card layout */
-            <div className="space-y-2">
-              {sortedTeams.map((team) => (
-                <div
-                  key={team.name}
-                  className={`rounded-lg border transition-all ${
-                    team.name === selectedTeam
-                      ? 'bg-emerald-900/30 border-emerald-500/50'
-                      : 'bg-slate-800/50 border-slate-700/50'
-                  }`}
-                >
-                  {/* Main row - always visible */}
-                  <button
-                    onClick={() => setExpandedTeam(expandedTeam === team.name ? null : team.name)}
-                    className="w-full p-3 text-left"
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-slate-900">
+                <tr className="border-b border-slate-700/50">
+                  <th
+                    className="text-left py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                    onClick={() => handleSort('overallRank')}
+                    title="Overall Rank - Combined ranking based on Z-Score, efficiency, and value gained"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <RankBadge rank={team.overallRank} />
-                        <span className={`font-medium ${team.name === selectedTeam ? 'text-emerald-300' : 'text-white'}`}>
-                          {team.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-emerald-400 font-bold">{team.totalZScore.toFixed(1)} Z</span>
-                        {expandedTeam === team.name ? (
-                          <ChevronUp className="w-4 h-4 text-slate-400" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-slate-400" />
-                        )}
-                      </div>
+                    <div className="flex items-center gap-0.5">
+                      <Medal className="w-3 h-3" /> # <SortIcon column="overallRank" />
                     </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div>
-                        <span className="text-slate-500">$/Z</span>
-                        <div className={team.totalZScore > 0 ? 'text-blue-400' : 'text-slate-500'}>
-                          {team.totalZScore > 0 ? `$${team.dollarsPerZScore.toFixed(2)}` : 'N/A'}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-slate-500">Spent</span>
-                        <div className="text-slate-300">${team.moneySpent}</div>
-                      </div>
-                      <div>
-                        <span className="text-slate-500">Value</span>
-                        <div className={team.valueGained >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                          {team.valueGained >= 0 ? '+' : ''}{team.valueGained.toFixed(0)}
-                        </div>
-                      </div>
+                  </th>
+                  <th className="text-left py-1.5 px-1.5 text-slate-400 font-medium" title="Team name and roster progress (drafted/total spots)">Team</th>
+                  <th
+                    className="text-center py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                    onClick={() => handleSort('zScoreRank')}
+                    title="Total Z-Score - Sum of all drafted players' projected value. Higher = better team"
+                  >
+                    <div className="flex items-center justify-center gap-0.5">
+                      Z <SortIcon column="zScoreRank" />
                     </div>
-                  </button>
-
-                  {/* Expanded details */}
-                  {expandedTeam === team.name && (
-                    <div className="px-3 pb-3 pt-0 border-t border-slate-700/50 mt-2">
-                      <div className="grid grid-cols-2 gap-3 text-xs mt-3">
-                        <div>
-                          <span className="text-slate-500">Hitter Z / $</span>
-                          <div className="text-slate-300">{team.hitterZScore.toFixed(1)} / ${team.hitterSpent}</div>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Pitcher Z / $</span>
-                          <div className="text-slate-300">{team.pitcherZScore.toFixed(1)} / ${team.pitcherSpent}</div>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Bargains</span>
-                          <div className="text-emerald-400">{team.bargainCount}</div>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Overpays</span>
-                          <div className="text-red-400">{team.overpayCount}</div>
-                        </div>
-                      </div>
-                      {team.bestPick && (
-                        <div className="mt-3 p-2 bg-emerald-900/20 rounded border border-emerald-500/30">
-                          <div className="flex items-center gap-1 text-emerald-400 text-xs mb-1">
-                            <Sparkles className="w-3 h-3" /> Best Pick
-                          </div>
-                          <div className="text-white text-sm">{team.bestPick.name}</div>
-                          <div className="text-emerald-300 text-xs">
-                            ${team.bestPick.price} (value: ${team.bestPick.value.toFixed(0)})
-                          </div>
-                        </div>
-                      )}
+                  </th>
+                  <th
+                    className="text-center py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                    onClick={() => handleSort('efficiencyRank')}
+                    title="Cost Efficiency - Dollars spent per Z-Score point. Lower = more efficient spending"
+                  >
+                    <div className="flex items-center justify-center gap-0.5">
+                      $/Z <SortIcon column="efficiencyRank" />
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            /* Desktop: Compact table layout */
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-slate-900">
-                  <tr className="border-b border-slate-700/50">
-                    <th
-                      className="text-left py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
-                      onClick={() => handleSort('overallRank')}
-                      title="Overall Rank - Combined ranking based on Z-Score, efficiency, and value gained"
-                    >
-                      <div className="flex items-center gap-0.5">
-                        <Medal className="w-3 h-3" /> # <SortIcon column="overallRank" />
-                      </div>
-                    </th>
-                    <th className="text-left py-1.5 px-1.5 text-slate-400 font-medium" title="Team name and roster progress (drafted/total spots)">Team</th>
-                    <th
-                      className="text-center py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
-                      onClick={() => handleSort('zScoreRank')}
-                      title="Total Z-Score - Sum of all drafted players' projected value. Higher = better team"
-                    >
-                      <div className="flex items-center justify-center gap-0.5">
-                        Z <SortIcon column="zScoreRank" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-center py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
-                      onClick={() => handleSort('efficiencyRank')}
-                      title="Cost Efficiency - Dollars spent per Z-Score point. Lower = more efficient spending"
-                    >
-                      <div className="flex items-center justify-center gap-0.5">
-                        $/Z <SortIcon column="efficiencyRank" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-center py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
-                      onClick={() => handleSort('valueRank')}
-                      title="Value Gained - Difference between projected value and actual cost. Positive = got bargains"
-                    >
-                      <div className="flex items-center justify-center gap-0.5">
-                        Val <SortIcon column="valueRank" />
-                      </div>
-                    </th>
-                    <th className="text-center py-1.5 px-1.5 text-slate-400 font-medium" title="Hitter Z-Score - Total projected value from position players">Hit</th>
-                    <th className="text-center py-1.5 px-1.5 text-slate-400 font-medium" title="Pitcher Z-Score - Total projected value from pitchers">Pitch</th>
-                    <th
-                      className="text-right py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
-                      onClick={() => handleSort('moneyRemaining')}
-                      title="Budget Remaining - Money left to spend on remaining roster spots"
-                    >
-                      <div className="flex items-center justify-end gap-0.5">
-                        $ <SortIcon column="moneyRemaining" />
-                      </div>
-                    </th>
-                    <th className="text-center py-1.5 px-1.5 text-slate-400 font-medium" title="Best Pick - The player with the best value relative to their cost">Best</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedTeams.map((team) => (
-                    <tr
-                      key={team.name}
-                      className={`border-b border-slate-700/30 transition-colors ${
-                        team.name === selectedTeam
-                          ? 'bg-emerald-900/20'
-                          : 'hover:bg-slate-700/30'
-                      }`}
-                    >
-                      {/* Overall Rank */}
-                      <td className="py-1 px-1.5 text-center">
-                        <RankBadge rank={team.overallRank} />
-                      </td>
+                  </th>
+                  <th
+                    className="text-center py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                    onClick={() => handleSort('valueRank')}
+                    title="Value Gained - Difference between projected value and actual cost. Positive = got bargains"
+                  >
+                    <div className="flex items-center justify-center gap-0.5">
+                      Val <SortIcon column="valueRank" />
+                    </div>
+                  </th>
+                  <th className="text-center py-1.5 px-1.5 text-slate-400 font-medium" title="Hitter Z-Score - Total projected value from position players">Hit</th>
+                  <th className="text-center py-1.5 px-1.5 text-slate-400 font-medium" title="Pitcher Z-Score - Total projected value from pitchers">Pitch</th>
+                  <th
+                    className="text-right py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors"
+                    onClick={() => handleSort('moneyRemaining')}
+                    title="Budget Remaining - Money left to spend on remaining roster spots"
+                  >
+                    <div className="flex items-center justify-end gap-0.5">
+                      $ <SortIcon column="moneyRemaining" />
+                    </div>
+                  </th>
+                  <th className="text-center py-1.5 px-1.5 text-slate-400 font-medium" title="Best Pick - The player with the best value relative to their cost">Best</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedTeams.map((team) => (
+                  <tr
+                    key={team.name}
+                    className={`border-b border-slate-700/30 transition-colors ${
+                      team.name === selectedTeam
+                        ? 'bg-emerald-900/20'
+                        : 'hover:bg-slate-700/30'
+                    }`}
+                  >
+                    {/* Overall Rank */}
+                    <td className="py-1 px-1.5 text-center">
+                      <RankBadge rank={team.overallRank} />
+                    </td>
 
-                      {/* Team Name */}
-                      <td className="py-1 px-1.5">
-                        <span className={`font-medium ${team.name === selectedTeam ? 'text-emerald-300' : 'text-white'}`}>
-                          {team.name}
-                        </span>
-                        <span className="text-slate-500 ml-1">{team.playersDrafted}/{team.rosterSpotsTotal}</span>
-                      </td>
+                    {/* Team Name */}
+                    <td className="py-1 px-1.5">
+                      <span className={`font-medium ${team.name === selectedTeam ? 'text-emerald-300' : 'text-white'}`}>
+                        {team.name}
+                      </span>
+                      <span className="text-slate-500 ml-1">{team.playersDrafted}/{team.rosterSpotsTotal}</span>
+                    </td>
 
-                      {/* Z-Score */}
-                      <td className="py-1 px-1.5 text-center">
-                        <span className="text-emerald-400 font-semibold">{team.totalZScore.toFixed(1)}</span>
-                      </td>
+                    {/* Z-Score */}
+                    <td className="py-1 px-1.5 text-center">
+                      <span className="text-emerald-400 font-semibold">{team.totalZScore.toFixed(1)}</span>
+                    </td>
 
-                      {/* Efficiency ($/Z) */}
-                      <td className="py-1 px-1.5 text-center">
-                        {team.totalZScore > 0 ? (
-                          <span className={`font-semibold ${
-                            team.efficiencyRank <= 3 ? 'text-emerald-400' :
-                            team.efficiencyRank <= 6 ? 'text-blue-400' : 'text-slate-300'
-                          }`}>
-                            ${team.dollarsPerZScore.toFixed(1)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-500">-</span>
-                        )}
-                      </td>
-
-                      {/* Value Gained */}
-                      <td className="py-1 px-1.5 text-center">
-                        <span className={`font-semibold ${team.valueGained >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {team.valueGained >= 0 ? '+' : ''}{team.valueGained.toFixed(0)}
-                        </span>
-                      </td>
-
-                      {/* Hitters */}
-                      <td className="py-1 px-1.5 text-center">
-                        <span className="text-amber-400">{team.hitterZScore.toFixed(1)}</span>
-                      </td>
-
-                      {/* Pitchers */}
-                      <td className="py-1 px-1.5 text-center">
-                        <span className="text-purple-400">{team.pitcherZScore.toFixed(1)}</span>
-                      </td>
-
-                      {/* Money Remaining */}
-                      <td className="py-1 px-1.5 text-right">
+                    {/* Efficiency ($/Z) */}
+                    <td className="py-1 px-1.5 text-center">
+                      {team.totalZScore > 0 ? (
                         <span className={`font-semibold ${
-                          team.moneyRemaining > 50 ? 'text-emerald-400' :
-                          team.moneyRemaining > 20 ? 'text-blue-400' : 'text-amber-400'
+                          team.efficiencyRank <= 3 ? 'text-emerald-400' :
+                          team.efficiencyRank <= 6 ? 'text-blue-400' : 'text-slate-300'
                         }`}>
-                          ${team.moneyRemaining}
+                          ${team.dollarsPerZScore.toFixed(1)}
                         </span>
-                      </td>
+                      ) : (
+                        <span className="text-slate-500">-</span>
+                      )}
+                    </td>
 
-                      {/* Best Pick */}
-                      <td className="py-1 px-1.5 text-center">
-                        {team.bestPick ? (
-                          <span className="text-slate-300" title={`${team.bestPick.name}: $${team.bestPick.price} (proj $${team.bestPick.value.toFixed(0)})`}>
-                            {team.bestPick.name.split(' ').slice(-1)[0]}
-                          </span>
-                        ) : (
-                          <span className="text-slate-500">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                    {/* Value Gained */}
+                    <td className="py-1 px-1.5 text-center">
+                      <span className={`font-semibold ${team.valueGained >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {team.valueGained >= 0 ? '+' : ''}{team.valueGained.toFixed(0)}
+                      </span>
+                    </td>
+
+                    {/* Hitters */}
+                    <td className="py-1 px-1.5 text-center">
+                      <span className="text-amber-400">{team.hitterZScore.toFixed(1)}</span>
+                    </td>
+
+                    {/* Pitchers */}
+                    <td className="py-1 px-1.5 text-center">
+                      <span className="text-purple-400">{team.pitcherZScore.toFixed(1)}</span>
+                    </td>
+
+                    {/* Money Remaining */}
+                    <td className="py-1 px-1.5 text-right">
+                      <span className={`font-semibold ${
+                        team.moneyRemaining > 50 ? 'text-emerald-400' :
+                        team.moneyRemaining > 20 ? 'text-blue-400' : 'text-amber-400'
+                      }`}>
+                        ${team.moneyRemaining}
+                      </span>
+                    </td>
+
+                    {/* Best Pick */}
+                    <td className="py-1 px-1.5 text-center">
+                      {team.bestPick ? (
+                        <span className="text-slate-300" title={`${team.bestPick.name}: $${team.bestPick.price} (proj $${team.bestPick.value.toFixed(0)})`}>
+                          {team.bestPick.name.split(' ').slice(-1)[0]}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Legend - compact */}

@@ -45,6 +45,7 @@
             "express-rate-limit": "^7.1.5",
             "framer-motion": "^12.23.26",
             "helmet": "^7.1.0",
+            "html2canvas": "^1.4.1",
             "input-otp": "^1.4.2",
             "ioredis": "^5.4.2",
             "jsonwebtoken": "^9.0.2",
