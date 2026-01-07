@@ -324,14 +324,17 @@ export function TeamRankings({
     );
   }
 
+  // Calculate max height based on viewport
+  const modalHeight = isMobile ? 'h-[90vh]' : 'h-[85vh]';
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className={`bg-slate-900 border border-slate-700 text-white rounded-lg ${isMobile ? 'w-full h-[90vh]' : 'max-w-5xl w-full max-h-[85vh]'} flex flex-col`}
+        className={`bg-slate-900 border border-slate-700 text-white rounded-lg ${isMobile ? 'w-full' : 'max-w-5xl w-full'} ${modalHeight} flex flex-col overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-slate-700 shrink-0">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-400" />
             <h2 className="text-lg font-semibold">Team Rankings</h2>
@@ -346,7 +349,7 @@ export function TeamRankings({
 
         {/* League Summary - fixed at top */}
         {leagueStats && (
-          <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-2 p-4 pb-0 flex-shrink-0`}>
+          <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-2 p-4 pb-0 shrink-0`}>
             <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
               <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
                 <BarChart3 className="w-3 h-3" />
@@ -645,7 +648,7 @@ export function TeamRankings({
         </div>
 
         {/* Legend - fixed at bottom */}
-        <div className={`flex flex-wrap items-center gap-4 ${isMobile ? 'text-xs' : 'text-sm'} border-t border-slate-700 p-4 flex-shrink-0 bg-slate-900`}>
+        <div className={`flex flex-wrap items-center gap-4 ${isMobile ? 'text-xs' : 'text-sm'} border-t border-slate-700 p-4 shrink-0 bg-slate-900`}>
           <div className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-emerald-400" />
             <span className="text-slate-400">Z-Score = Total player value (SGP)</span>
