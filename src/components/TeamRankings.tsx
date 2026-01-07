@@ -523,7 +523,8 @@ export function TeamRankings({
         </div>
 
         {/* DEBUG: Data verification panel - shows raw data for comparison */}
-        {import.meta.env.DEV && (
+        {/* Temporarily enabled in production for debugging */}
+        {(
           <div className="px-3 py-2 bg-purple-900/30 border-b border-purple-500/30 text-xs">
             <div className="text-purple-300 font-semibold mb-1">DEBUG INFO (Mobile)</div>
             <div className="text-purple-200">
@@ -696,7 +697,8 @@ export function TeamRankings({
         </div>
 
         {/* DEBUG: Data verification panel - shows raw data for comparison */}
-        {import.meta.env.DEV && (
+        {/* Temporarily enabled in production for debugging */}
+        {(
           <div className="px-4 py-2 bg-purple-900/30 border-b border-purple-500/30 text-xs shrink-0">
             <div className="flex items-center gap-4">
               <span className="text-purple-300 font-semibold">DEBUG INFO (Desktop)</span>
