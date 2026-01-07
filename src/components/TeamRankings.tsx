@@ -83,6 +83,15 @@ export function TeamRankings({
       return [];
     }
 
+    // DEBUG: Log input data for debugging discrepancies
+    if (import.meta.env.DEV) {
+      console.log('[TeamRankings] Calculating rankings:', {
+        isMobile,
+        totalDraftedPlayers: allDrafted.length,
+        teamsCount: auctionData.teams.length,
+      });
+    }
+
     // Build a map of drafted players by team
     const draftedByTeam = new Map<string, Player[]>();
     allDrafted.forEach(p => {
@@ -120,6 +129,23 @@ export function TeamRankings({
       const totalProjectedValue = teamPlayers.reduce((sum, p) => sum + (p.projectedValue || 0), 0);
       const totalActualSpent = moneySpent;
       const valueGained = totalProjectedValue - totalActualSpent; // Positive = bargains
+
+      // DEBUG: Log detailed breakdown for specific teams
+      if (import.meta.env.DEV && (team.name.toLowerCase().includes('marlin') || team.name === 'Marlins')) {
+        console.log(`[TeamRankings] ${team.name} breakdown:`, {
+          playerCount: teamPlayers.length,
+          players: teamPlayers.map(p => ({
+            name: p.name,
+            projectedValue: p.projectedValue,
+            draftedPrice: p.draftedPrice,
+            sgpValue: p.sgpValue,
+          })),
+          totalProjectedValue,
+          totalActualSpent,
+          valueGained,
+          isMobile,
+        });
+      }
 
       // Count bargains and overpays (10% threshold)
       let bargainCount = 0;
@@ -225,7 +251,7 @@ export function TeamRankings({
     });
 
     return teamsData;
-  }, [auctionData, allDrafted, settings.budgetPerTeam, totalRosterSpots]);
+  }, [auctionData, allDrafted, settings.budgetPerTeam, totalRosterSpots, isMobile]);
 
   // Sort teams
   const sortedTeams = useMemo(() => {
