@@ -660,6 +660,28 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
             }
           }
 
+          // FALLBACK: If still not found by ID, try name+team matching
+          // This handles cases where server matched the player but with a different ID format
+          // or when a player is in initialPlayers but wasn't matched by server
+          if (!basePlayer) {
+            const scrapedNameNormalized = normalizeName(mp.scrapedPlayer.fullName);
+            const scrapedTeamNormalized = mp.scrapedPlayer.mlbTeam.toLowerCase().trim();
+            basePlayer = initialPlayers.find(p => {
+              const playerNameNormalized = normalizeName(p.name);
+              const playerTeamNormalized = p.team.toLowerCase().trim();
+              return playerNameNormalized === scrapedNameNormalized &&
+                     playerTeamNormalized === scrapedTeamNormalized;
+            });
+            if (basePlayer && import.meta.env.DEV) {
+              console.log('[DraftRoom] Player found via name+team fallback lookup:', {
+                basePlayerId: basePlayer.id,
+                basePlayerName: basePlayer.name,
+                scrapedName: mp.scrapedPlayer.fullName,
+                projectedValue: basePlayer.projectedValue,
+              });
+            }
+          }
+
           if (basePlayer) {
             // Avoid duplicates (Ohtani may appear twice - once for hitter, once for pitcher match)
             if (addedPlayerIds.has(basePlayer.id)) {
@@ -707,28 +729,63 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
       // Also handle unmatched drafted players (no projection match at all)
       result.unmatchedPlayers?.forEach(up => {
         if (up.status === 'drafted') {
-          const playerId = `cm-${up.couchManagersId}`;
-          // Skip if already added (may have been matched via frontend name lookup)
-          if (addedPlayerIds.has(playerId)) {
-            return;
-          }
-          addedPlayerIds.add(playerId);
-
-          missingFromPool.push(`${up.fullName} ($${up.winningBid}) [unmatched]`);
-          draftedPlayers.push({
-            id: playerId,
-            name: up.fullName,
-            team: up.mlbTeam,
-            positions: up.positions,
-            projectedValue: 0,
-            adjustedValue: 0,
-            projectedStats: {},
-            status: 'drafted' as const,
-            draftedPrice: up.winningBid,
-            draftedBy: up.winningTeam || 'Unknown',
-            tier: 10,
-            isInDraftPool: false,
+          // Try to find player in initialPlayers by name+team before giving up
+          const unmatchedNameNormalized = normalizeName(up.fullName);
+          const unmatchedTeamNormalized = up.mlbTeam.toLowerCase().trim();
+          const foundInInitial = initialPlayers.find(p => {
+            const playerNameNormalized = normalizeName(p.name);
+            const playerTeamNormalized = p.team.toLowerCase().trim();
+            return playerNameNormalized === unmatchedNameNormalized &&
+                   playerTeamNormalized === unmatchedTeamNormalized;
           });
+
+          if (foundInInitial) {
+            // Skip if already added
+            if (addedPlayerIds.has(foundInInitial.id)) {
+              return;
+            }
+            addedPlayerIds.add(foundInInitial.id);
+
+            if (import.meta.env.DEV) {
+              console.log('[DraftRoom] Unmatched player found via name+team lookup:', {
+                foundId: foundInInitial.id,
+                foundName: foundInInitial.name,
+                scrapedName: up.fullName,
+                projectedValue: foundInInitial.projectedValue,
+              });
+            }
+
+            draftedPlayers.push({
+              ...foundInInitial,
+              status: 'drafted' as const,
+              draftedPrice: up.winningBid,
+              draftedBy: up.winningTeam || 'Unknown',
+            });
+          } else {
+            // Truly unmatched - no projection data available
+            const playerId = `cm-${up.couchManagersId}`;
+            // Skip if already added (may have been matched via frontend name lookup)
+            if (addedPlayerIds.has(playerId)) {
+              return;
+            }
+            addedPlayerIds.add(playerId);
+
+            missingFromPool.push(`${up.fullName} ($${up.winningBid}) [unmatched]`);
+            draftedPlayers.push({
+              id: playerId,
+              name: up.fullName,
+              team: up.mlbTeam,
+              positions: up.positions,
+              projectedValue: 0,
+              adjustedValue: 0,
+              projectedStats: {},
+              status: 'drafted' as const,
+              draftedPrice: up.winningBid,
+              draftedBy: up.winningTeam || 'Unknown',
+              tier: 10,
+              isInDraftPool: false,
+            });
+          }
         }
       });
 
