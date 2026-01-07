@@ -489,6 +489,14 @@ export function TeamRankings({
 
   // Mobile view - full screen with simple scrolling list
   if (isMobile) {
+    // Find Marlins data for debug display
+    const marlinsTeam = teamRankings.find(t =>
+      t.name.toLowerCase().includes('marlin') || t.name === 'Marlins'
+    );
+    const marlinsPlayers = allDrafted.filter(p =>
+      p.draftedBy?.toLowerCase().includes('marlin') || p.draftedBy === 'Marlins'
+    );
+
     return (
       <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col">
         {/* Fixed Header */}
@@ -513,6 +521,36 @@ export function TeamRankings({
             </button>
           </div>
         </div>
+
+        {/* DEBUG: Data verification panel - shows raw data for comparison */}
+        {import.meta.env.DEV && (
+          <div className="px-3 py-2 bg-purple-900/30 border-b border-purple-500/30 text-xs">
+            <div className="text-purple-300 font-semibold mb-1">DEBUG INFO (Mobile)</div>
+            <div className="text-purple-200">
+              Total Drafted: {allDrafted.length} | Teams: {auctionData?.teams?.length || 0}
+            </div>
+            {marlinsTeam && (
+              <div className="mt-1 text-purple-200">
+                <div>Marlins: Val={marlinsTeam.valueGained.toFixed(0)}, Z={marlinsTeam.totalZScore.toFixed(1)}, $/Z=${marlinsTeam.dollarsPerZScore.toFixed(1)}</div>
+                <div className="text-purple-300/70 mt-0.5">
+                  ProjVal=${marlinsTeam.totalProjectedValue.toFixed(0)}, Spent=${marlinsTeam.totalActualSpent}
+                </div>
+              </div>
+            )}
+            {marlinsPlayers.length > 0 && (
+              <details className="mt-1">
+                <summary className="text-purple-300 cursor-pointer">Marlins Players ({marlinsPlayers.length})</summary>
+                <div className="mt-1 pl-2 text-purple-200/80 max-h-32 overflow-y-auto">
+                  {marlinsPlayers.map((p, i) => (
+                    <div key={i} className="truncate">
+                      {p.name}: proj=${p.projectedValue?.toFixed(0) || 0}, paid=${p.draftedPrice || 0}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
 
         {/* League Summary */}
         {leagueStats && (
@@ -619,6 +657,14 @@ export function TeamRankings({
   }
 
   // Desktop view
+  // Find Marlins data for debug display (desktop)
+  const marlinsTeamDesktop = teamRankings.find(t =>
+    t.name.toLowerCase().includes('marlin') || t.name === 'Marlins'
+  );
+  const marlinsPlayersDesktop = allDrafted.filter(p =>
+    p.draftedBy?.toLowerCase().includes('marlin') || p.draftedBy === 'Marlins'
+  );
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
@@ -648,6 +694,36 @@ export function TeamRankings({
             </button>
           </div>
         </div>
+
+        {/* DEBUG: Data verification panel - shows raw data for comparison */}
+        {import.meta.env.DEV && (
+          <div className="px-4 py-2 bg-purple-900/30 border-b border-purple-500/30 text-xs shrink-0">
+            <div className="flex items-center gap-4">
+              <span className="text-purple-300 font-semibold">DEBUG INFO (Desktop)</span>
+              <span className="text-purple-200">Total Drafted: {allDrafted.length}</span>
+              <span className="text-purple-200">Teams: {auctionData?.teams?.length || 0}</span>
+              {marlinsTeamDesktop && (
+                <>
+                  <span className="text-purple-200">Marlins Val={marlinsTeamDesktop.valueGained.toFixed(0)}</span>
+                  <span className="text-purple-200">ProjVal=${marlinsTeamDesktop.totalProjectedValue.toFixed(0)}</span>
+                  <span className="text-purple-200">Spent=${marlinsTeamDesktop.totalActualSpent}</span>
+                </>
+              )}
+            </div>
+            {marlinsPlayersDesktop.length > 0 && (
+              <details className="mt-1">
+                <summary className="text-purple-300 cursor-pointer">Marlins Players ({marlinsPlayersDesktop.length})</summary>
+                <div className="mt-1 flex flex-wrap gap-2 text-purple-200/80">
+                  {marlinsPlayersDesktop.map((p, i) => (
+                    <span key={i} className="bg-purple-900/50 px-1 rounded">
+                      {p.name.split(' ').pop()}: ${p.projectedValue?.toFixed(0) || 0}/${p.draftedPrice || 0}
+                    </span>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
 
         {/* League Summary - compact */}
         {leagueStats && (
