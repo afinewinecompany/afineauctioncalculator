@@ -282,7 +282,7 @@ export function TeamRankings({
   const handleSaveAsImage = useCallback(async () => {
     setShowPrintView(true);
     // Wait for print view to render
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     if (printRef.current) {
       try {
@@ -292,21 +292,64 @@ export function TeamRankings({
           backgroundColor: '#1e293b',
           scale: 2,
           logging: false,
+          useCORS: true,
         });
 
-        // Convert to image and download
+        // Convert canvas to blob
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error('Failed to create blob'));
+          }, 'image/png');
+        });
+
+        const fileName = `team-rankings-${new Date().toISOString().split('T')[0]}.png`;
+
+        // Try Web Share API first (works best on mobile)
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], fileName, { type: 'image/png' });
+          const shareData = { files: [file] };
+
+          if (navigator.canShare(shareData)) {
+            try {
+              await navigator.share(shareData);
+              setShowPrintView(false);
+              return;
+            } catch (shareError) {
+              // User cancelled or share failed, fall through to download
+              if ((shareError as Error).name === 'AbortError') {
+                setShowPrintView(false);
+                return;
+              }
+            }
+          }
+        }
+
+        // Fallback: Create download link
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.download = `team-rankings-${new Date().toISOString().split('T')[0]}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        link.href = url;
+        link.download = fileName;
+
+        // For mobile, we need to handle this differently
+        if (isMobile) {
+          // Open in new tab so user can long-press to save
+          window.open(url, '_blank');
+        } else {
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+
+        // Clean up the URL after a delay
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       } catch (error) {
         console.error('Failed to save image:', error);
-        // Fallback: copy to clipboard or show error
         alert('Failed to save image. Please try taking a screenshot instead.');
       }
     }
     setShowPrintView(false);
-  }, []);
+  }, [isMobile]);
 
   const RankBadge = ({ rank, size = 'normal' }: { rank: number; size?: 'normal' | 'small' }) => {
     const textSize = size === 'small' ? 'text-sm' : 'text-lg';
@@ -454,7 +497,7 @@ export function TeamRankings({
             </div>
             <div className="text-center">
               <div className="text-slate-500">Avg $/Z</div>
-              <div className="text-blue-400 font-semibold">${leagueStats.avgEfficiency.toFixed(1)}</div>
+              <div className="text-blue-400 font-semibold">${leagueStats.avgEfficiency.toFixed(2)}</div>
             </div>
             <div className="text-center">
               <div className="text-slate-500">Spent</div>
