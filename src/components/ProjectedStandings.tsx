@@ -152,11 +152,11 @@ export function ProjectedStandings({
   }, [isMobile]);
 
   const RankBadge = ({ rank, size = 'normal' }: { rank: number; size?: 'normal' | 'small' }) => {
-    const textSize = size === 'small' ? 'text-sm' : 'text-lg';
+    const textSize = size === 'small' ? 'text-xs' : 'text-lg';
     if (rank === 1) return <span className={textSize}>🥇</span>;
     if (rank === 2) return <span className={textSize}>🥈</span>;
     if (rank === 3) return <span className={textSize}>🥉</span>;
-    return <span className={`text-slate-400 ${size === 'small' ? 'text-xs' : 'text-sm'} font-medium`}>#{rank}</span>;
+    return <span className={`text-slate-400 ${size === 'small' ? 'text-[10px]' : 'text-sm'} font-medium`}>{rank}</span>;
   };
 
   const CategoryRankBadge = ({ rank, numTeams }: { rank: number; numTeams: number }) => {
@@ -364,13 +364,13 @@ export function ProjectedStandings({
 
   // Desktop view
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2" onClick={onClose}>
       <div
-        className="bg-slate-900 border border-slate-700 text-white rounded-lg max-w-6xl w-full h-[85vh] flex flex-col overflow-hidden"
+        className="bg-slate-900 border border-slate-700 text-white rounded-lg max-w-7xl w-full max-h-[95vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700 shrink-0">
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-700 shrink-0">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-emerald-400" />
             <h2 className="text-sm font-semibold">Projected Standings</h2>
@@ -397,12 +397,12 @@ export function ProjectedStandings({
         </div>
 
         {/* Scrollable table */}
-        <div className="flex-1 overflow-auto px-2 py-1" style={{ minHeight: 0 }}>
-          <table className="w-full text-xs">
+        <div className="flex-1 overflow-auto px-1" style={{ minHeight: 0 }}>
+          <table className="w-full text-[11px]">
             <thead className="sticky top-0 bg-slate-900">
               <tr className="border-b border-slate-700/50">
                 <th
-                  className="text-left py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors sticky left-0 bg-slate-900"
+                  className="text-left py-1 px-1 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors sticky left-0 bg-slate-900"
                   onClick={() => handleSort('rank')}
                 >
                   <div className="flex items-center gap-0.5">
@@ -410,7 +410,7 @@ export function ProjectedStandings({
                   </div>
                 </th>
                 <th
-                  className="text-left py-1.5 px-1.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors sticky left-8 bg-slate-900"
+                  className="text-left py-1 px-1 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors sticky left-6 bg-slate-900"
                   onClick={() => handleSort('team')}
                 >
                   <div className="flex items-center gap-0.5">
@@ -420,7 +420,7 @@ export function ProjectedStandings({
                 {enabledCategories.map(cat => (
                   <th
                     key={cat}
-                    className={`text-center py-1.5 px-1 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors whitespace-nowrap ${
+                    className={`text-center py-1 px-0.5 text-slate-400 font-medium cursor-pointer hover:text-white transition-colors whitespace-nowrap ${
                       isLowerBetterCategory(cat) ? 'text-red-400/70' : ''
                     }`}
                     onClick={() => handleSort(cat)}
@@ -433,7 +433,7 @@ export function ProjectedStandings({
                   </th>
                 ))}
                 <th
-                  className="text-center py-1.5 px-2 text-emerald-400 font-medium cursor-pointer hover:text-emerald-300 transition-colors"
+                  className="text-center py-1 px-1 text-emerald-400 font-medium cursor-pointer hover:text-emerald-300 transition-colors"
                   onClick={() => handleSort('total')}
                   title="Total Roto Points"
                 >
@@ -447,36 +447,43 @@ export function ProjectedStandings({
               {sortedTeams.map((team) => (
                 <tr
                   key={team.teamName}
-                  className={`border-b border-slate-700/30 transition-colors ${
+                  className={`border-b border-slate-700/20 transition-colors ${
                     team.teamName === selectedTeam
                       ? 'bg-emerald-900/20'
                       : 'hover:bg-slate-700/30'
                   }`}
                 >
                   {/* Rank */}
-                  <td className="py-1 px-1.5 text-center sticky left-0 bg-slate-900">
-                    <RankBadge rank={team.overallRank} />
+                  <td className="py-0.5 px-1 text-center sticky left-0 bg-slate-900">
+                    <RankBadge rank={team.overallRank} size="small" />
                   </td>
 
                   {/* Team Name */}
-                  <td className="py-1 px-1.5 sticky left-8 bg-slate-900">
-                    <span className={`font-medium ${team.teamName === selectedTeam ? 'text-emerald-300' : 'text-white'}`}>
+                  <td className="py-0.5 px-1 sticky left-6 bg-slate-900 max-w-[120px] truncate">
+                    <span className={`font-medium ${team.teamName === selectedTeam ? 'text-emerald-300' : 'text-white'}`} title={team.teamName}>
                       {team.teamName}
                     </span>
-                    <span className="text-slate-500 ml-1 text-xs">({team.playerCount})</span>
+                    <span className="text-slate-500 ml-0.5">({team.playerCount})</span>
                   </td>
 
                   {/* Category values */}
                   {enabledCategories.map(cat => {
                     const catData = team.categories[cat];
                     return (
-                      <td key={cat} className="py-1 px-1 text-center">
-                        <div className="flex flex-col items-center">
+                      <td key={cat} className="py-0.5 px-0.5 text-center">
+                        <div className="flex flex-col items-center leading-tight">
                           <span className="text-white">
                             {catData ? formatStatValue(catData.value, cat) : '-'}
                           </span>
                           {catData && (
-                            <CategoryRankBadge rank={catData.rank} numTeams={numTeams} />
+                            <span className={`text-[9px] ${
+                              catData.rank === 1 ? 'text-amber-400' :
+                              catData.rank === 2 ? 'text-slate-300' :
+                              catData.rank === 3 ? 'text-amber-600' :
+                              catData.rank <= numTeams / 3 ? 'text-emerald-400' :
+                              catData.rank <= (numTeams * 2) / 3 ? 'text-slate-500' :
+                              'text-red-400'
+                            }`}>({catData.rank})</span>
                           )}
                         </div>
                       </td>
@@ -484,7 +491,7 @@ export function ProjectedStandings({
                   })}
 
                   {/* Total Points */}
-                  <td className="py-1 px-2 text-center">
+                  <td className="py-0.5 px-1 text-center">
                     <span className="text-emerald-400 font-bold">{team.totalRotoPoints.toFixed(1)}</span>
                   </td>
                 </tr>
@@ -493,14 +500,14 @@ export function ProjectedStandings({
           </table>
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-3 text-xs border-t border-slate-700 px-4 py-2 shrink-0 bg-slate-900">
-          <span className="text-slate-500">Roto scoring: 1st = {numTeams} pts, last = 1 pt per category</span>
-          <span className="text-slate-500">|</span>
-          <span className="text-emerald-400">Green</span>
-          <span className="text-slate-500">= Top 1/3</span>
-          <span className="text-red-400">Red</span>
-          <span className="text-slate-500">= Bottom 1/3</span>
+        {/* Legend - more compact */}
+        <div className="flex items-center gap-2 text-[10px] border-t border-slate-700 px-3 py-1 shrink-0 bg-slate-900">
+          <span className="text-slate-500">Roto: 1st={numTeams}pts</span>
+          <span className="text-slate-600">|</span>
+          <span className="text-emerald-400">●</span>
+          <span className="text-slate-500">Top 1/3</span>
+          <span className="text-red-400">●</span>
+          <span className="text-slate-500">Bottom 1/3</span>
         </div>
       </div>
     </div>
