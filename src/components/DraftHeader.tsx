@@ -10,6 +10,7 @@ interface DraftHeaderProps {
   inflationRate: number;
   isMobile?: boolean;
   onOpenTeamRankings?: () => void;
+  onOpenProjectedStandings?: () => void;
 }
 
 export function DraftHeader({
@@ -20,6 +21,7 @@ export function DraftHeader({
   inflationRate,
   isMobile,
   onOpenTeamRankings,
+  onOpenProjectedStandings,
 }: DraftHeaderProps) {
   const totalRosterSpots = Object.values(settings.rosterSpots).reduce((a, b) => a + b, 0);
   const totalPlayersNeeded = totalRosterSpots * settings.numTeams;
@@ -174,6 +176,22 @@ export function DraftHeader({
                 <div className="flex flex-col text-left">
                   <span className="text-amber-200 font-semibold">Team Rankings</span>
                   <span className="text-amber-300/80 text-xs">View standings</span>
+                </div>
+              </button>
+            )}
+
+            {/* Projected Standings Button */}
+            {onOpenProjectedStandings && (
+              <button
+                onClick={onOpenProjectedStandings}
+                className="flex items-center gap-3 bg-gradient-to-br from-emerald-500/30 to-emerald-600/30 hover:from-emerald-500/50 hover:to-emerald-600/50 px-4 py-3 rounded-xl border-2 border-emerald-400/60 hover:border-emerald-400 backdrop-blur-sm transition-all group shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40"
+              >
+                <div className="p-2 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-lg group-hover:scale-110 transition-transform shadow-md">
+                  <TrendingUp className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-emerald-200 font-semibold">Projections</span>
+                  <span className="text-emerald-300/80 text-xs">Category standings</span>
                 </div>
               </button>
             )}

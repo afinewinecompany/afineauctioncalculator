@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { SavedLeague, LeagueSettings, SubscriptionInfo, ScrapedAuctionData } from '../lib/types';
-import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle, Settings, User, Crown, Loader2, Pencil, Shield, BarChart3 } from 'lucide-react';
+import { SavedLeague, LeagueSettings, SubscriptionInfo, ScrapedAuctionData, Player } from '../lib/types';
+import { Plus, Calendar, Users, DollarSign, Trash2, Play, CheckCircle, Settings, User, Crown, Loader2, Pencil, Shield, BarChart3, TrendingUp } from 'lucide-react';
 import { EditLeagueModal } from './EditLeagueModal';
+import { ProjectedStandings } from './ProjectedStandings';
 import { fetchAuctionData } from '../lib/auctionApi';
 import { useIsMobile } from './ui/use-mobile';
 
@@ -49,6 +50,7 @@ export function LeaguesList({
 }: LeaguesListProps) {
   const [editingLeague, setEditingLeague] = useState<SavedLeague | null>(null);
   const [roomDataCache, setRoomDataCache] = useState<RoomDataCache>({});
+  const [standingsLeague, setStandingsLeague] = useState<SavedLeague | null>(null);
   const isMobile = useIsMobile();
 
   // Fetch room data for leagues with Couch Managers room IDs
@@ -319,6 +321,16 @@ export function LeaguesList({
                         </button>
                       )}
 
+                      {league.status === 'drafting' && (
+                        <button
+                          onClick={() => setStandingsLeague(league)}
+                          className="p-2.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:bg-emerald-900/30 hover:text-emerald-400 hover:border-emerald-500/30 transition-all"
+                          title="Projected Standings"
+                        >
+                          <TrendingUp className="w-4 h-4" />
+                        </button>
+                      )}
+
                       <button
                         onClick={() => setEditingLeague(league)}
                         className="p-2.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:bg-blue-900/30 hover:text-blue-400 hover:border-blue-500/30 transition-all"
@@ -439,6 +451,16 @@ export function LeaguesList({
                         </button>
                       )}
 
+                      {league.status === 'drafting' && (
+                        <button
+                          onClick={() => setStandingsLeague(league)}
+                          className="px-4 py-3 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:bg-emerald-900/30 hover:text-emerald-400 hover:border-emerald-500/30 transition-all"
+                          title="Projected Standings"
+                        >
+                          <TrendingUp className="w-4 h-4" />
+                        </button>
+                      )}
+
                       <button
                         onClick={() => setEditingLeague(league)}
                         className="px-4 py-3 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg hover:bg-blue-900/30 hover:text-blue-400 hover:border-blue-500/30 transition-all"
@@ -496,6 +518,19 @@ export function LeaguesList({
             await onReloadProjections(league, newProjectionSystem);
             setEditingLeague(null);
           }}
+        />
+      )}
+
+      {/* Projected Standings Modal */}
+      {standingsLeague && (
+        <ProjectedStandings
+          isOpen={!!standingsLeague}
+          onClose={() => setStandingsLeague(null)}
+          settings={standingsLeague.settings}
+          auctionData={roomDataCache[standingsLeague.settings.couchManagerRoomId]?.data ?? null}
+          allPlayers={standingsLeague.players}
+          allDrafted={standingsLeague.players.filter(p => p.status === 'drafted' || p.status === 'onMyTeam')}
+          isMobile={isMobile}
         />
       )}
     </div>

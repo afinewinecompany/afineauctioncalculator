@@ -20,7 +20,7 @@ export interface LeagueSettings {
   };
   leagueType: 'redraft' | 'dynasty';
   scoringType: 'rotisserie' | 'h2h-categories' | 'h2h-points';
-  projectionSystem: 'steamer' | 'batx' | 'ja';
+  projectionSystem: 'steamer' | 'batx' | 'ja' | 'oopsy';
   // Dynasty-specific settings (only used when leagueType === 'dynasty')
   dynastySettings?: {
     dynastyWeight: number; // 0.0-1.0 (how much to weight dynasty rankings vs projections)

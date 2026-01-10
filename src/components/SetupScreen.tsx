@@ -116,6 +116,7 @@ export function SetupScreen({
     { value: 'steamer', label: 'Steamer', description: 'Popular projection system with conservative estimates' },
     { value: 'batx', label: 'THE BAT X', description: 'Advanced metrics-based projections', author: 'Derek Carty' },
     { value: 'ja', label: 'JA Projections', description: 'Jon Anderson (MLB Data Warehouse)' },
+    { value: 'oopsy', label: 'OOPSY', description: 'Alternative projection model from FanGraphs' },
   ];
 
   const leagueTypes: Array<{ value: LeagueSettings['leagueType']; label: string; description: string; icon: React.ReactNode }> = [

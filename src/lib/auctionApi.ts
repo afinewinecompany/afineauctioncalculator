@@ -337,11 +337,11 @@ export function formatLastSync(lastSyncAt: string | null): string {
 // =============================================================================
 
 /**
- * Fetches projections for a given system (steamer, batx, ja)
+ * Fetches projections for a given system (steamer, batx, ja, oopsy)
  * Uses 24-hour cache on the server
  */
 export async function fetchProjections(
-  system: 'steamer' | 'batx' | 'ja' = 'steamer'
+  system: 'steamer' | 'batx' | 'ja' | 'oopsy' = 'steamer'
 ): Promise<ProjectionsResponse> {
   const response = await fetch(`${PROJECTIONS_BASE}/${system}`);
 
@@ -385,7 +385,7 @@ export async function calculateLeagueAuctionValues(
  * Forces a refresh of projections cache for a system
  */
 export async function refreshProjections(
-  system: 'steamer' | 'batx' | 'ja' = 'steamer'
+  system: 'steamer' | 'batx' | 'ja' | 'oopsy' = 'steamer'
 ): Promise<{ success: boolean; playerCount: number; refreshedAt: string }> {
   const response = await fetch(`${PROJECTIONS_BASE}/${system}/refresh`, {
     method: 'POST',
@@ -402,7 +402,7 @@ export async function refreshProjections(
  * Gets the cache status for a projection system
  */
 export async function getProjectionsCacheStatus(
-  system: 'steamer' | 'batx' | 'ja' = 'steamer'
+  system: 'steamer' | 'batx' | 'ja' | 'oopsy' = 'steamer'
 ): Promise<{
   system: string;
   exists: boolean;

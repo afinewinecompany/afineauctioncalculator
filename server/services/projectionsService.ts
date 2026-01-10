@@ -178,6 +178,51 @@ export async function fetchBatXProjections(): Promise<NormalizedProjection[]> {
 }
 
 /**
+ * Fetches OOPSY projections for both hitters and pitchers from FanGraphs
+ * Uses 'oopsy' type parameter for both batting and pitching
+ */
+export async function fetchOopsyProjections(): Promise<NormalizedProjection[]> {
+  logger.info('Fetching OOPSY projections from FanGraphs');
+
+  // Fetch both batting and pitching in parallel
+  const [hittersResponse, pitchersResponse] = await Promise.all([
+    fetch(`${FANGRAPHS_BASE_URL}?type=oopsy&stats=bat&pos=all&team=0&players=0&lg=all`),
+    fetch(`${FANGRAPHS_BASE_URL}?type=oopsy&stats=pit&pos=all&team=0&players=0&lg=all`),
+  ]);
+
+  if (!hittersResponse.ok) {
+    throw new Error(`Failed to fetch OOPSY hitter projections: ${hittersResponse.status}`);
+  }
+  if (!pitchersResponse.ok) {
+    throw new Error(`Failed to fetch OOPSY pitcher projections: ${pitchersResponse.status}`);
+  }
+
+  const hitters: FanGraphsHitter[] = await hittersResponse.json();
+  const pitchers: FanGraphsPitcher[] = await pitchersResponse.json();
+
+  logger.info({ hitters: hitters.length, pitchers: pitchers.length }, 'Fetched OOPSY projections from FanGraphs');
+
+  // Normalize all projections
+  const normalizedHitters = hitters.map(normalizeHitter);
+  const normalizedPitchers = pitchers.map(normalizePitcher);
+
+  // Validate projections to filter out bad data
+  const validHitters = normalizedHitters.filter(validateProjection);
+  const validPitchers = normalizedPitchers.filter(validateProjection);
+
+  const filteredHitters = normalizedHitters.length - validHitters.length;
+  const filteredPitchers = normalizedPitchers.length - validPitchers.length;
+
+  if (filteredHitters > 0 || filteredPitchers > 0) {
+    logger.info({ filteredHitters, filteredPitchers }, 'Filtered out invalid OOPSY projections');
+  }
+
+  logger.info({ validHitters: validHitters.length, validPitchers: validPitchers.length }, 'Returning valid OOPSY projections');
+
+  return [...validHitters, ...validPitchers];
+}
+
+/**
  * Normalizes a FanGraphs hitter to internal format
  */
 function normalizeHitter(raw: FanGraphsHitter): NormalizedProjection {

@@ -9,12 +9,13 @@ import { RosterPanel } from './RosterPanel';
 import { InflationTracker } from './InflationTracker';
 import { TeamOverviewGrid } from './TeamOverviewGrid';
 import { TeamRankings } from './TeamRankings';
+import { ProjectedStandings } from './ProjectedStandings';
 import { PlayerDetailModal } from './PlayerDetailModal';
 import { DraftRoomLoadingScreen } from './DraftRoomLoadingScreen';
 import { ChatAssistant } from './ChatAssistant';
 import { useIsMobile } from './ui/use-mobile';
 import { useAuth } from '../contexts/AuthContext';
-import { Users, ListFilter, Trophy } from 'lucide-react';
+import { Users, ListFilter, Trophy, TrendingUp } from 'lucide-react';
 
 // Timing constants
 const SYNC_INTERVAL_MS = 2 * 60 * 1000; // Sync interval: 2 minutes
@@ -40,6 +41,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
   const [rosterNeedsRemaining, setRosterNeedsRemaining] = useState(settings.rosterSpots);
   const [selectedPlayerForDetail, setSelectedPlayerForDetail] = useState<Player | null>(null);
   const [isTeamRankingsOpen, setIsTeamRankingsOpen] = useState(false);
+  const [isProjectedStandingsOpen, setIsProjectedStandingsOpen] = useState(false);
 
   // Mobile detection and tab state
   const isMobile = useIsMobile();
@@ -1090,6 +1092,16 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
     setIsTeamRankingsOpen(false);
   }, []);
 
+  // Handler for opening Projected Standings modal
+  const handleOpenProjectedStandings = useCallback(() => {
+    setIsProjectedStandingsOpen(true);
+  }, []);
+
+  // Handler for closing Projected Standings modal
+  const handleCloseProjectedStandings = useCallback(() => {
+    setIsProjectedStandingsOpen(false);
+  }, []);
+
   const totalRosterSpots = Object.values(settings.rosterSpots).reduce((a, b) => a + b, 0);
   const isDraftComplete = myRoster.length >= totalRosterSpots;
 
@@ -1109,6 +1121,7 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         inflationRate={inflationRate}
         isMobile={isMobile}
         onOpenTeamRankings={handleOpenTeamRankings}
+        onOpenProjectedStandings={handleOpenProjectedStandings}
       />
 
       {/* Main Content - scrollable container */}
@@ -1154,6 +1167,15 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
                   aria-label="Team Rankings"
                 >
                   <Trophy className="w-5 h-5 text-white" />
+                </button>
+                {/* Projected Standings button for mobile */}
+                <button
+                  type="button"
+                  onClick={handleOpenProjectedStandings}
+                  className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-xl shadow-lg shadow-emerald-500/30 transition-all active:scale-95"
+                  aria-label="Projected Standings"
+                >
+                  <TrendingUp className="w-5 h-5 text-white" />
                 </button>
               </div>
 
@@ -1285,6 +1307,18 @@ export function DraftRoom({ settings, players: initialPlayers, onComplete }: Dra
         onClose={handleCloseTeamRankings}
         settings={settings}
         auctionData={syncResult?.auctionData ?? null}
+        allDrafted={allDrafted}
+        selectedTeam={selectedTeam}
+        isMobile={isMobile}
+      />
+
+      {/* Projected Standings Modal */}
+      <ProjectedStandings
+        isOpen={isProjectedStandingsOpen}
+        onClose={handleCloseProjectedStandings}
+        settings={settings}
+        auctionData={syncResult?.auctionData ?? null}
+        allPlayers={players}
         allDrafted={allDrafted}
         selectedTeam={selectedTeam}
         isMobile={isMobile}

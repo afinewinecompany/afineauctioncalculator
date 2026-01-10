@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { fetchSteamerProjections, fetchBatXProjections } from '../services/projectionsService.js';
+import { fetchSteamerProjections, fetchBatXProjections, fetchOopsyProjections } from '../services/projectionsService.js';
 import { fetchJAProjections } from '../services/jaProjectionsService.js';
 import {
   getCachedProjections,
@@ -24,7 +24,7 @@ import type { LeagueSettings } from '../../src/lib/types.js';
 
 const router = Router();
 
-const VALID_SYSTEMS = ['steamer', 'batx', 'ja'] as const;
+const VALID_SYSTEMS = ['steamer', 'batx', 'ja', 'oopsy'] as const;
 type ProjectionSystem = typeof VALID_SYSTEMS[number];
 
 function isValidSystem(system: string): system is ProjectionSystem {
@@ -66,6 +66,9 @@ router.get('/:system', async (req: Request, res: Response) => {
         break;
       case 'batx':
         projections = await fetchBatXProjections();
+        break;
+      case 'oopsy':
+        projections = await fetchOopsyProjections();
         break;
       default:
         return res.status(400).json({ error: 'Invalid projection system' });
@@ -154,6 +157,9 @@ router.post('/:system/refresh', refreshLimiter, async (req: Request, res: Respon
         break;
       case 'batx':
         projections = await fetchBatXProjections();
+        break;
+      case 'oopsy':
+        projections = await fetchOopsyProjections();
         break;
       default:
         return res.status(400).json({ error: 'Invalid projection system' });
@@ -246,6 +252,9 @@ router.post('/calculate-values', async (req: Request, res: Response) => {
           break;
         case 'batx':
           projections = await fetchBatXProjections();
+          break;
+        case 'oopsy':
+          projections = await fetchOopsyProjections();
           break;
         default:
           return res.status(400).json({ error: 'Invalid projection system' });
