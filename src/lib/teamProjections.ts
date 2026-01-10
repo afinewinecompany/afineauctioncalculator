@@ -87,6 +87,9 @@ export function calculateProjectedStandings(
   const teamNames = getTeamNames(allDrafted, auctionData);
 
   if (teamNames.length === 0) {
+    if (import.meta.env.DEV) {
+      console.log('[TeamProjections] No team names found');
+    }
     return [];
   }
 
@@ -94,11 +97,44 @@ export function calculateProjectedStandings(
   const enabledCategories = getEnabledCategories(settings);
 
   if (enabledCategories.length === 0) {
+    if (import.meta.env.DEV) {
+      console.log('[TeamProjections] No enabled categories found');
+    }
     return [];
+  }
+
+  if (import.meta.env.DEV) {
+    console.log('[TeamProjections] Calculating standings:', {
+      numTeams: teamNames.length,
+      teamNames,
+      enabledCategories,
+      allPlayersCount: allPlayers.length,
+      allDraftedCount: allDrafted.length,
+      sampleDraftedPlayer: allDrafted[0] ? {
+        id: allDrafted[0].id,
+        name: allDrafted[0].name,
+        draftedBy: allDrafted[0].draftedBy,
+        projectedStats: allDrafted[0].projectedStats,
+      } : null,
+    });
   }
 
   // Group players by team
   const playersByTeam = groupPlayersByTeam(allPlayers, allDrafted, teamNames);
+
+  if (import.meta.env.DEV) {
+    // Log sample team data
+    const firstTeam = teamNames[0];
+    const firstTeamPlayers = playersByTeam.get(firstTeam) || [];
+    console.log('[TeamProjections] First team players:', {
+      team: firstTeam,
+      playerCount: firstTeamPlayers.length,
+      players: firstTeamPlayers.slice(0, 3).map(p => ({
+        name: p.name,
+        projectedStats: p.projectedStats,
+      })),
+    });
+  }
 
   // Calculate raw stats for each team
   const teamRawStats = teamNames.map(teamName =>
@@ -172,27 +208,40 @@ function groupPlayersByTeam(
   // Initialize empty arrays for all teams
   teamNames.forEach(name => playersByTeam.set(name, []));
 
-  // Map drafted player IDs to their full projection data
-  const draftedById = new Map<string, Player>();
-  allDrafted.forEach(p => {
-    draftedById.set(p.id, p);
-  });
+  // Create a lookup map for allPlayers by ID for O(1) access
+  const allPlayersById = new Map<string, Player>();
+  allPlayers.forEach(p => allPlayersById.set(p.id, p));
 
   // Find the full player data for each drafted player
   allDrafted.forEach(draftedPlayer => {
     if (!draftedPlayer.draftedBy) return;
 
-    // Try to find the player in allPlayers (which has projections)
-    const fullPlayer = allPlayers.find(p => p.id === draftedPlayer.id);
-    const playerToAdd = fullPlayer || draftedPlayer;
+    // Try to find the player in allPlayers first (which might have more complete data)
+    // But prefer the drafted player's projectedStats if they exist
+    const fullPlayer = allPlayersById.get(draftedPlayer.id);
+
+    // Use the player that has projectedStats with actual values
+    let playerToAdd = draftedPlayer;
+
+    // Check if fullPlayer has more projection data
+    if (fullPlayer && fullPlayer.projectedStats) {
+      const fullStatsCount = Object.keys(fullPlayer.projectedStats).length;
+      const draftedStatsCount = Object.keys(draftedPlayer.projectedStats || {}).length;
+
+      // Use fullPlayer if it has more stats, otherwise use draftedPlayer
+      if (fullStatsCount > draftedStatsCount) {
+        playerToAdd = {
+          ...fullPlayer,
+          draftedBy: draftedPlayer.draftedBy,
+          draftedPrice: draftedPlayer.draftedPrice,
+          status: draftedPlayer.status,
+        };
+      }
+    }
 
     const teamPlayers = playersByTeam.get(draftedPlayer.draftedBy);
     if (teamPlayers) {
-      teamPlayers.push({
-        ...playerToAdd,
-        draftedBy: draftedPlayer.draftedBy,
-        draftedPrice: draftedPlayer.draftedPrice,
-      });
+      teamPlayers.push(playerToAdd);
     }
   });
 

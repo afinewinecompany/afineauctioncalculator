@@ -44,6 +44,7 @@ export function EditLeagueModal({
     { value: 'steamer', label: 'Steamer', description: 'Popular, conservative' },
     { value: 'batx', label: 'THE BAT X', description: 'Advanced metrics', author: 'Derek Carty' },
     { value: 'ja', label: 'JA Projections', description: 'Jon Anderson (MLB Data Warehouse)' },
+    { value: 'oopsy', label: 'OOPSY', description: 'Alternative FanGraphs model' },
   ];
 
   const scoringTypes: Array<{ value: LeagueSettings['scoringType']; label: string }> = [
